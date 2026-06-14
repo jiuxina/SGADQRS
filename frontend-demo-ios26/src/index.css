@@ -722,6 +722,194 @@ body {
 }
 
 /* ============================================
+   Bento Grid — Asymmetric dashboard layout
+   ============================================ */
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding-bottom: 40px;
+}
+
+.bento-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+}
+
+/* Size variants */
+.bento-lg    { grid-column: span 2; grid-row: span 2; }
+.bento-wide  { grid-column: span 2; }
+.bento-tall  { grid-row: span 2; }
+
+/* Inner elements */
+.bento-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.bento-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.bento-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+}
+
+/* Mini bar chart inside bento cards */
+.bento-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 48px;
+  margin-top: 16px;
+}
+
+.bento-bar {
+  flex: 1;
+  border-radius: 4px 4px 0 0;
+  min-height: 6px;
+  transition: height 0.5s ease;
+}
+
+/* Dot indicators */
+.bento-dots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.bento-dot-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.bento-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Inline badge for numbers in text */
+.bento-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(0, 122, 255, 0.08);
+}
+
+.bento-num.warn {
+  color: var(--warning);
+  background: rgba(255, 149, 0, 0.08);
+}
+
+.bento-num.danger {
+  color: var(--danger);
+  background: rgba(255, 59, 48, 0.08);
+}
+
+.bento-num.success {
+  color: var(--success);
+  background: rgba(52, 199, 89, 0.08);
+}
+
+/* Action row inside bento cards */
+.bento-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  transition: color 0.15s;
+}
+
+.bento-action:last-child { border-bottom: none; }
+.bento-action:hover { color: var(--accent); }
+
+/* Timeline inside bento cards */
+.bento-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.bento-timeline-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  position: relative;
+  padding-left: 16px;
+}
+
+.bento-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.bento-timeline-item::after {
+  content: '';
+  position: absolute;
+  left: 3.5px;
+  top: 18px;
+  width: 1px;
+  height: calc(100% + 4px);
+  background: rgba(0,0,0,0.06);
+}
+
+.bento-timeline-item:last-child::after { display: none; }
+
+@media (max-width: 1024px) {
+  .bento-grid { grid-template-columns: repeat(2, 1fr); }
+  .bento-lg { grid-column: span 2; grid-row: span 1; }
+  .bento-wide { grid-column: span 2; }
+}
+
+/* ============================================
    Data Table
    ============================================ */
 
