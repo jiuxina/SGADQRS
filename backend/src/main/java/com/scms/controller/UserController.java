@@ -1,0 +1,59 @@
+package com.scms.controller;
+
+import com.scms.common.Result;
+import com.scms.dto.UserDTO;
+import com.scms.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+@Tag(name = "用户管理")
+@RestController
+@RequestMapping("/user")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final UserService userService;
+
+    @Operation(summary = "用户列表")
+    @GetMapping("/list")
+    public Result<?> list(@RequestParam(defaultValue = "1") int current,
+                          @RequestParam(defaultValue = "10") int size,
+                          @RequestParam(required = false) String keyword,
+                          @RequestParam(required = false) Integer userType,
+                          @RequestParam(required = false) Integer status) {
+        return userService.listUsers(current, size, keyword, userType, status);
+    }
+
+    @Operation(summary = "用户详情")
+    @GetMapping("/{id}")
+    public Result<?> getById(@PathVariable Long id) {
+        return userService.getUserById(id);
+    }
+
+    @Operation(summary = "创建用户")
+    @PostMapping
+    public Result<?> create(@Valid @RequestBody UserDTO dto) {
+        return userService.createUser(dto);
+    }
+
+    @Operation(summary = "更新用户")
+    @PutMapping
+    public Result<?> update(@RequestBody UserDTO dto) {
+        return userService.updateUser(dto);
+    }
+
+    @Operation(summary = "修改用户状态")
+    @PutMapping("/{id}/status")
+    public Result<?> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+        return userService.updateUserStatus(id, status);
+    }
+
+    @Operation(summary = "删除用户")
+    @DeleteMapping("/{id}")
+    public Result<?> delete(@PathVariable Long id) {
+        return userService.deleteUser(id);
+    }
+}
