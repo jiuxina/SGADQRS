@@ -1,0 +1,673 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------------< com.scms:scms-backend >------------------------
+[INFO] Building SCMS Backend 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ scms-backend ---
+[INFO] Deleting f:\xm\SGADQRS\backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ scms-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ scms-backend ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 78 source files with javac [debug release 17] to target\classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/entity/sysConfig.java:[9,8] 类 SysConfig 是公共的, 应在名为 SysConfig.java 的文件中声明
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[41,59] 找不到符号
+  符号:   方法 getUserId()
+  位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[56,68] 找不到符号
+  符号:   方法 getUserId()
+  位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[68,54] 找不到符号
+  符号:   方法 getRoleCode()
+  位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[68,81] 找不到符号
+  符号:   方法 getUserId()
+  位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[77,61] 找不到符号
+  符号:   方法 getUserId()
+  位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[85,62] 找不到符号
+  符号:   方法 getUserId()
+  位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[34,47] 方法引用无效
+  找不到符号
+    符号:   方法 getCompetitionId()
+    位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[35,43] 方法引用无效
+  找不到符号
+    符号:   方法 getStudentId()
+    位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[36,40] 方法引用无效
+  找不到符号
+    符号:   方法 getStatus()
+    位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[40,27] 方法引用无效
+  找不到符号
+    符号:   方法 getCompetitionId()
+    位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[44,29] 方法引用无效
+  找不到符号
+    符号:   方法 getCreateTime()
+    位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[52,60] 找不到符号
+  符号:   方法 getCompetitionId()
+  位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[54,17] 找不到符号
+  符号:   方法 getStatus()
+  位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[57,30] 找不到符号
+  符号:   方法 getRegistrationStart()
+  位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[57,74] 找不到符号
+  符号:   方法 getRegistrationEnd()
+  位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[64,75] 找不到符号
+  符号:   方法 getCompetitionId()
+  位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[64,29] 方法引用无效
+  找不到符号
+    符号:   方法 getCompetitionId()
+    位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[65,29] 方法引用无效
+  找不到符号
+    符号:   方法 getStudentId()
+    位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[70,33] 找不到符号
+  符号:   方法 getCompetitionId()
+  位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[71,12] 找不到符号
+  符号:   方法 setStudentId(java.lang.Long)
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[72,26] 找不到符号
+  符号:   方法 getTeamId()
+  位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[73,12] 找不到符号
+  符号:   方法 setIsTeamLeader(int)
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[73,32] 找不到符号
+  符号:   方法 getTeamId()
+  位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[74,32] 找不到符号
+  符号:   方法 getContactPhone()
+  位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[75,26] 找不到符号
+  符号:   方法 getRemark()
+  位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[76,33] 找不到符号
+  符号:   方法 getAttachmentUrl()
+  位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[77,12] 找不到符号
+  符号:   方法 setStatus(int)
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[88,26] 找不到符号
+  符号:   方法 getStatus()
+  位置: 类型为com.scms.dto.AuditDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[89,31] 找不到符号
+  符号:   方法 getAuditRemark()
+  位置: 类型为com.scms.dto.AuditDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[90,12] 找不到符号
+  符号:   方法 setAuditTime(java.time.LocalDateTime)
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[92,34] 找不到符号
+  符号:   方法 getStatus()
+  位置: 类型为com.scms.dto.AuditDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[99,17] 找不到符号
+  符号:   方法 getStudentId()
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[109,47] 方法引用无效
+  找不到符号
+    符号:   方法 getCompetitionId()
+    位置: 类 com.scms.entity.CompetitionTeam
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[110,40] 方法引用无效
+  找不到符号
+    符号:   方法 getStatus()
+    位置: 类 com.scms.entity.CompetitionTeam
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[112,27] 方法引用无效
+  找不到符号
+    符号:   方法 getCompetitionId()
+    位置: 类 com.scms.entity.CompetitionTeam
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[115,29] 方法引用无效
+  找不到符号
+    符号:   方法 getCreateTime()
+    位置: 类 com.scms.entity.CompetitionTeam
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[125,34] 找不到符号
+  符号:   方法 getCompetitionId()
+  位置: 类型为com.scms.dto.TeamDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[126,29] 找不到符号
+  符号:   方法 getTeamName()
+  位置: 类型为com.scms.dto.TeamDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[127,13] 找不到符号
+  符号:   方法 setLeaderId(java.lang.Long)
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[128,31] 找不到符号
+  符号:   方法 getTeamSlogan()
+  位置: 类型为com.scms.dto.TeamDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[129,13] 找不到符号
+  符号:   方法 setStatus(int)
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[134,30] 找不到符号
+  符号:   方法 getId()
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[135,15] 找不到符号
+  符号:   方法 setStudentId(java.lang.Long)
+  位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[136,15] 找不到符号
+  符号:   方法 setStatus(int)
+  位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[150,29] 方法引用无效
+  找不到符号
+    符号:   方法 getTeamId()
+    位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[151,29] 方法引用无效
+  找不到符号
+    符号:   方法 getStudentId()
+    位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[152,29] 方法引用无效
+  找不到符号
+    符号:   方法 getStatus()
+    位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[157,15] 找不到符号
+  符号:   方法 setTeamId(java.lang.Long)
+  位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[158,15] 找不到符号
+  符号:   方法 setStudentId(java.lang.Long)
+  位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[159,15] 找不到符号
+  符号:   方法 setStatus(int)
+  位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[169,13] 找不到符号
+  符号:   方法 setStatus(java.lang.Integer)
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[175,16] 找不到符号
+  符号:   方法 getCompetitionId()
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[176,64] 找不到符号
+  符号:   方法 getCompetitionId()
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[177,58] 找不到符号
+  符号:   方法 getCompetitionName()
+  位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[179,16] 找不到符号
+  符号:   方法 getStudentId()
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[180,50] 找不到符号
+  符号:   方法 getStudentId()
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[181,54] 找不到符号
+  符号:   方法 getRealName()
+  位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[183,16] 找不到符号
+  符号:   方法 getTeamId()
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[184,61] 找不到符号
+  符号:   方法 getTeamId()
+  位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[185,51] 找不到符号
+  符号:   方法 getTeamName()
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[190,17] 找不到符号
+  符号:   方法 getLeaderId()
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[191,53] 找不到符号
+  符号:   方法 getLeaderId()
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[192,58] 找不到符号
+  符号:   方法 getRealName()
+  位置: 类型为com.scms.entity.User的变量 leader
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[194,17] 找不到符号
+  符号:   方法 getCompetitionId()
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[195,65] 找不到符号
+  符号:   方法 getCompetitionId()
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[196,59] 找不到符号
+  符号:   方法 getCompetitionName()
+  位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[201,67] 找不到符号
+  符号:   方法 getId()
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[201,29] 方法引用无效
+  找不到符号
+    符号:   方法 getTeamId()
+    位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[202,29] 方法引用无效
+  找不到符号
+    符号:   方法 getStatus()
+    位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[205,48] 找不到符号
+  符号:   方法 getStudentId()
+  位置: 类型为com.scms.entity.CompetitionTeamMember的变量 m
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[207,38] 找不到符号
+  符号:   方法 getRealName()
+  位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[208,42] 找不到符号
+  符号:   方法 getUsername()
+  位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[211,13] 找不到符号
+  符号:   方法 setMembers(java.util.List<com.scms.entity.CompetitionTeamMember>)
+  位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[19,15] 找不到符号
+  符号:   方法 setCode(int)
+  位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[20,15] 找不到符号
+  符号:   方法 setMessage(java.lang.String)
+  位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[21,15] 找不到符号
+  符号:   方法 setData(T)
+  位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[27,15] 找不到符号
+  符号:   方法 setCode(int)
+  位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[28,15] 找不到符号
+  符号:   方法 setMessage(java.lang.String)
+  位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[29,15] 找不到符号
+  符号:   方法 setData(T)
+  位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[39,15] 找不到符号
+  符号:   方法 setCode(int)
+  位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[40,15] 找不到符号
+  符号:   方法 setMessage(java.lang.String)
+  位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/security/LoginUser.java:[14,8] com.scms.security.LoginUser不是抽象的, 并且未覆盖org.springframework.security.core.userdetails.UserDetails中的抽象方法getUsername()
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[33,73] 找不到符号
+  符号:   方法 getUsername()
+  位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[33,51] 方法引用无效
+  找不到符号
+    符号:   方法 getUsername()
+    位置: 类 com.scms.entity.User
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[38,17] 找不到符号
+  符号:   方法 getStatus()
+  位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[44,80] 找不到符号
+  符号:   方法 getId()
+  位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[44,55] 方法引用无效
+  找不到符号
+    符号:   方法 getUserId()
+    位置: 类 com.scms.entity.UserRole
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[47,54] 找不到符号
+  符号:   方法 getRoleId()
+  位置: 类型为com.scms.entity.UserRole的变量 userRole
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[48,36] 找不到符号
+  符号:   方法 getRole()
+  位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[48,88] 找不到符号
+  符号:   方法 getRole()
+  位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[53,41] 找不到符号
+  符号:   方法 getPassword()
+  位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[53,61] 找不到符号
+  符号:   方法 getPassword()
+  位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[58,13] 找不到符号
+  符号:   方法 setLastLoginTime(java.time.LocalDateTime)
+  位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[64,54] 找不到符号
+  符号:   方法 getRoleId()
+  位置: 类型为com.scms.entity.UserRole的变量 userRole
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[68,55] 找不到符号
+  符号:   方法 getId()
+  位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[68,69] 找不到符号
+  符号:   方法 getUsername()
+  位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[80,73] 找不到符号
+  符号:   方法 getUsername()
+  位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[80,51] 方法引用无效
+  找不到符号
+    符号:   方法 getUsername()
+    位置: 类 com.scms.entity.User
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[87,29] 找不到符号
+  符号:   方法 getUsername()
+  位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[INFO] 100 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.643 s
+[INFO] Finished at: 2026-06-12T17:12:57+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project scms-backend: Compilation failure: Compilation failure: 
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/entity/sysConfig.java:[9,8] 类 SysConfig 是公共的, 应在名为 SysConfig.java 的文件中声明
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[41,59] 找不到符号
+[ERROR]   符号:   方法 getUserId()
+[ERROR]   位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[56,68] 找不到符号
+[ERROR]   符号:   方法 getUserId()
+[ERROR]   位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[68,54] 找不到符号
+[ERROR]   符号:   方法 getRoleCode()
+[ERROR]   位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[68,81] 找不到符号
+[ERROR]   符号:   方法 getUserId()
+[ERROR]   位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[77,61] 找不到符号
+[ERROR]   符号:   方法 getUserId()
+[ERROR]   位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/controller/RegistrationController.java:[85,62] 找不到符号
+[ERROR]   符号:   方法 getUserId()
+[ERROR]   位置: 类型为com.scms.security.LoginUser的变量 loginUser
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[34,47] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getCompetitionId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[35,43] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getStudentId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[36,40] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getStatus()
+[ERROR]     位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[40,27] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getCompetitionId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[44,29] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getCreateTime()
+[ERROR]     位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[52,60] 找不到符号
+[ERROR]   符号:   方法 getCompetitionId()
+[ERROR]   位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[54,17] 找不到符号
+[ERROR]   符号:   方法 getStatus()
+[ERROR]   位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[57,30] 找不到符号
+[ERROR]   符号:   方法 getRegistrationStart()
+[ERROR]   位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[57,74] 找不到符号
+[ERROR]   符号:   方法 getRegistrationEnd()
+[ERROR]   位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[64,75] 找不到符号
+[ERROR]   符号:   方法 getCompetitionId()
+[ERROR]   位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[64,29] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getCompetitionId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[65,29] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getStudentId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionRegistration
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[70,33] 找不到符号
+[ERROR]   符号:   方法 getCompetitionId()
+[ERROR]   位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[71,12] 找不到符号
+[ERROR]   符号:   方法 setStudentId(java.lang.Long)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[72,26] 找不到符号
+[ERROR]   符号:   方法 getTeamId()
+[ERROR]   位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[73,12] 找不到符号
+[ERROR]   符号:   方法 setIsTeamLeader(int)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[73,32] 找不到符号
+[ERROR]   符号:   方法 getTeamId()
+[ERROR]   位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[74,32] 找不到符号
+[ERROR]   符号:   方法 getContactPhone()
+[ERROR]   位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[75,26] 找不到符号
+[ERROR]   符号:   方法 getRemark()
+[ERROR]   位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[76,33] 找不到符号
+[ERROR]   符号:   方法 getAttachmentUrl()
+[ERROR]   位置: 类型为com.scms.dto.RegistrationDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[77,12] 找不到符号
+[ERROR]   符号:   方法 setStatus(int)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[88,26] 找不到符号
+[ERROR]   符号:   方法 getStatus()
+[ERROR]   位置: 类型为com.scms.dto.AuditDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[89,31] 找不到符号
+[ERROR]   符号:   方法 getAuditRemark()
+[ERROR]   位置: 类型为com.scms.dto.AuditDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[90,12] 找不到符号
+[ERROR]   符号:   方法 setAuditTime(java.time.LocalDateTime)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[92,34] 找不到符号
+[ERROR]   符号:   方法 getStatus()
+[ERROR]   位置: 类型为com.scms.dto.AuditDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[99,17] 找不到符号
+[ERROR]   符号:   方法 getStudentId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[109,47] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getCompetitionId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionTeam
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[110,40] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getStatus()
+[ERROR]     位置: 类 com.scms.entity.CompetitionTeam
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[112,27] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getCompetitionId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionTeam
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[115,29] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getCreateTime()
+[ERROR]     位置: 类 com.scms.entity.CompetitionTeam
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[125,34] 找不到符号
+[ERROR]   符号:   方法 getCompetitionId()
+[ERROR]   位置: 类型为com.scms.dto.TeamDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[126,29] 找不到符号
+[ERROR]   符号:   方法 getTeamName()
+[ERROR]   位置: 类型为com.scms.dto.TeamDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[127,13] 找不到符号
+[ERROR]   符号:   方法 setLeaderId(java.lang.Long)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[128,31] 找不到符号
+[ERROR]   符号:   方法 getTeamSlogan()
+[ERROR]   位置: 类型为com.scms.dto.TeamDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[129,13] 找不到符号
+[ERROR]   符号:   方法 setStatus(int)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[134,30] 找不到符号
+[ERROR]   符号:   方法 getId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[135,15] 找不到符号
+[ERROR]   符号:   方法 setStudentId(java.lang.Long)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[136,15] 找不到符号
+[ERROR]   符号:   方法 setStatus(int)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[150,29] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getTeamId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[151,29] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getStudentId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[152,29] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getStatus()
+[ERROR]     位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[157,15] 找不到符号
+[ERROR]   符号:   方法 setTeamId(java.lang.Long)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[158,15] 找不到符号
+[ERROR]   符号:   方法 setStudentId(java.lang.Long)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[159,15] 找不到符号
+[ERROR]   符号:   方法 setStatus(int)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeamMember的变量 member
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[169,13] 找不到符号
+[ERROR]   符号:   方法 setStatus(java.lang.Integer)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[175,16] 找不到符号
+[ERROR]   符号:   方法 getCompetitionId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[176,64] 找不到符号
+[ERROR]   符号:   方法 getCompetitionId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[177,58] 找不到符号
+[ERROR]   符号:   方法 getCompetitionName()
+[ERROR]   位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[179,16] 找不到符号
+[ERROR]   符号:   方法 getStudentId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[180,50] 找不到符号
+[ERROR]   符号:   方法 getStudentId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[181,54] 找不到符号
+[ERROR]   符号:   方法 getRealName()
+[ERROR]   位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[183,16] 找不到符号
+[ERROR]   符号:   方法 getTeamId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[184,61] 找不到符号
+[ERROR]   符号:   方法 getTeamId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionRegistration的变量 reg
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[185,51] 找不到符号
+[ERROR]   符号:   方法 getTeamName()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[190,17] 找不到符号
+[ERROR]   符号:   方法 getLeaderId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[191,53] 找不到符号
+[ERROR]   符号:   方法 getLeaderId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[192,58] 找不到符号
+[ERROR]   符号:   方法 getRealName()
+[ERROR]   位置: 类型为com.scms.entity.User的变量 leader
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[194,17] 找不到符号
+[ERROR]   符号:   方法 getCompetitionId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[195,65] 找不到符号
+[ERROR]   符号:   方法 getCompetitionId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[196,59] 找不到符号
+[ERROR]   符号:   方法 getCompetitionName()
+[ERROR]   位置: 类型为com.scms.entity.Competition的变量 comp
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[201,67] 找不到符号
+[ERROR]   符号:   方法 getId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[201,29] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getTeamId()
+[ERROR]     位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[202,29] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getStatus()
+[ERROR]     位置: 类 com.scms.entity.CompetitionTeamMember
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[205,48] 找不到符号
+[ERROR]   符号:   方法 getStudentId()
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeamMember的变量 m
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[207,38] 找不到符号
+[ERROR]   符号:   方法 getRealName()
+[ERROR]   位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[208,42] 找不到符号
+[ERROR]   符号:   方法 getUsername()
+[ERROR]   位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/RegistrationService.java:[211,13] 找不到符号
+[ERROR]   符号:   方法 setMembers(java.util.List<com.scms.entity.CompetitionTeamMember>)
+[ERROR]   位置: 类型为com.scms.entity.CompetitionTeam的变量 team
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[19,15] 找不到符号
+[ERROR]   符号:   方法 setCode(int)
+[ERROR]   位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[20,15] 找不到符号
+[ERROR]   符号:   方法 setMessage(java.lang.String)
+[ERROR]   位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[21,15] 找不到符号
+[ERROR]   符号:   方法 setData(T)
+[ERROR]   位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[27,15] 找不到符号
+[ERROR]   符号:   方法 setCode(int)
+[ERROR]   位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[28,15] 找不到符号
+[ERROR]   符号:   方法 setMessage(java.lang.String)
+[ERROR]   位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[29,15] 找不到符号
+[ERROR]   符号:   方法 setData(T)
+[ERROR]   位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[39,15] 找不到符号
+[ERROR]   符号:   方法 setCode(int)
+[ERROR]   位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/common/Result.java:[40,15] 找不到符号
+[ERROR]   符号:   方法 setMessage(java.lang.String)
+[ERROR]   位置: 类型为com.scms.common.Result<T>的变量 result
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/security/LoginUser.java:[14,8] com.scms.security.LoginUser不是抽象的, 并且未覆盖org.springframework.security.core.userdetails.UserDetails中的抽象方法getUsername()
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[33,73] 找不到符号
+[ERROR]   符号:   方法 getUsername()
+[ERROR]   位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[33,51] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getUsername()
+[ERROR]     位置: 类 com.scms.entity.User
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[38,17] 找不到符号
+[ERROR]   符号:   方法 getStatus()
+[ERROR]   位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[44,80] 找不到符号
+[ERROR]   符号:   方法 getId()
+[ERROR]   位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[44,55] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getUserId()
+[ERROR]     位置: 类 com.scms.entity.UserRole
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[47,54] 找不到符号
+[ERROR]   符号:   方法 getRoleId()
+[ERROR]   位置: 类型为com.scms.entity.UserRole的变量 userRole
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[48,36] 找不到符号
+[ERROR]   符号:   方法 getRole()
+[ERROR]   位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[48,88] 找不到符号
+[ERROR]   符号:   方法 getRole()
+[ERROR]   位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[53,41] 找不到符号
+[ERROR]   符号:   方法 getPassword()
+[ERROR]   位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[53,61] 找不到符号
+[ERROR]   符号:   方法 getPassword()
+[ERROR]   位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[58,13] 找不到符号
+[ERROR]   符号:   方法 setLastLoginTime(java.time.LocalDateTime)
+[ERROR]   位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[64,54] 找不到符号
+[ERROR]   符号:   方法 getRoleId()
+[ERROR]   位置: 类型为com.scms.entity.UserRole的变量 userRole
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[68,55] 找不到符号
+[ERROR]   符号:   方法 getId()
+[ERROR]   位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[68,69] 找不到符号
+[ERROR]   符号:   方法 getUsername()
+[ERROR]   位置: 类型为com.scms.entity.User的变量 user
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[80,73] 找不到符号
+[ERROR]   符号:   方法 getUsername()
+[ERROR]   位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[80,51] 方法引用无效
+[ERROR]   找不到符号
+[ERROR]     符号:   方法 getUsername()
+[ERROR]     位置: 类 com.scms.entity.User
+[ERROR] /f:/xm/SGADQRS/backend/src/main/java/com/scms/service/AuthService.java:[87,29] 找不到符号
+[ERROR]   符号:   方法 getUsername()
+[ERROR]   位置: 类型为com.scms.dto.LoginDTO的变量 dto
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
