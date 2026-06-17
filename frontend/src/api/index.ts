@@ -1,0 +1,6 @@
+export { authApi } from './modules/auth'
+export { userApi } from './modules/user'
+export { competitionApi } from './modules/competition'
+export { registrationApi } from './modules/registration'
+export { resultApi } from './modules/result'
+export { noticeApi, messageApi, logApi, configApi, deptApi, statsApi, fileApi } from './modules/system'
