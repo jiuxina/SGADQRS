@@ -1,0 +1,28 @@
+import { Navigate, useLocation } from 'react-router-dom'
+import { useAuthStore } from '../store/authStore'
+
+interface AuthGuardProps {
+  children: React.ReactNode
+  allowedRoles?: string[]
+}
+
+export default function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
+  const { isAuthenticated, user } = useAuthStore()
+  const location = useLocation()
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    // 用户没有权限访问该页面，重定向到对应角色的首页
+    const roleHome: Record<string, string> = {
+      admin: '/admin/dashboard',
+      teacher: '/teacher/dashboard',
+      student: '/student/dashboard',
+    }
+    return <Navigate to={roleHome[user.role] || '/login'} replace />
+  }
+
+  return <>{children}</>
+}
