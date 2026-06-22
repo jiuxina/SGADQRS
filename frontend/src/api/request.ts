@@ -1,11 +1,13 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import type { Result } from './types'
+import { env } from '../config/env'
+import { STORAGE_KEYS, API_CONFIG, ROUTES } from '../config/constants'
 
-const BASE_URL = 'http://localhost:8080/api'
+const BASE_URL = env.apiBaseUrl
 
 const instance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: env.apiTimeout,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -14,7 +16,7 @@ const instance: AxiosInstance = axios.create({
 // 请求拦截器：自动附加 Token
 instance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('scms_token')
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -27,16 +29,16 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response: AxiosResponse<Result>) => {
     const { data } = response
-    if (data.code !== 200) {
+    if (data.code !== API_CONFIG.SUCCESS_CODE) {
       return Promise.reject(new Error(data.message || '请求失败'))
     }
     return response
   },
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('scms_token')
-      localStorage.removeItem('scms_user')
-      window.location.href = '/login'
+    if (error.response?.status === API_CONFIG.AUTH_EXPIRED_STATUS) {
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.USER)
+      window.location.href = ROUTES.LOGIN
     }
     const message = error.response?.data?.message || error.message || '网络错误'
     return Promise.reject(new Error(message))
