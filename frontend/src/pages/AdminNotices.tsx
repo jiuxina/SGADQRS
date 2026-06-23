@@ -4,6 +4,9 @@ import { Plus, Pencil, Send, RotateCcw, Trash2, Pin, X } from 'lucide-react'
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { noticeApi } from '../api'
 import type { NoticeItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
+import { toast } from '../components/Toast'
+import { confirmDialog } from '../components/ConfirmDialog'
 
 type FilterType = 'all' | 'notice' | 'announcement' | 'published' | 'draft'
 
@@ -23,11 +26,12 @@ export default function AdminNotices() {
   const [newType, setNewType] = useState<'notice' | 'announcement'>('notice')
   const [notices, setNotices] = useState<NoticeItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [editingId, setEditingId] = useState<number | null>(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: 50 }
+      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
       if (filter === 'notice') params.noticeType = 1
       else if (filter === 'announcement') params.noticeType = 2
       const result = await noticeApi.list(params as Parameters<typeof noticeApi.list>[0])
@@ -48,26 +52,40 @@ export default function AdminNotices() {
   const handleCreate = async () => {
     if (!newTitle.trim()) return
     try {
-      await noticeApi.create({ noticeTitle: newTitle, noticeContent: newContent, noticeType: newType === 'notice' ? 1 : 2 })
-      setShowModal(false); setNewTitle(''); setNewContent(''); loadData()
-    } catch (err) { alert(err instanceof Error ? err.message : '创建失败') }
+      if (editingId) {
+        await noticeApi.update({ id: editingId, noticeTitle: newTitle, noticeContent: newContent, noticeType: newType === 'notice' ? 1 : 2 })
+      } else {
+        await noticeApi.create({ noticeTitle: newTitle, noticeContent: newContent, noticeType: newType === 'notice' ? 1 : 2 })
+      }
+      setShowModal(false); setEditingId(null); setNewTitle(''); setNewContent(''); loadData()
+    } catch (err) { toast.error(err instanceof Error ? err.message : editingId ? '更新失败' : '创建失败') }
+  }
+
+  const handleEdit = (notice: NoticeItem) => {
+    setEditingId(notice.id)
+    setNewTitle(notice.noticeTitle)
+    setNewContent(notice.noticeContent)
+    setNewType(notice.noticeType === 1 ? 'notice' : 'announcement')
+    setShowModal(true)
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除此公告吗？')) return
-    try { await noticeApi.delete(id); loadData() }
-    catch (err) { alert(err instanceof Error ? err.message : '删除失败') }
+    const confirmed = await confirmDialog({ message: '确定要删除此公告吗？', variant: 'danger', confirmText: '删除' })
+    if (!confirmed) return
+    try { await noticeApi.delete(id); loadData(); toast.success('删除成功') }
+    catch (err) { toast.error(err instanceof Error ? err.message : '删除失败') }
   }
 
   const handleWithdraw = async (id: number) => {
-    if (!confirm('确定要撤回此公告吗？撤回后将变为草稿状态。')) return
-    try { await noticeApi.update({ id, status: 0 }); loadData() }
-    catch (err) { alert(err instanceof Error ? err.message : '撤回失败') }
+    const confirmed = await confirmDialog({ message: '确定要撤回此公告吗？撤回后将变为草稿状态。', variant: 'warning', confirmText: '撤回' })
+    if (!confirmed) return
+    try { await noticeApi.update({ id, status: 0 }); loadData(); toast.success('撤回成功') }
+    catch (err) { toast.error(err instanceof Error ? err.message : '撤回失败') }
   }
 
   const handlePublishDraft = async (id: number) => {
-    try { await noticeApi.update({ id, status: 1 }); loadData() }
-    catch (err) { alert(err instanceof Error ? err.message : '发布失败') }
+    try { await noticeApi.update({ id, status: 1 }); loadData(); toast.success('发布成功') }
+    catch (err) { toast.error(err instanceof Error ? err.message : '发布失败') }
   }
 
   const sorted = [...filtered].sort((a, b) => {
@@ -163,7 +181,8 @@ export default function AdminNotices() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        <button className="text-btn blue" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <button className="text-btn blue" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                          onClick={() => handleEdit(notice)}>
                           <Pencil size={11} strokeWidth={1.5} /> 编辑
                         </button>
                         {notice.status === 0 ? (

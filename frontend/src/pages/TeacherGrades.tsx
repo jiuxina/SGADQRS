@@ -4,6 +4,9 @@ import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { competitionApi, resultApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem, ResultItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
+import { toast } from '../components/Toast'
+import { confirmDialog } from '../components/ConfirmDialog'
 
 const awardLevelLabel: Record<number, string> = { 1: '特等奖', 2: '一等奖', 3: '二等奖', 4: '三等奖', 5: '优秀奖' }
 
@@ -16,7 +19,7 @@ export default function TeacherGrades() {
 
   useEffect(() => {
     if (!user) return
-    competitionApi.list({ current: 1, size: 50, publisherId: user.id })
+    competitionApi.list({ current: 1, size: PAGE_SIZE.LARGE, publisherId: user.id })
       .then((res) => { setCompetitions(res.records); if (res.records.length > 0) setSelectedComp(res.records[0].id) })
       .catch(console.error).finally(() => setLoading(false))
   }, [user])
@@ -24,7 +27,7 @@ export default function TeacherGrades() {
   const loadResults = useCallback(async () => {
     if (!selectedComp) return
     try {
-      const res = await resultApi.list({ current: 1, size: 50, competitionId: selectedComp })
+      const res = await resultApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: selectedComp })
       setResults(res.records)
     } catch (err) { console.error('加载成绩失败:', err) }
   }, [selectedComp])
@@ -32,9 +35,11 @@ export default function TeacherGrades() {
   useEffect(() => { loadResults() }, [loadResults])
 
   const handlePublish = async () => {
-    if (!selectedComp || !confirm('确定要发布该竞赛的所有成绩吗？')) return
-    try { await resultApi.publish(selectedComp); loadResults() }
-    catch (err) { alert(err instanceof Error ? err.message : '发布失败') }
+    if (!selectedComp) return
+    const confirmed = await confirmDialog({ message: '确定要发布该竞赛的所有成绩吗？', variant: 'warning', confirmText: '发布' })
+    if (!confirmed) return
+    try { await resultApi.publish(selectedComp); loadResults(); toast.success('发布成功') }
+    catch (err) { toast.error(err instanceof Error ? err.message : '发布失败') }
   }
 
   if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
@@ -81,7 +86,7 @@ export default function TeacherGrades() {
                   <td>
                     <button className="text-btn blue" style={{ fontSize: '12px' }} onClick={async () => {
                       const score = prompt('输入分数:', String(r.score || ''))
-                      if (score !== null) { try { await resultApi.update({ id: r.id, score: Number(score) }); loadResults() } catch (err) { alert('更新失败') } }
+                      if (score !== null) { try { await resultApi.update({ id: r.id, score: Number(score) }); loadResults() } catch (err) { toast.error('更新失败') } }
                     }}>编辑</button>
                   </td>
                 </tr>

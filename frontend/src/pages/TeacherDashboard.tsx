@@ -5,6 +5,7 @@ import { Trophy, Users, FileText, Clock, ArrowUpRight } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../motion/variants'
 import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
+import { PAGE_SIZE } from '../config/constants'
 
 export default function TeacherDashboard() {
   const navigate = useNavigate()
@@ -15,7 +16,7 @@ export default function TeacherDashboard() {
   useEffect(() => {
     if (!user) return
     competitionApi.dashboard().then(setStats as any).catch(console.error)
-    competitionApi.list({ current: 1, size: 5, publisherId: user.id })
+    competitionApi.list({ current: 1, size: PAGE_SIZE.DASHBOARD_PREVIEW, publisherId: user.id })
       .then((res) => setCompetitions(res.records))
       .catch(console.error)
   }, [user])

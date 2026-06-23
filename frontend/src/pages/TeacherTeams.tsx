@@ -4,6 +4,8 @@ import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { TeamItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
+import { toast } from '../components/Toast'
 
 const statusMap: Record<number, { cls: string; label: string }> = {
   0: { cls: 'pending', label: '组建中' },
@@ -21,7 +23,7 @@ export default function TeacherTeams() {
     if (!user) return
     setLoading(true)
     try {
-      const result = await registrationApi.teamList({ current: 1, size: 50 })
+      const result = await registrationApi.teamList({ current: 1, size: PAGE_SIZE.LARGE })
       setTeams(result.records)
     } catch (err) { console.error('加载团队数据失败:', err) }
     finally { setLoading(false) }
@@ -30,8 +32,8 @@ export default function TeacherTeams() {
   useEffect(() => { loadData() }, [loadData])
 
   const handleAudit = async (id: number, status: number) => {
-    try { await registrationApi.auditTeam(id, status); loadData() }
-    catch (err) { alert(err instanceof Error ? err.message : '操作失败') }
+    try { await registrationApi.auditTeam(id, status); loadData(); toast.success('操作成功') }
+    catch (err) { toast.error(err instanceof Error ? err.message : '操作失败') }
   }
 
   if (loading && teams.length === 0) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>

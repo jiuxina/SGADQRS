@@ -5,6 +5,7 @@ import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem, RegistrationItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
 
 export default function StudentAudit() {
   const user = useAuthStore((s) => s.user)
@@ -19,7 +20,7 @@ export default function StudentAudit() {
     setLoading(true)
     Promise.all([
       competitionApi.getById(Number(compId)),
-      registrationApi.list({ current: 1, size: 50, competitionId: Number(compId), studentId: user.id }),
+      registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: Number(compId), studentId: user.id }),
     ]).then(([comp, regResult]) => {
       setCompetition(comp)
       setRegistrations(regResult.records)

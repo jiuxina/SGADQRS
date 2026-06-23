@@ -10,6 +10,7 @@ import { fadeSlideUp, staggerContainer, staggerItem } from '../motion/variants'
 import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionCategory } from '../api/types'
+import { toast } from '../components/Toast'
 
 interface FormData {
   name: string
@@ -90,7 +91,7 @@ export default function TeacherCompetitionCreate() {
       })
       navigate(-1)
     } catch (err) {
-      alert(err instanceof Error ? err.message : '保存失败')
+      toast.error(err instanceof Error ? err.message : '保存失败')
     }
   }
 
@@ -115,7 +116,7 @@ export default function TeacherCompetitionCreate() {
       })
       navigate(-1)
     } catch (err) {
-      alert(err instanceof Error ? err.message : '提交失败')
+      toast.error(err instanceof Error ? err.message : '提交失败')
     } finally {
       setSubmitting(false)
     }

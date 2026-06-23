@@ -1,16 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import {
   FileText,
   CheckCircle,
   Clock,
   XCircle,
+  X,
 } from 'lucide-react'
 import DigitRoller from '../components/DigitRoller'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { RegistrationItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
+import { toast } from '../components/Toast'
+import { confirmDialog } from '../components/ConfirmDialog'
 
 type FilterKey = 'all' | 0 | 1 | 2
 
@@ -32,12 +36,13 @@ export default function StudentRegistration() {
   const [filter, setFilter] = useState<FilterKey>('all')
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedReg, setSelectedReg] = useState<RegistrationItem | null>(null)
 
   const loadData = useCallback(async () => {
     if (!user) return
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: 50, studentId: user.id }
+      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE, studentId: user.id }
       if (filter !== 'all') params.status = filter
       const result = await registrationApi.list(params as Parameters<typeof registrationApi.list>[0])
       setRegistrations(result.records)
@@ -53,12 +58,14 @@ export default function StudentRegistration() {
   }, [loadData])
 
   const handleCancel = async (id: number) => {
-    if (!confirm('确定要取消报名吗？')) return
+    const confirmed = await confirmDialog({ message: '确定要取消报名吗？', variant: 'danger', confirmText: '取消报名' })
+    if (!confirmed) return
     try {
       await registrationApi.cancel(id)
       loadData()
+      toast.success('取消成功')
     } catch (err) {
-      alert(err instanceof Error ? err.message : '取消失败')
+      toast.error(err instanceof Error ? err.message : '取消失败')
     }
   }
 
@@ -197,7 +204,7 @@ export default function StudentRegistration() {
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <button className="text-btn blue" style={{ fontSize: '12px' }}>查看详情</button>
+                      <button className="text-btn blue" style={{ fontSize: '12px' }} onClick={() => setSelectedReg(reg)}>查看详情</button>
                       {reg.status === 0 && (
                         <button className="text-btn danger" style={{ fontSize: '12px' }} onClick={() => handleCancel(reg.id)}>
                           取消报名
@@ -219,6 +226,74 @@ export default function StudentRegistration() {
       </motion.div>
 
       <div style={{ paddingBottom: '40px' }} />
+
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {selectedReg && (
+          <motion.div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
+            }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setSelectedReg(null)}
+          >
+            <motion.div
+              className="glass-card glass-card-vertical glass-card-static"
+              style={{ width: '420px', padding: '24px', position: 'relative' }}
+              variants={panelSlideIn} initial="initial" animate="animate" exit="exit"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button onClick={() => setSelectedReg(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}>
+                <X size={16} strokeWidth={1.5} />
+              </button>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>报名详情</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>竞赛名称</div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>{selectedReg.competitionName || '-'}</div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>队伍名称</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.teamName || '--'}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>角色</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.isTeamLeader === 1 ? '队长' : '队员'}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>报名时间</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{formatDate(selectedReg.createTime)}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>状态</div>
+                    <span className={`glass-badge ${(statusMap[selectedReg.status] || statusMap[0]).badge}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                      {(statusMap[selectedReg.status] || statusMap[0]).label}
+                    </span>
+                  </div>
+                </div>
+                {selectedReg.auditRemark && (
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>审核备注</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.auditRemark}</div>
+                  </div>
+                )}
+                {selectedReg.remark && (
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>备注</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.remark}</div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }
+

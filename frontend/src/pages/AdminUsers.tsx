@@ -5,6 +5,8 @@ import DigitRoller from '../components/DigitRoller'
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { userApi, deptApi } from '../api'
 import type { UserItem, DeptItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
+import { toast } from '../components/Toast'
 
 type FilterType = 'all' | 1 | 2 | 3
 
@@ -31,7 +33,7 @@ export default function AdminUsers() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: 50 }
+      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
       if (filter !== 'all') params.userType = filter
       if (searchQuery) params.keyword = searchQuery
       const result = await userApi.list(params as Parameters<typeof userApi.list>[0])
@@ -55,7 +57,7 @@ export default function AdminUsers() {
       await userApi.updateStatus(id, currentStatus === 1 ? 0 : 1)
       loadData()
     } catch (err) {
-      alert(err instanceof Error ? err.message : '操作失败')
+      toast.error(err instanceof Error ? err.message : '操作失败')
     }
   }
 
@@ -83,7 +85,7 @@ export default function AdminUsers() {
       setEditingUser(null)
       loadData()
     } catch (err) {
-      alert(err instanceof Error ? err.message : '保存失败')
+      toast.error(err instanceof Error ? err.message : '保存失败')
     } finally {
       setSaving(false)
     }

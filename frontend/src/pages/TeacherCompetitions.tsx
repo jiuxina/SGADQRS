@@ -5,6 +5,9 @@ import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../mot
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem, RegistrationItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
+import { toast } from '../components/Toast'
+import { confirmDialog } from '../components/ConfirmDialog'
 
 const statusBadgeMap: Record<number, { cls: string; label: string }> = {
   0: { cls: 'pending', label: '草稿' },
@@ -34,7 +37,7 @@ export default function TeacherCompetitions() {
     if (!user) return
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: 50, publisherId: user.id }
+      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE, publisherId: user.id }
       if (statusFilter !== 'all') params.status = statusFilter
       const result = await competitionApi.list(params as Parameters<typeof competitionApi.list>[0])
       setCompetitions(result.records)
@@ -45,16 +48,17 @@ export default function TeacherCompetitions() {
   useEffect(() => { loadData() }, [loadData])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除此竞赛吗？')) return
-    try { await competitionApi.delete(id); loadData() }
-    catch (err) { alert(err instanceof Error ? err.message : '删除失败') }
+    const confirmed = await confirmDialog({ message: '确定要删除此竞赛吗？', variant: 'danger', confirmText: '删除' })
+    if (!confirmed) return
+    try { await competitionApi.delete(id); loadData(); toast.success('删除成功') }
+    catch (err) { toast.error(err instanceof Error ? err.message : '删除失败') }
   }
 
   const openManage = async (comp: CompetitionItem) => {
     setManagingComp(comp)
     setRegLoading(true)
     try {
-      const result = await registrationApi.list({ current: 1, size: 100, competitionId: comp.id })
+      const result = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: comp.id })
       setRegistrations(result.records)
     } catch (err) {
       console.error('加载报名列表失败:', err)
@@ -68,12 +72,12 @@ export default function TeacherCompetitions() {
     try {
       await registrationApi.audit(id, { status })
       if (managingComp) {
-        const result = await registrationApi.list({ current: 1, size: 100, competitionId: managingComp.id })
+        const result = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: managingComp.id })
         setRegistrations(result.records)
       }
       loadData()
     } catch (err) {
-      alert(err instanceof Error ? err.message : '审核失败')
+      toast.error(err instanceof Error ? err.message : '审核失败')
     }
   }
 

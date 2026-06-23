@@ -6,6 +6,7 @@ import { staggerContainer, staggerItem } from '../motion/variants'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
 
 export default function StudentDashboard() {
   const navigate = useNavigate()
@@ -16,7 +17,7 @@ export default function StudentDashboard() {
   useEffect(() => {
     if (!user) return
     competitionApi.dashboard().then(setStats as any).catch(console.error)
-    competitionApi.list({ current: 1, size: 5, status: 2 })
+    competitionApi.list({ current: 1, size: PAGE_SIZE.DASHBOARD_PREVIEW, status: 2 })
       .then((res) => setCompetitions(res.records))
       .catch(console.error)
   }, [user])

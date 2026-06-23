@@ -5,6 +5,8 @@ import {
   EyeOff,
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { env } from '../config/env'
+import { toast } from '../components/Toast'
 
 type Role = 'admin' | 'teacher' | 'student'
 
@@ -167,7 +169,7 @@ export default function LoginPage() {
                 <input type="checkbox" defaultChecked style={{ accentColor: 'var(--accent)' }} />
                 记住账号
               </label>
-              <button type="button" onClick={() => alert('请联系管理员重置密码\n管理员邮箱：admin@scms.com')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px' }}>
+              <button type="button" onClick={() => toast.info('请联系管理员重置密码')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px' }}>
                 忘记密码？
               </button>
             </div>
@@ -187,9 +189,11 @@ export default function LoginPage() {
               {errorMsg}
             </p>
           )}
-          <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-tertiary)', margin: '8px 0 0' }}>
-            默认账号：admin / 123456 | T2024001 / 123456 | S20210001 / 123456
-          </p>
+          {env.isDev && (
+            <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-tertiary)', margin: '8px 0 0' }}>
+              开发环境默认账号：admin / 123456 | T2024001 / 123456 | S20210001 / 123456
+            </p>
+          )}
         </form>
       </div>
     </div>

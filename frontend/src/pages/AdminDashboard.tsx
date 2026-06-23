@@ -12,6 +12,7 @@ import {
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { competitionApi, userApi, statsApi, logApi } from '../api'
 import type { CompetitionItem, LogItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -22,8 +23,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([
-      competitionApi.list({ current: 1, size: 50 }),
-      logApi.list({ current: 1, size: 5 }),
+      competitionApi.list({ current: 1, size: PAGE_SIZE.LARGE }),
+      logApi.list({ current: 1, size: PAGE_SIZE.DASHBOARD_PREVIEW }),
       statsApi.admin(),
     ]).then(([compResult, logResult, statsResult]) => {
       setCompetitions(compResult.records)

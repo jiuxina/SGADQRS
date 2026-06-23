@@ -4,6 +4,7 @@ import { Pencil, Check, X, Server, Shield, Clock, Database } from 'lucide-react'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { configApi } from '../api'
 import type { ConfigItem } from '../api/types'
+import { toast } from '../components/Toast'
 
 export default function AdminSettings() {
   const [configs, setConfigs] = useState<ConfigItem[]>([])
@@ -39,7 +40,7 @@ export default function AdminSettings() {
       const updatedConfigs = await configApi.list()
       setConfigs(updatedConfigs)
     } catch (err) {
-      alert(err instanceof Error ? err.message : '保存失败')
+      toast.error(err instanceof Error ? err.message : '保存失败')
     }
   }
 

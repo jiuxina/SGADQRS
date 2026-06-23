@@ -11,6 +11,7 @@ import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { resultApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { ResultItem } from '../api/types'
+import { PAGE_SIZE, CANVAS_CONFIG } from '../config/constants'
 
 const awardLevelLabel: Record<number, string> = {
   1: '特等奖',
@@ -22,12 +23,12 @@ const awardLevelLabel: Record<number, string> = {
 
 function downloadCertificate(result: ResultItem, userName: string) {
   const canvas = document.createElement('canvas')
-  canvas.width = 1000
-  canvas.height = 700
+  canvas.width = CANVAS_CONFIG.CERTIFICATE_WIDTH
+  canvas.height = CANVAS_CONFIG.CERTIFICATE_HEIGHT
   const ctx = canvas.getContext('2d')!
 
   // Background
-  const grad = ctx.createLinearGradient(0, 0, 1000, 700)
+  const grad = ctx.createLinearGradient(0, 0, CANVAS_CONFIG.CERTIFICATE_WIDTH, CANVAS_CONFIG.CERTIFICATE_HEIGHT)
   grad.addColorStop(0, '#fefce8')
   grad.addColorStop(1, '#fff7ed')
   ctx.fillStyle = grad
@@ -102,7 +103,7 @@ export default function StudentGrades() {
     if (!user) return
     setLoading(true)
     try {
-      const result = await resultApi.list({ current: 1, size: 50, studentId: user.id, isPublished: 1 })
+      const result = await resultApi.list({ current: 1, size: PAGE_SIZE.LARGE, studentId: user.id, isPublished: 1 })
       setResults(result.records)
     } catch (err) {
       console.error('加载成绩数据失败:', err)

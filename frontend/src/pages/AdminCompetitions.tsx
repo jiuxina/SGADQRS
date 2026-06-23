@@ -4,6 +4,8 @@ import { Search, Check, X, Eye, Calendar, MapPin, Users, Clock } from 'lucide-re
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { competitionApi } from '../api'
 import type { CompetitionItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
+import { toast } from '../components/Toast'
 
 type FilterStatus = 'all' | 1 | 2 | 3 | 4 | 0 | 5
 
@@ -37,7 +39,7 @@ export default function AdminCompetitions() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: 50 }
+      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
       if (filter !== 'all') params.status = filter
       if (searchQuery) params.keyword = searchQuery
       const result = await competitionApi.list(params as Parameters<typeof competitionApi.list>[0])
@@ -59,7 +61,7 @@ export default function AdminCompetitions() {
       await competitionApi.audit(id, status)
       loadData()
     } catch (err) {
-      alert(err instanceof Error ? err.message : '操作失败')
+      toast.error(err instanceof Error ? err.message : '操作失败')
     }
   }
 

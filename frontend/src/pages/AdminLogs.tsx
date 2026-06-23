@@ -5,6 +5,7 @@ import DigitRoller from '../components/DigitRoller'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { logApi } from '../api'
 import type { LogItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
 
 type FilterStatus = 'all' | 1 | 0
 
@@ -28,7 +29,7 @@ export default function AdminLogs() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: 50 }
+      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
       if (filter !== 'all') params.status = filter
       if (searchQuery) params.username = searchQuery
       const result = await logApi.list(params as Parameters<typeof logApi.list>[0])

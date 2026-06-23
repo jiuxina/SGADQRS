@@ -6,11 +6,16 @@ import {
   Users,
   Clock,
   Calendar,
+  X,
 } from 'lucide-react'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem, CompetitionCategory } from '../api/types'
+import CountdownTimer from '../components/CountdownTimer'
+import ConfettiEffect from '../components/ConfettiEffect'
+import FailureEffect from '../components/FailureEffect'
+import { PAGE_SIZE } from '../config/constants'
 
 type StatusFilter = 'all' | 2 | 3 | 4
 
@@ -41,10 +46,16 @@ export default function StudentCompetitions() {
   const [total, setTotal] = useState(0)
   const [current, setCurrent] = useState(1)
 
+  // 特效状态
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [showFailure, setShowFailure] = useState(false)
+  const [failureMessage, setFailureMessage] = useState('')
+  const [selectedComp, setSelectedComp] = useState<CompetitionItem | null>(null)
+
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current, size: 20, status: 2 }
+      const params: Record<string, unknown> = { current, size: PAGE_SIZE.DEFAULT, status: 2 }
       if (searchQuery) params.keyword = searchQuery
       if (categoryFilter !== 'all') params.categoryId = categoryFilter
       if (statusFilter !== 'all') params.status = statusFilter
@@ -72,10 +83,13 @@ export default function StudentCompetitions() {
     if (!user) return
     try {
       await registrationApi.register({ competitionId: comp.id, contactPhone: user.phone || '' })
-      alert('报名成功！')
+      // 显示庆祝特效
+      setShowConfetti(true)
       loadData()
     } catch (err) {
-      alert(err instanceof Error ? err.message : '报名失败')
+      // 显示失败特效
+      setFailureMessage(err instanceof Error ? err.message : '报名失败')
+      setShowFailure(true)
     }
   }
 
@@ -241,9 +255,23 @@ export default function StudentCompetitions() {
                 </div>
               </div>
 
+              {/* 倒计时 - 仅报名中的竞赛显示 */}
+              {comp.status === 2 && !comp.hasRegistered && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  style={{ marginBottom: '12px' }}
+                >
+                  <CountdownTimer
+                    deadline={comp.registrationEnd}
+                    startDate={comp.registrationStart}
+                  />
+                </motion.div>
+              )}
+
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
-                <button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }}>
+                <button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }} onClick={() => setSelectedComp(comp)}>
                   查看详情
                 </button>
                 {comp.status === 2 && (
@@ -280,6 +308,171 @@ export default function StudentCompetitions() {
       )}
 
       <div style={{ paddingBottom: '40px' }} />
+
+      {/* Competition Detail Modal */}
+      <AnimatePresence>
+        {selectedComp && (
+          <motion.div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
+            }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setSelectedComp(null)}
+          >
+            <motion.div
+              className="glass-card glass-card-vertical glass-card-static"
+              style={{ width: '480px', maxHeight: '80vh', overflow: 'auto', padding: '24px', position: 'relative' }}
+              variants={panelSlideIn} initial="initial" animate="animate" exit="exit"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button onClick={() => setSelectedComp(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}>
+                <X size={16} strokeWidth={1.5} />
+              </button>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>竞赛详情</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>竞赛名称</div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>{selectedComp.competitionName}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>主办方</div>
+                  <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedComp.organizer}</div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>分类</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedComp.categoryName || '-'}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>状态</div>
+                    <span className={`glass-badge ${selectedComp.status === 2 ? 'pass' : selectedComp.status === 3 ? 'reviewing' : 'pending'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                      {statusBadgeLabel[selectedComp.status] ?? '未知'}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>报名时间</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{formatDate(selectedComp.registrationStart)} ~ {formatDate(selectedComp.registrationEnd)}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>比赛时间</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{formatDate(selectedComp.competitionStart)} ~ {formatDate(selectedComp.competitionEnd)}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>地点</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedComp.location || '待定'}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>每队人数</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedComp.maxMembers} 人</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>已报名</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedComp.registrationCount}{selectedComp.maxTeams ? ` / ${selectedComp.maxTeams} 队` : ' 人'}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>浏览量</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedComp.viewCount}</div>
+                  </div>
+                </div>
+                {selectedComp.description && (
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>竞赛简介</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{selectedComp.description}</div>
+                  </div>
+                )}
+                {selectedComp.rules && (
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>竞赛规则</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{selectedComp.rules}</div>
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+                <button className="btn ghost" onClick={() => setSelectedComp(null)}>关闭</button>
+                {selectedComp.status === 2 && !selectedComp.hasRegistered && (
+                  <button className="btn primary" onClick={() => { handleRegister(selectedComp); setSelectedComp(null) }}>立即报名</button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 庆祝特效 */}
+      <ConfettiEffect
+        show={showConfetti}
+        onComplete={() => setShowConfetti(false)}
+        duration={3000}
+      />
+
+      {/* 失败特效 */}
+      <FailureEffect
+        show={showFailure}
+        message={failureMessage}
+        onComplete={() => setShowFailure(false)}
+        duration={2500}
+      />
+
+      {/* 竞赛详情模态框 */}
+      <AnimatePresence>
+        {selectedComp && (
+          <motion.div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
+            }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setSelectedComp(null)}
+          >
+            <motion.div
+              className="glass-card glass-card-vertical glass-card-static"
+              style={{ width: '520px', maxHeight: '80vh', overflow: 'auto', padding: '24px', position: 'relative' }}
+              variants={panelSlideIn} initial="initial" animate="animate" exit="exit"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button onClick={() => setSelectedComp(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}>
+                <X size={16} strokeWidth={1.5} />
+              </button>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px', lineHeight: 1.4 }}>
+                {selectedComp.competitionName}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <span className="glass-badge" style={{ fontSize: '11px', padding: '2px 8px', background: 'rgba(0,122,255,0.06)' }}>{selectedComp.categoryName}</span>
+                <span className={`glass-badge ${selectedComp.status === 2 ? 'pass' : selectedComp.status === 3 ? 'reviewing' : 'pending'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                  {statusBadgeLabel[selectedComp.status] ?? '未知'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
+                <div><span style={{ color: 'var(--text-tertiary)' }}>主办方：</span><span style={{ color: 'var(--text-primary)' }}>{selectedComp.organizer}</span></div>
+                {selectedComp.description && <div><span style={{ color: 'var(--text-tertiary)' }}>描述：</span><span style={{ color: 'var(--text-primary)', lineHeight: 1.6 }}>{selectedComp.description}</span></div>}
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div><span style={{ color: 'var(--text-tertiary)' }}>报名时间：</span><span style={{ color: 'var(--text-primary)' }}>{formatDate(selectedComp.registrationStart)} ~ {formatDate(selectedComp.registrationEnd)}</span></div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div><span style={{ color: 'var(--text-tertiary)' }}>比赛时间：</span><span style={{ color: 'var(--text-primary)' }}>{formatDate(selectedComp.competitionStart)} ~ {formatDate(selectedComp.competitionEnd)}</span></div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div><span style={{ color: 'var(--text-tertiary)' }}>地点：</span><span style={{ color: 'var(--text-primary)' }}>{selectedComp.location || '待定'}</span></div>
+                  <div><span style={{ color: 'var(--text-tertiary)' }}>每队人数：</span><span style={{ color: 'var(--text-primary)' }}>{selectedComp.maxMembers} 人</span></div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div><span style={{ color: 'var(--text-tertiary)' }}>已报名：</span><span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{selectedComp.registrationCount}{selectedComp.maxTeams ? ` / ${selectedComp.maxTeams} 队` : ' 人'}</span></div>
+                </div>
+                {selectedComp.rules && <div><span style={{ color: 'var(--text-tertiary)' }}>规则：</span><span style={{ color: 'var(--text-primary)', lineHeight: 1.6 }}>{selectedComp.rules}</span></div>}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

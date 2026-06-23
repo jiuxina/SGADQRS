@@ -5,6 +5,7 @@ import { staggerContainer, staggerItem, fadeSlideUp, expandCollapse } from '../m
 import { messageApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { MessageItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
 
 const typeIconMap: Record<number, typeof Bell> = { 1: Settings, 2: Trophy, 3: UserCheck, 4: BarChart3 }
 const typeColorBg: Record<number, string> = { 1: 'rgba(142,142,147,0.08)', 2: 'rgba(0,122,255,0.08)', 3: 'rgba(52,199,89,0.08)', 4: 'rgba(175,82,222,0.08)' }
@@ -20,7 +21,7 @@ export default function TeacherMessages() {
     if (!user) return
     setLoading(true)
     try {
-      const result = await messageApi.list({ current: 1, size: 50 })
+      const result = await messageApi.list({ current: 1, size: PAGE_SIZE.LARGE })
       setMessages(result.records)
     } catch (err) { console.error('加载消息失败:', err) }
     finally { setLoading(false) }

@@ -13,6 +13,7 @@ import { staggerContainer, staggerItem, fadeSlideUp, expandCollapse } from '../m
 import { messageApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { MessageItem } from '../api/types'
+import { PAGE_SIZE } from '../config/constants'
 
 type FilterKey = 'all' | 1 | 2 | 3 | 4
 
@@ -56,7 +57,7 @@ export default function StudentMessages() {
     if (!user) return
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: 50 }
+      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
       if (filter !== 'all') params.messageType = filter
       const result = await messageApi.list(params as Parameters<typeof messageApi.list>[0])
       setMessages(result.records)
