@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { UserInfo } from '../api/types'
 import { authApi } from '../api'
+import { STORAGE_KEYS } from '../config/constants'
 
 interface AuthState {
   token: string | null
@@ -14,14 +15,14 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  token: localStorage.getItem('scms_token'),
-  user: JSON.parse(localStorage.getItem('scms_user') || 'null'),
-  isAuthenticated: !!localStorage.getItem('scms_token'),
+  token: localStorage.getItem(STORAGE_KEYS.TOKEN),
+  user: JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null'),
+  isAuthenticated: !!localStorage.getItem(STORAGE_KEYS.TOKEN),
 
   login: async (username: string, password: string, role: string) => {
     const result = await authApi.login({ username, password, role })
-    localStorage.setItem('scms_token', result.token)
-    localStorage.setItem('scms_user', JSON.stringify(result.user))
+    localStorage.setItem(STORAGE_KEYS.TOKEN, result.token)
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user))
     set({
       token: result.token,
       user: result.user,
@@ -30,8 +31,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
-    localStorage.removeItem('scms_token')
-    localStorage.removeItem('scms_user')
+    localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    localStorage.removeItem(STORAGE_KEYS.USER)
     set({
       token: null,
       user: null,
@@ -42,7 +43,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loadUser: async () => {
     try {
       const userInfo = await authApi.getUserInfo()
-      localStorage.setItem('scms_user', JSON.stringify(userInfo))
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userInfo))
       set({ user: userInfo })
     } catch {
       get().logout()
@@ -50,7 +51,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setUser: (user: UserInfo) => {
-    localStorage.setItem('scms_user', JSON.stringify(user))
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user))
     set({ user })
   },
 }))

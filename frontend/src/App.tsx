@@ -21,6 +21,8 @@ import StudentMessages from './pages/StudentMessages'
 import StudentAudit from './pages/StudentAudit'
 import DesktopLayout from './components/DesktopLayout'
 import AuthGuard from './components/AuthGuard'
+import { ToastContainer } from './components/Toast'
+import { ConfirmContainer } from './components/ConfirmDialog'
 
 function DashboardLayout() {
   return (
@@ -63,6 +65,10 @@ function App() {
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+
+      {/* Global overlays */}
+      <ToastContainer />
+      <ConfirmContainer />
     </div>
   )
 }
