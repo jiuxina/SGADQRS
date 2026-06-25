@@ -12,12 +12,13 @@ echo.
 set "ROOT_DIR=%~dp0"
 set "BACKEND_DIR=%ROOT_DIR%backend"
 set "FRONTEND_DIR=%ROOT_DIR%frontend"
+set "ANIM_DIR=%ROOT_DIR%frontend-animation-demo"
 
 echo [INFO] Project: %ROOT_DIR%
 echo.
 
 :: ===== Check Java =====
-echo [1/4] Checking Java...
+echo [1/5] Checking Java...
 java -version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Java not found! Please install JDK 17+
@@ -27,7 +28,7 @@ echo [OK] Java installed
 echo.
 
 :: ===== Check Node.js =====
-echo [2/4] Checking Node.js...
+echo [2/5] Checking Node.js...
 node -v >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Node.js not found! Please install Node.js 18+
@@ -37,7 +38,7 @@ echo [OK] Node.js installed
 echo.
 
 :: ===== Check MySQL =====
-echo [3/4] Checking MySQL...
+echo [3/5] Checking MySQL...
 mysql --version >nul 2>&1
 if errorlevel 1 (
     echo [WARN] mysql command not found
@@ -81,7 +82,7 @@ if errorlevel 1 (
 echo.
 
 :: ===== Start Backend =====
-echo [4/4] Starting services...
+echo [4/5] Starting backend...
 echo.
 
 :: Check for pre-built jar
@@ -100,6 +101,9 @@ echo [INFO] Waiting 15 seconds for backend...
 timeout /t 15 /nobreak >nul
 
 :: ===== Start Frontend =====
+echo [5/5] Starting frontend services...
+echo.
+
 if not exist "%FRONTEND_DIR%\package.json" (
     echo [ERROR] frontend\package.json not found!
     goto :fail
@@ -119,6 +123,15 @@ echo [INFO] Starting frontend (port 5174)...
 start "SCMS Frontend" /D "%FRONTEND_DIR%" cmd /k "npm run dev"
 echo [OK] Frontend window opened
 
+:: ===== Start Animation Demo =====
+if exist "%ANIM_DIR%\package.json" (
+    echo [INFO] Starting animation demo (port 3001)...
+    start "Animation Demo" /D "%ANIM_DIR%" cmd /k "npm run dev"
+    echo [OK] Animation demo window opened
+) else (
+    echo [WARN] Animation demo not found, skipping
+)
+
 echo [INFO] Waiting 5 seconds...
 timeout /t 5 /nobreak >nul
 
@@ -131,8 +144,9 @@ echo ========================================
 echo   All services started!
 echo ========================================
 echo.
-echo   Frontend:  http://localhost:5174
-echo   Backend:   http://localhost:8080/api
+echo   Frontend:       http://localhost:5174
+echo   Backend:        http://localhost:8080/api
+echo   Animation Demo: http://localhost:3001
 echo.
 echo   Accounts:
 echo     Admin:   admin / 123456
