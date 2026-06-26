@@ -1,81 +1,69 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { AlertTriangle, HelpCircle, X } from 'lucide-react'
+import { X, Edit3 } from 'lucide-react'
 
-interface ConfirmOptions {
+interface PromptOptions {
   title?: string
   message: string
+  defaultValue?: string
+  placeholder?: string
   confirmText?: string
   cancelText?: string
-  variant?: 'danger' | 'warning' | 'info'
 }
 
-interface ConfirmState extends ConfirmOptions {
-  resolve: (value: boolean) => void
+interface PromptState extends PromptOptions {
+  resolve: (value: string | null) => void
 }
 
-let globalConfirm: ((options: ConfirmOptions) => Promise<boolean>) | null = null
+let globalPrompt: ((options: PromptOptions) => Promise<string | null>) | null = null
 
-/** 全局调用方法 — 替代 confirm() */
-export function confirmDialog(options: ConfirmOptions): Promise<boolean> {
-  if (!globalConfirm) return Promise.resolve(false)
-  return globalConfirm(options)
+/** 全局调用方法 — 替代 prompt() */
+export function promptDialog(options: PromptOptions): Promise<string | null> {
+  if (!globalPrompt) return Promise.resolve(null)
+  return globalPrompt(options)
 }
 
-const variantStyles = {
-  danger: {
-    icon: AlertTriangle,
-    iconColor: '#FF3B30',
-    iconBg: 'rgba(255, 59, 48, 0.1)',
-    confirmBg: '#FF3B30',
-    confirmHover: '#e0342a',
-  },
-  warning: {
-    icon: AlertTriangle,
-    iconColor: '#FF9500',
-    iconBg: 'rgba(255, 149, 0, 0.1)',
-    confirmBg: '#FF9500',
-    confirmHover: '#e08600',
-  },
-  info: {
-    icon: HelpCircle,
-    iconColor: '#007AFF',
-    iconBg: 'rgba(0, 122, 255, 0.1)',
-    confirmBg: '#007AFF',
-    confirmHover: '#0066d6',
-  },
-}
+/** Prompt 容器 — 需挂载在 App 根部 */
+export function PromptContainer() {
+  const [state, setState] = useState<PromptState | null>(null)
+  const [value, setValue] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
 
-/** Confirm 容器 — 需挂载在 App 根部 */
-export function ConfirmContainer() {
-  const [state, setState] = useState<ConfirmState | null>(null)
-
-  const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
-    return new Promise<boolean>((resolve) => {
+  const prompt = useCallback((options: PromptOptions): Promise<string | null> => {
+    return new Promise<string | null>((resolve) => {
       setState({ ...options, resolve })
+      setValue(options.defaultValue ?? '')
     })
   }, [])
 
   useEffect(() => {
-    globalConfirm = confirm
-    return () => { globalConfirm = null }
-  }, [confirm])
+    globalPrompt = prompt
+    return () => { globalPrompt = null }
+  }, [prompt])
+
+  useEffect(() => {
+    if (state) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 100)
+      return () => clearTimeout(timer)
+    }
+  }, [state])
 
   const handleConfirm = useCallback(() => {
-    state?.resolve(true)
+    state?.resolve(value)
     setState(null)
-  }, [state])
+  }, [state, value])
 
   const handleCancel = useCallback(() => {
-    state?.resolve(false)
+    state?.resolve(null)
     setState(null)
   }, [state])
 
-  if (!state) return null
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleConfirm()
+    if (e.key === 'Escape') handleCancel()
+  }, [handleConfirm, handleCancel])
 
-  const variant = state.variant || 'warning'
-  const styles = variantStyles[variant]
-  const Icon = styles.icon
+  if (!state) return null
 
   return (
     <AnimatePresence>
@@ -127,11 +115,11 @@ export function ConfirmContainer() {
             {/* Icon */}
             <div style={{
               width: '48px', height: '48px', borderRadius: '14px',
-              background: styles.iconBg,
+              background: 'rgba(0, 122, 255, 0.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 16px',
             }}>
-              <Icon size={24} strokeWidth={1.8} color={styles.iconColor} />
+              <Edit3 size={24} strokeWidth={1.8} color="#007AFF" />
             </div>
 
             {/* Title */}
@@ -147,9 +135,22 @@ export function ConfirmContainer() {
             {/* Message */}
             <div style={{
               fontSize: '14px', color: 'var(--text-secondary)',
-              textAlign: 'center', lineHeight: 1.6, marginBottom: '24px',
+              textAlign: 'center', lineHeight: 1.6, marginBottom: '16px',
             }}>
               {state.message}
+            </div>
+
+            {/* Input */}
+            <div style={{ marginBottom: '24px' }}>
+              <input
+                ref={inputRef}
+                className="glass-input"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={state.placeholder || ''}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
             </div>
 
             {/* Buttons */}
@@ -171,14 +172,14 @@ export function ConfirmContainer() {
                 onClick={handleConfirm}
                 style={{
                   flex: 1, height: '42px', borderRadius: '10px',
-                  background: styles.confirmBg,
+                  background: '#007AFF',
                   border: 'none',
                   color: '#fff',
                   fontSize: '14px', fontWeight: '600',
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = styles.confirmHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.background = styles.confirmBg)}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#0066D6')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#007AFF')}
               >
                 {state.confirmText || '确定'}
               </button>

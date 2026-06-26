@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Clock, AlertTriangle } from 'lucide-react'
+import { Clock } from 'lucide-react'
 
 interface CountdownTimerProps {
   /** 报名截止时间 (ISO string or Date-parseable string) */
@@ -55,23 +55,20 @@ export default function CountdownTimer({ deadline, style }: CountdownTimerProps)
   if (isExpired) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          padding: '6px 12px',
-          borderRadius: '8px',
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
+          padding: '4px 0',
           fontSize: '12px',
-          fontWeight: '600',
-          color: '#ef4444',
+          fontWeight: '500',
+          color: 'var(--text-tertiary)',
           ...style,
         }}
       >
-        <AlertTriangle size={14} />
+        <Clock size={14} strokeWidth={1.5} />
         <span>报名已截止</span>
       </motion.div>
     )
