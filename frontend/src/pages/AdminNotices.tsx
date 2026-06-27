@@ -7,6 +7,7 @@ import type { NoticeItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
 import { confirmDialog } from '../components/ConfirmDialog'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 type FilterType = 'all' | 'notice' | 'announcement' | 'published' | 'draft'
 
@@ -25,8 +26,9 @@ export default function AdminNotices() {
   const [newContent, setNewContent] = useState('')
   const [newType, setNewType] = useState<'notice' | 'announcement'>('notice')
   const [notices, setNotices] = useState<NoticeItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const isMobile = useIsMobile()
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -239,7 +241,7 @@ export default function AdminNotices() {
           >
             <motion.div
               className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: '480px', padding: '24px', position: 'relative' }}
+              style={{ width: isMobile ? 'calc(100vw - 32px)' : '480px', padding: '24px', position: 'relative' }}
               variants={panelSlideIn}
               initial="initial"
               animate="animate"

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { X, Check, UserCheck, UserX } from 'lucide-react'
+import { X, UserCheck, UserX } from 'lucide-react'
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
@@ -8,6 +8,7 @@ import type { CompetitionItem, RegistrationItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
 import { confirmDialog } from '../components/ConfirmDialog'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const statusBadgeMap: Record<number, { cls: string; label: string }> = {
   0: { cls: 'pending', label: '草稿' },
@@ -32,6 +33,7 @@ export default function TeacherCompetitions() {
   const [managingComp, setManagingComp] = useState<CompetitionItem | null>(null)
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
   const [regLoading, setRegLoading] = useState(false)
+  const isMobile = useIsMobile()
 
   const loadData = useCallback(async () => {
     if (!user) return
@@ -156,7 +158,7 @@ export default function TeacherCompetitions() {
           >
             <motion.div
               className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: '600px', maxHeight: '80vh', overflow: 'auto', padding: '24px', position: 'relative' }}
+              style={{ width: isMobile ? 'calc(100vw - 32px)' : '600px', maxHeight: '80vh', overflow: 'auto', padding: '24px', position: 'relative' }}
               variants={panelSlideIn}
               initial="initial"
               animate="animate"
@@ -212,13 +214,13 @@ export default function TeacherCompetitions() {
                           <td>
                             {reg.status === 0 ? (
                               <div style={{ display: 'flex', gap: '6px' }}>
-                                <button className="btn primary" style={{ padding: '3px 8px', fontSize: '11px', gap: '3px' }}
+                                <button className="text-btn blue" style={{ fontSize: '11px' }}
                                   onClick={() => handleAuditReg(reg.id, 1)}>
-                                  <Check size={11} strokeWidth={2} /> 通过
+                                  通过
                                 </button>
-                                <button className="btn ghost" style={{ padding: '3px 8px', fontSize: '11px', gap: '3px', color: 'var(--danger)' }}
+                                <button className="text-btn danger" style={{ fontSize: '11px' }}
                                   onClick={() => handleAuditReg(reg.id, 2)}>
-                                  <X size={11} strokeWidth={2} /> 拒绝
+                                  拒绝
                                 </button>
                               </div>
                             ) : reg.status === 1 ? (

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Trophy, Clock, Medal, FileText, ArrowUpRight } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../motion/variants'
-import { competitionApi, registrationApi } from '../api'
+import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
@@ -40,11 +40,10 @@ export default function StudentDashboard() {
           <div className="bento-dots" style={{ flex: 1, gap: '10px' }}>
             {competitions.map((c) => (
               <div key={c.id} className="bento-dot-row" style={{ gap: '8px' }}>
-                <span className="bento-dot" style={{ background: 'var(--accent)' }} />
                 <span style={{ fontSize: '12px', color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {c.competitionName}
                 </span>
-                <span className="bento-num" style={{ fontSize: '10px' }}>{c.registrationCount}人</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>{c.registrationCount}人</span>
               </div>
             ))}
           </div>

@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { statsApi } from '../api'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 export default function AdminStats() {
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     statsApi.admin().then((data) => setStats(data as Record<string, unknown>)).catch(console.error).finally(() => setLoading(false))
@@ -18,7 +20,7 @@ export default function AdminStats() {
 
   return (
     <>
-      <motion.div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}
+      <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}
         variants={staggerContainer} initial="hidden" animate="visible">
         {[
           { label: '总用户', value: (stats?.totalUsers as number) || 0 },
@@ -33,7 +35,7 @@ export default function AdminStats() {
         ))}
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
         <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '20px' }}
           variants={fadeSlideUp} initial="hidden" animate="visible">
           <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>分类分布</div>

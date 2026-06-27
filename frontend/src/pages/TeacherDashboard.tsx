@@ -35,16 +35,7 @@ export default function TeacherDashboard() {
           <div className="bento-label">赛事概览</div>
           <div className="bento-value">{(stats?.myCompetitions as number) || 0}</div>
           <div className="bento-sub">我发布的竞赛</div>
-          <div className="bento-dots" style={{ marginTop: '16px', gap: '10px' }}>
-            <div className="bento-dot-row" style={{ gap: '8px' }}>
-              <span className="bento-dot" style={{ background: 'var(--accent)' }} />
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>总报名 {(stats?.totalRegistrations as number) || 0}</span>
-            </div>
-            <div className="bento-dot-row" style={{ gap: '8px' }}>
-              <span className="bento-dot" style={{ background: 'var(--warning)' }} />
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>待审核 {(stats?.pendingAudit as number) || 0}</span>
-            </div>
-          </div>
+          <div className="bento-sub">{competitions.length} 个竞赛</div>
         </motion.div>
 
         <motion.div className="bento-card bento-wide" variants={staggerItem}>
@@ -52,9 +43,9 @@ export default function TeacherDashboard() {
           <div className="bento-timeline" style={{ marginTop: '10px' }}>
             {competitions.map((c) => (
               <div key={c.id} className="bento-timeline-item">
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{c.competitionName}</span>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{c.registrationCount} 人报名</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.competitionName}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', flexShrink: 0 }}>{c.registrationCount} 人报名</span>
                 </div>
               </div>
             ))}

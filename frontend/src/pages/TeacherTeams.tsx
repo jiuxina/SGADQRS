@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import { fadeSlideUp } from '../motion/variants'
 import { registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { TeamItem } from '../api/types'

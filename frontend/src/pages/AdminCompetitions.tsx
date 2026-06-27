@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Search, Check, X, Eye, Calendar, MapPin, Users, Clock } from 'lucide-react'
+import { Search, X, Eye, Calendar, MapPin, Users, Clock } from 'lucide-react'
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { competitionApi } from '../api'
 import type { CompetitionItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 type FilterStatus = 'all' | 1 | 2 | 3 | 4 | 0 | 5
 
@@ -35,6 +36,7 @@ export default function AdminCompetitions() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [selectedComp, setSelectedComp] = useState<CompetitionItem | null>(null)
+  const isMobile = useIsMobile()
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -174,13 +176,13 @@ export default function AdminCompetitions() {
                     <td>
                       {comp.status === 1 ? (
                         <div style={{ display: 'flex', gap: '6px' }}>
-                          <button className="btn primary" style={{ padding: '4px 10px', fontSize: '12px', gap: '4px' }}
+                          <button className="text-btn blue" style={{ fontSize: '12px' }}
                             onClick={() => handleAudit(comp.id, 2)}>
-                            <Check size={12} strokeWidth={2} /> 通过
+                            通过
                           </button>
-                          <button className="btn ghost" style={{ padding: '4px 10px', fontSize: '12px', gap: '4px', color: 'var(--danger)' }}
+                          <button className="text-btn danger" style={{ fontSize: '12px' }}
                             onClick={() => handleAudit(comp.id, 5)}>
-                            <X size={12} strokeWidth={2} /> 拒绝
+                            拒绝
                           </button>
                         </div>
                       ) : (
@@ -221,7 +223,7 @@ export default function AdminCompetitions() {
           >
             <motion.div
               className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: '520px', maxHeight: '80vh', overflow: 'auto', padding: '24px', position: 'relative' }}
+              style={{ width: isMobile ? 'calc(100vw - 32px)' : '520px', maxHeight: '80vh', overflow: 'auto', padding: '24px', position: 'relative' }}
               variants={panelSlideIn}
               initial="initial"
               animate="animate"
@@ -256,7 +258,7 @@ export default function AdminCompetitions() {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
                   <Users size={13} strokeWidth={1.5} />
                   主办方：{selectedComp.organizer || '-'}
@@ -275,7 +277,7 @@ export default function AdminCompetitions() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
                 <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
                   <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)' }}>{selectedComp.registrationCount}</div>
                   <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>已报名</div>

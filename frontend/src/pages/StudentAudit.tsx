@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import { fadeSlideUp } from '../motion/variants'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem, RegistrationItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 export default function StudentAudit() {
   const user = useAuthStore((s) => s.user)
@@ -14,6 +15,7 @@ export default function StudentAudit() {
   const [competition, setCompetition] = useState<CompetitionItem | null>(null)
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
   const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (!compId || !user) return
@@ -47,7 +49,7 @@ export default function StudentAudit() {
         </div>
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
         <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '20px' }}
           variants={fadeSlideUp} initial="hidden" animate="visible">
           <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>竞赛信息</div>

@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Search, ToggleLeft, ToggleRight, Pencil, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import DigitRoller from '../components/DigitRoller'
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { userApi, deptApi } from '../api'
 import type { UserItem, DeptItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 type FilterType = 'all' | 1 | 2 | 3
 
@@ -29,6 +30,7 @@ export default function AdminUsers() {
   const [editForm, setEditForm] = useState({ realName: '', phone: '', email: '', deptId: '' })
   const [depts, setDepts] = useState<DeptItem[]>([])
   const [saving, setSaving] = useState(false)
+  const isMobile = useIsMobile()
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -107,7 +109,7 @@ export default function AdminUsers() {
   return (
     <>
       <motion.div
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}
+        style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
@@ -201,32 +203,27 @@ export default function AdminUsers() {
                     <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{user.email || '-'}</td>
                     <td>
                       {user.status === 1 ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--success)' }}>
-                          <span className="status-dot pass" />正常
-                        </span>
+                        <span style={{ fontSize: '12px', color: 'var(--success)' }}>正常</span>
                       ) : (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--danger)' }}>
-                          <span className="status-dot fail" />已禁用
-                        </span>
+                        <span style={{ fontSize: '12px', color: 'var(--danger)' }}>已禁用</span>
                       )}
                     </td>
-                    <td style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>{formatDate(user.lastLoginTime ?? null)}</td>
+                    <td style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>{formatDate((user as unknown as Record<string, unknown>).lastLoginTime as string ?? null)}</td>
                     <td>
-                      <div style={{ display: 'flex', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '4px' }}>
                         <button
-                          className="btn ghost"
+                          className="text-btn"
                           style={{
-                            padding: '4px 8px', fontSize: '12px', gap: '3px',
+                            fontSize: '12px',
                             color: user.status === 1 ? 'var(--danger)' : 'var(--success)',
                           }}
                           onClick={() => handleToggleStatus(user.id, user.status)}
                         >
-                          {user.status === 1 ? <ToggleRight size={13} strokeWidth={1.5} /> : <ToggleLeft size={13} strokeWidth={1.5} />}
                           {user.status === 1 ? '禁用' : '启用'}
                         </button>
-                        <button className="text-btn blue" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                        <button className="text-btn blue" style={{ fontSize: '12px' }}
                           onClick={() => openEditModal(user)}>
-                          <Pencil size={11} strokeWidth={1.5} /> 编辑
+                          编辑
                         </button>
                       </div>
                     </td>
@@ -261,7 +258,7 @@ export default function AdminUsers() {
           >
             <motion.div
               className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: '440px', padding: '24px', position: 'relative' }}
+              style={{ width: isMobile ? 'calc(100vw - 32px)' : '440px', padding: '24px', position: 'relative' }}
               variants={panelSlideIn}
               initial="initial"
               animate="animate"

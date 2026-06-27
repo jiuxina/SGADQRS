@@ -6,6 +6,7 @@ import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { logApi } from '../api'
 import type { LogItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 type FilterStatus = 'all' | 1 | 0
 
@@ -25,6 +26,7 @@ export default function AdminLogs() {
   const [logs, setLogs] = useState<LogItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -51,7 +53,7 @@ export default function AdminLogs() {
 
   return (
     <>
-      <motion.div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }} variants={staggerContainer} initial="hidden" animate="visible">
+      <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }} variants={staggerContainer} initial="hidden" animate="visible">
         {[
           { label: '总日志数', value: total, footer: '系统操作记录' },
           { label: '成功操作', value: successCount, footer: '执行成功' },

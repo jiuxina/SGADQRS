@@ -61,7 +61,7 @@ export default function AdminSettings() {
         </span>
       </motion.div>
 
-      <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0' }} variants={fadeSlideUp} initial="hidden" animate="visible">
+      <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0', maxWidth: '720px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
         <motion.div variants={staggerContainer} initial="hidden" animate="visible">
           {configs.map((config) => {
             const isEditing = editStates[config.id]
@@ -74,8 +74,8 @@ export default function AdminSettings() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '14px',
-                  padding: '16px 18px',
+                  gap: '12px',
+                  padding: '12px 16px',
                   borderBottom: '1px solid rgba(0,0,0,0.04)',
                 }}
               >

@@ -9,8 +9,8 @@ import {
   ArrowUpRight,
   AlertTriangle,
 } from 'lucide-react'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
-import { competitionApi, userApi, statsApi, logApi } from '../api'
+import { staggerContainer, staggerItem } from '../motion/variants'
+import { competitionApi, statsApi, logApi } from '../api'
 import type { CompetitionItem, LogItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
                     <strong>{log.username || '-'}</strong>{' '}
                     <span style={{ color: 'var(--text-secondary)' }}>{log.operation}</span>
                   </span>
-                  <span className={`bento-num ${log.status === 1 ? 'success' : 'danger'}`} style={{ fontSize: '10px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '500', color: log.status === 1 ? 'var(--success)' : 'var(--danger)' }}>
                     {log.status === 1 ? '成功' : '失败'}
                   </span>
                 </div>
@@ -110,11 +110,10 @@ export default function AdminDashboard() {
             <div className="bento-dots" style={{ flex: 1, gap: '10px' }}>
               {pendingList.map((c) => (
                 <div key={c.id} className="bento-dot-row" style={{ gap: '8px' }}>
-                  <span className="bento-dot" style={{ background: 'var(--warning)' }} />
                   <span style={{ fontSize: '12px', color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {c.competitionName}
                   </span>
-                  <span className="bento-num warn" style={{ fontSize: '10px', flexShrink: 0 }}>待审</span>
+                  <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '500', flexShrink: 0 }}>待审</span>
                 </div>
               ))}
             </div>
@@ -127,11 +126,9 @@ export default function AdminDashboard() {
           <div className="bento-value">{totalUsers}</div>
           <div className="bento-dots" style={{ marginTop: '10px', gap: '6px' }}>
             <div className="bento-dot-row" style={{ gap: '6px' }}>
-              <span className="bento-dot" style={{ background: 'var(--success)' }} />
               <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>活跃 {activeUsers}</span>
             </div>
             <div className="bento-dot-row" style={{ gap: '6px' }}>
-              <span className="bento-dot" style={{ background: 'var(--gray-3)' }} />
               <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>禁用 {disabledUsers}</span>
             </div>
           </div>
@@ -149,7 +146,7 @@ export default function AdminDashboard() {
           <div className="bento-label">系统预警</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
             <AlertTriangle size={18} color="var(--danger)" strokeWidth={1.5} />
-            <span className="bento-num danger">{pendingList.length}</span>
+            <span style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-1px' }}>{pendingList.length}</span>
           </div>
           <div className="bento-sub">待审核项</div>
         </motion.div>

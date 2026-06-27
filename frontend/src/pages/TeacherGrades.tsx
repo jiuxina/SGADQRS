@@ -7,6 +7,7 @@ import type { CompetitionItem, ResultItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
 import { confirmDialog } from '../components/ConfirmDialog'
+import { promptDialog } from '../components/PromptDialog'
 
 const awardLevelLabel: Record<number, string> = { 1: '特等奖', 2: '一等奖', 3: '二等奖', 4: '三等奖', 5: '优秀奖' }
 
@@ -85,7 +86,7 @@ export default function TeacherGrades() {
                   </td>
                   <td>
                     <button className="text-btn blue" style={{ fontSize: '12px' }} onClick={async () => {
-                      const score = prompt('输入分数:', String(r.score || ''))
+                      const score = await promptDialog({ title: '编辑分数', message: `请输入 ${r.studentName || r.teamName || '该学生'} 的分数：`, defaultValue: String(r.score ?? ''), placeholder: '请输入分数' })
                       if (score !== null) { try { await resultApi.update({ id: r.id, score: Number(score) }); loadResults() } catch (err) { toast.error('更新失败') } }
                     }}>编辑</button>
                   </td>

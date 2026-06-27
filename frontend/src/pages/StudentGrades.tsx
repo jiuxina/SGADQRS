@@ -5,6 +5,8 @@ import {
   Award,
   BarChart3,
   Download,
+  Users,
+  Calendar,
 } from 'lucide-react'
 import DigitRoller from '../components/DigitRoller'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
@@ -12,6 +14,7 @@ import { resultApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { ResultItem } from '../api/types'
 import { PAGE_SIZE, CANVAS_CONFIG } from '../config/constants'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const awardLevelLabel: Record<number, string> = {
   1: '特等奖',
@@ -19,6 +22,14 @@ const awardLevelLabel: Record<number, string> = {
   3: '二等奖',
   4: '三等奖',
   5: '优秀奖',
+}
+
+const awardColorMap: Record<number, string> = {
+  1: '#b45309',
+  2: '#d97706',
+  3: '#92400e',
+  4: 'var(--accent)',
+  5: 'var(--text-secondary)',
 }
 
 function downloadCertificate(result: ResultItem, userName: string) {
@@ -98,6 +109,7 @@ export default function StudentGrades() {
   const user = useAuthStore((s) => s.user)
   const [results, setResults] = useState<ResultItem[]>([])
   const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
 
   const loadData = useCallback(async () => {
     if (!user) return
@@ -136,152 +148,211 @@ export default function StudentGrades() {
     return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
   }
 
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '-'
+    const d = new Date(dateStr)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
   return (
     <>
       {/* Summary metric cards */}
       <motion.div
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}
+        style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '10px' }}
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
       >
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <div className="icon-box sm blue"><BarChart3 strokeWidth={1.5} /></div>
+        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            <BarChart3 size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>参赛次数</span>
           </div>
-          <div style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+          <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             <DigitRoller value={results.length} />
           </div>
         </motion.div>
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <div className="icon-box sm green"><Trophy strokeWidth={1.5} /></div>
+        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            <Trophy size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>获奖次数</span>
           </div>
-          <div style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+          <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             <DigitRoller value={awardResults.length} />
           </div>
         </motion.div>
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <div className="icon-box sm purple"><Award strokeWidth={1.5} /></div>
+        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            <Award size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>最高奖项</span>
           </div>
-          <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+          <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
             {highestAward}
           </div>
         </motion.div>
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <div className="icon-box sm amber"><BarChart3 strokeWidth={1.5} /></div>
+        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            <BarChart3 size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>平均成绩</span>
           </div>
-          <div style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+          <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             {avgScore}
           </div>
         </motion.div>
       </motion.div>
 
-      {/* Results table */}
+      {/* Section header */}
+      <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.05 }} style={{ marginTop: '16px', marginBottom: '14px' }}>
+        <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
+          成绩明细
+          <span style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
+            {results.length}条
+          </span>
+        </span>
+      </motion.div>
+
+      {/* Results cards grid */}
       <motion.div
-        className="glass-card glass-card-vertical glass-card-static"
-        style={{ padding: '0', marginTop: '24px' }}
-        variants={fadeSlideUp}
+        variants={staggerContainer}
         initial="hidden"
         animate="visible"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: '16px',
+        }}
       >
-        <div style={{ padding: '16px 18px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
-            成绩明细
-            <span style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
-              {results.length}条
-            </span>
-          </span>
-        </div>
-
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>竞赛名称</th>
-              <th>队伍名称</th>
-              <th>分数</th>
-              <th>排名</th>
-              <th>奖项</th>
-              <th>状态</th>
-              <th style={{ width: '100px' }}>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((result) => (
-              <tr key={result.id}>
-                <td style={{ fontWeight: '600', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {result.competitionName || '-'}
-                </td>
-                <td style={{ color: 'var(--text-secondary)' }}>
-                  {result.teamName ?? <span style={{ color: 'var(--text-tertiary)' }}>个人参赛</span>}
-                </td>
-                <td>
-                  {result.score !== null ? (
-                    <span style={{ fontWeight: '700' }}>{result.score}</span>
-                  ) : (
-                    <span style={{ color: 'var(--text-tertiary)' }}>--</span>
-                  )}
-                </td>
-                <td>
-                  {result.ranking !== null ? (
-                    <span>第 {result.ranking} 名</span>
-                  ) : (
-                    <span style={{ color: 'var(--text-tertiary)' }}>--</span>
-                  )}
-                </td>
-                <td>
-                  {result.awardLevel ? (
-                    <span style={{
-                      fontWeight: '600',
-                      color: result.awardLevel <= 2 ? 'var(--accent)' : 'var(--text-primary)',
-                    }}>
-                      {awardLevelLabel[result.awardLevel] ?? result.awardName}
-                    </span>
-                  ) : (
-                    <span style={{ color: 'var(--text-tertiary)' }}>--</span>
-                  )}
-                </td>
-                <td>
+        {results.map((result) => {
+          const awardColor = result.awardLevel ? (awardColorMap[result.awardLevel] || 'var(--text-secondary)') : null
+          const accentColor = result.awardLevel
+            ? (result.awardLevel <= 2 ? '#d97706' : result.awardLevel <= 4 ? 'var(--accent)' : 'var(--gray-2)')
+            : 'var(--gray-3)'
+          return (
+            <motion.div
+              key={result.id}
+              variants={staggerItem}
+              className="glass-card glass-card-vertical"
+              style={{ padding: '18px' }}
+            >
+              {/* Top: Name + status badge */}
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1.35, flex: 1 }}>
+                    {result.competitionName || '-'}
+                  </span>
                   {result.isPublished === 1 ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <div className="status-dot pass" />
-                      <span className="glass-badge pass" style={{ fontSize: '11px', padding: '2px 8px' }}>已发布</span>
-                    </div>
+                    <span className="glass-badge pass" style={{ fontSize: '11px', padding: '2px 8px', flexShrink: 0 }}>已发布</span>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <div className="status-dot pending" />
-                      <span className="glass-badge pending" style={{ fontSize: '11px', padding: '2px 8px' }}>待公布</span>
-                    </div>
+                    <span className="glass-badge pending" style={{ fontSize: '11px', padding: '2px 8px', flexShrink: 0 }}>待公布</span>
                   )}
-                </td>
-                <td>
-                  {result.isPublished === 1 && result.awardLevel ? (
-                    <button className="text-btn blue" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}
-                      onClick={() => downloadCertificate(result, user?.realName || user?.username || '学生')}>
-                      <Download size={12} strokeWidth={1.5} />
-                      下载证书
-                    </button>
-                  ) : (
-                    <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>--</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
 
-        {results.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-tertiary)', fontSize: '14px' }}>
-            暂无成绩记录
-          </div>
-        )}
+                {/* Accent line */}
+                <div style={{ width: '32px', height: '3px', borderRadius: '2px', background: accentColor, marginBottom: '10px' }} />
+              </div>
+
+              {/* Score + Ranking highlight */}
+              {(result.score !== null || result.ranking !== null) && (
+                <div style={{
+                  display: 'flex',
+                  gap: '16px',
+                  marginBottom: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  background: 'rgba(0,0,0,0.02)',
+                }}>
+                  {result.score !== null && (
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>分数</div>
+                      <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px', lineHeight: 1 }}>
+                        {result.score}
+                      </div>
+                    </div>
+                  )}
+                  {result.ranking !== null && (
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>排名</div>
+                      <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px', lineHeight: 1 }}>
+                        {result.ranking}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Award highlight */}
+              {result.awardLevel && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  background: result.awardLevel <= 2 ? 'rgba(217, 119, 6, 0.06)' : 'rgba(0, 122, 255, 0.04)',
+                  marginBottom: '12px',
+                }}>
+                  <Trophy size={14} strokeWidth={1.8} color={awardColor || 'var(--text-secondary)'} />
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: awardColor || 'var(--text-primary)' }}>
+                    {result.awardName || awardLevelLabel[result.awardLevel]}
+                  </span>
+                </div>
+              )}
+
+              {/* Meta info */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                  <Users size={12} strokeWidth={1.5} />
+                  队伍：{result.teamName || <span style={{ color: 'var(--text-tertiary)' }}>个人参赛</span>}
+                </div>
+                {result.publishTime && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                    <Calendar size={12} strokeWidth={1.5} />
+                    发布时间：{formatDate(result.publishTime)}
+                  </div>
+                )}
+              </div>
+
+              {/* Action button */}
+              {result.isPublished === 1 && result.awardLevel ? (
+                <button
+                  className="btn ghost"
+                  style={{ width: '100%', height: '32px', fontSize: '12px', marginTop: 'auto' }}
+                  onClick={() => downloadCertificate(result, user?.realName || user?.username || '学生')}
+                >
+                  <Download size={14} strokeWidth={1.5} />
+                  下载证书
+                </button>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  color: 'var(--text-tertiary)',
+                  padding: '6px 0',
+                  marginTop: 'auto',
+                }}>
+                  {result.isPublished !== 1 ? '成绩待公布' : '暂无奖项证书'}
+                </div>
+              )}
+            </motion.div>
+          )
+        })}
       </motion.div>
+
+      {results.length === 0 && !loading && (
+        <motion.div
+          variants={fadeSlideUp}
+          initial="hidden"
+          animate="visible"
+          style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            color: 'var(--text-tertiary)',
+            fontSize: '14px',
+          }}
+        >
+          暂无成绩记录
+        </motion.div>
+      )}
 
       <div style={{ paddingBottom: '40px' }} />
     </>

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'motion/react'
 import {
   Eye,
   EyeOff,
@@ -184,11 +185,19 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {errorMsg && (
-            <p style={{ textAlign: 'center', fontSize: '12px', color: '#ef4444', margin: '12px 0 0' }}>
-              {errorMsg}
-            </p>
-          )}
+          <AnimatePresence>
+            {errorMsg && (
+              <motion.p
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0, x: [0, -8, 8, -8, 8, 0] }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                style={{ textAlign: 'center', fontSize: '12px', color: '#ef4444', margin: '12px 0 0' }}
+              >
+                {errorMsg}
+              </motion.p>
+            )}
+          </AnimatePresence>
           {env.isDev && (
             <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-tertiary)', margin: '8px 0 0' }}>
               开发环境默认账号：admin / 123456 | T2024001 / 123456 | S20210001 / 123456

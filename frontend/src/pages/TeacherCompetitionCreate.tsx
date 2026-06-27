@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
   ArrowLeft,
-  Save,
-  Send,
 } from 'lucide-react'
 import { fadeSlideUp, staggerContainer, staggerItem } from '../motion/variants'
 import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionCategory } from '../api/types'
 import { toast } from '../components/Toast'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface FormData {
   name: string
@@ -29,7 +28,7 @@ interface FormData {
 
 export default function TeacherCompetitionCreate() {
   const navigate = useNavigate()
-  const user = useAuthStore((s) => s.user)
+  useAuthStore((s) => s.user)
   const [categories, setCategories] = useState<CompetitionCategory[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState<FormData>({
@@ -47,6 +46,7 @@ export default function TeacherCompetitionCreate() {
     maxTeams: '',
   })
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     competitionApi.categories().then(setCategories).catch(console.error)
@@ -160,7 +160,7 @@ export default function TeacherCompetitionCreate() {
             {errors.name && <div style={errorStyle}>{errors.name}</div>}
           </motion.div>
 
-          <motion.div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }} variants={staggerItem}>
+          <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px', marginBottom: '20px' }} variants={staggerItem}>
             <div>
               <label style={labelStyle}>竞赛分类 <span style={{ color: 'var(--danger)' }}>*</span></label>
               <select style={selectStyle} value={form.categoryId} onChange={(e) => updateField('categoryId', e.target.value)}>
@@ -190,7 +190,7 @@ export default function TeacherCompetitionCreate() {
 
           <motion.div style={{ marginBottom: '20px' }} variants={staggerItem}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '12px' }}>时间安排</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
               <div>
                 <label style={{ ...labelStyle, fontSize: '12px', color: 'var(--text-secondary)' }}>报名开始时间 <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <input className="glass-input" type="date" value={form.registrationStart} onChange={(e) => updateField('registrationStart', e.target.value)} />
@@ -214,7 +214,7 @@ export default function TeacherCompetitionCreate() {
             </div>
           </motion.div>
 
-          <motion.div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '20px', marginBottom: '28px' }} variants={staggerItem}>
+          <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: '20px', marginBottom: '28px' }} variants={staggerItem}>
             <div>
               <label style={labelStyle}>竞赛地点</label>
               <input className="glass-input" placeholder="请输入竞赛地点" value={form.location} onChange={(e) => updateField('location', e.target.value)} />
@@ -231,10 +231,10 @@ export default function TeacherCompetitionCreate() {
 
           <motion.div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }} variants={staggerItem}>
             <button className="btn ghost" onClick={handleSaveDraft} disabled={submitting}>
-              <Save size={14} strokeWidth={1.5} /> 保存草稿
+              保存草稿
             </button>
             <button className="btn filled-primary" onClick={handleSubmit} disabled={submitting}>
-              <Send size={14} strokeWidth={1.5} /> {submitting ? '提交中...' : '提交审核'}
+              {submitting ? '提交中...' : '提交审核'}
             </button>
           </motion.div>
         </motion.div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Bell, Trophy, UserCheck, BarChart3, Settings, CheckCheck, ChevronRight } from 'lucide-react'
-import { staggerContainer, staggerItem, fadeSlideUp, expandCollapse } from '../motion/variants'
+import { fadeSlideUp, expandCollapse } from '../motion/variants'
 import { messageApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { MessageItem } from '../api/types'
