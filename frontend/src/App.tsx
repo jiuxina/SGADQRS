@@ -23,6 +23,7 @@ import DesktopLayout from './components/DesktopLayout'
 import AuthGuard from './components/AuthGuard'
 import { ToastContainer } from './components/Toast'
 import { ConfirmContainer } from './components/ConfirmDialog'
+import { PromptContainer } from './components/PromptDialog'
 
 function DashboardLayout() {
   return (
@@ -69,6 +70,7 @@ function App() {
       {/* Global overlays */}
       <ToastContainer />
       <ConfirmContainer />
+      <PromptContainer />
     </div>
   )
 }
