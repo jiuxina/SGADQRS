@@ -105,21 +105,9 @@ CREATE TABLE IF NOT EXISTS `sys_class` (
 
 -- ===== 3. 竞赛核心表 =====
 
-CREATE TABLE IF NOT EXISTS `competition_category` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `category_name` VARCHAR(50) NOT NULL COMMENT '分类名称',
-    `category_code` VARCHAR(50) NOT NULL COMMENT '分类编码',
-    `description` VARCHAR(200) DEFAULT NULL,
-    `sort_order` INT NOT NULL DEFAULT 0,
-    `status` TINYINT NOT NULL DEFAULT 1,
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB COMMENT='竞赛分类表';
-
 CREATE TABLE IF NOT EXISTS `competition` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `competition_name` VARCHAR(100) NOT NULL COMMENT '竞赛名称',
-    `category_id` BIGINT NOT NULL COMMENT '分类ID',
     `organizer` VARCHAR(100) NOT NULL COMMENT '主办单位',
     `publisher_id` BIGINT NOT NULL COMMENT '发布人ID',
     `cover_image` VARCHAR(255) DEFAULT NULL,
@@ -138,7 +126,6 @@ CREATE TABLE IF NOT EXISTS `competition` (
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_comp_status` (`status`),
-    KEY `idx_comp_category` (`category_id`),
     KEY `idx_comp_publisher` (`publisher_id`)
 ) ENGINE=InnoDB COMMENT='竞赛信息表';
 
@@ -197,7 +184,7 @@ CREATE TABLE IF NOT EXISTS `competition_team_member` (
     KEY `idx_tm_team` (`team_id`)
 ) ENGINE=InnoDB COMMENT='团队成员表';
 
--- ===== 5. 成绩与证书 =====
+-- ===== 5. 成绩 =====
 
 CREATE TABLE IF NOT EXISTS `competition_result` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -218,17 +205,6 @@ CREATE TABLE IF NOT EXISTS `competition_result` (
     KEY `idx_result_student` (`student_id`),
     KEY `idx_result_publish` (`is_published`)
 ) ENGINE=InnoDB COMMENT='竞赛成绩表';
-
-CREATE TABLE IF NOT EXISTS `competition_certificate` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `result_id` BIGINT NOT NULL,
-    `certificate_no` VARCHAR(50) NOT NULL,
-    `certificate_url` VARCHAR(255) DEFAULT NULL,
-    `issue_date` DATE NOT NULL,
-    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '0-无效 1-有效',
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB COMMENT='证书信息表';
 
 -- ===== 6. 系统辅助表 =====
 
@@ -271,15 +247,6 @@ CREATE TABLE IF NOT EXISTS `sys_oper_log` (
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB COMMENT='操作日志表';
-
-CREATE TABLE IF NOT EXISTS `competition_favorite` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `user_id` BIGINT NOT NULL,
-    `competition_id` BIGINT NOT NULL,
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_fav` (`user_id`, `competition_id`)
-) ENGINE=InnoDB COMMENT='竞赛收藏表';
 
 CREATE TABLE IF NOT EXISTS `sys_config` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -336,19 +303,13 @@ INSERT INTO `sys_class` VALUES (2, 1, '计科2102班', '2021', 1, NOW());
 INSERT INTO `sys_class` VALUES (3, 2, '软工2201班', '2022', 1, NOW());
 INSERT INTO `sys_class` VALUES (4, 3, '电信2101班', '2021', 1, NOW());
 
--- 竞赛分类
-INSERT INTO `competition_category` VALUES (1, '学科竞赛', 'academic', '数学建模、程序设计等学科类竞赛', 1, 1, NOW());
-INSERT INTO `competition_category` VALUES (2, '创新创业', 'innovation', '互联网+、挑战杯等创新创业竞赛', 2, 1, NOW());
-INSERT INTO `competition_category` VALUES (3, '文体活动', 'sports', '运动会、文艺比赛等', 3, 1, NOW());
-INSERT INTO `competition_category` VALUES (4, '专业技能', 'professional', 'ACM、CTF、电子设计等专业技能竞赛', 4, 1, NOW());
-
 -- 竞赛数据
-INSERT INTO `competition` VALUES (1, '全国大学生数学建模竞赛', 1, '教育部高等教育司', 2, NULL, '全国大学生数学建模竞赛是国内规模最大的基础性学科竞赛，创办于1992年，每年一届。', '1. 每队3人；2. 赛期3天；3. 提交论文', '2026-05-01 00:00:00', '2026-06-30 23:59:59', '2026-09-10 00:00:00', '2026-09-13 00:00:00', '线上+线下', 3, 100, 2, 156, NOW(), NOW());
-INSERT INTO `competition` VALUES (2, 'ACM-ICPC程序设计竞赛', 4, '国际计算机学会', 2, NULL, 'ACM国际大学生程序设计竞赛是最具影响力的大学生程序设计竞赛。', '1. 每队3人；2. 5小时；3. C/C++/Java/Python', '2026-04-01 00:00:00', '2026-05-15 23:59:59', '2026-06-01 00:00:00', '2026-06-01 05:00:00', '计算机学院实验室', 3, 50, 2, 89, NOW(), NOW());
-INSERT INTO `competition` VALUES (3, '中国"互联网+"大学生创新创业大赛', 2, '教育部', 3, NULL, '中国"互联网+"大学生创新创业大赛，由教育部与政府、各高校共同主办。', '1. 团队参赛；2. 提交商业计划书；3. 现场路演', '2026-03-01 00:00:00', '2026-04-30 23:59:59', '2026-07-01 00:00:00', '2026-07-03 00:00:00', '学校大礼堂', 5, 30, 2, 210, NOW(), NOW());
-INSERT INTO `competition` VALUES (4, '全国大学生电子设计竞赛', 4, '教育部高等教育司', 3, NULL, '全国大学生电子设计竞赛是面向大学生的群众性科技活动。', '1. 每队3人；2. 4天3夜；3. 完成实物制作', '2026-05-15 00:00:00', '2026-07-15 23:59:59', '2026-08-01 00:00:00', '2026-08-04 00:00:00', '电子信息学院实验室', 3, 40, 1, 45, NOW(), NOW());
-INSERT INTO `competition` VALUES (5, '校园英语演讲比赛', 3, '外国语学院', 2, NULL, '提升大学生英语口语表达能力和跨文化交际能力。', '1. 个人赛；2. 3分钟定题演讲；3. 2分钟即兴', '2026-04-10 00:00:00', '2026-05-10 23:59:59', '2026-05-25 00:00:00', '2026-05-25 12:00:00', '外语学院报告厅', 1, 60, 2, 78, NOW(), NOW());
-INSERT INTO `competition` VALUES (6, '"蓝桥杯"软件设计大赛', 4, '工业和信息化部', 2, NULL, '蓝桥杯全国软件和信息技术专业人才大赛。', '1. 个人赛；2. 4小时；3. C/C++/Java', '2026-02-01 00:00:00', '2026-03-31 23:59:59', '2026-04-15 00:00:00', '2026-04-15 16:00:00', '线上', 1, 200, 4, 320, NOW(), NOW());
+INSERT INTO `competition` VALUES (1, '全国大学生数学建模竞赛', '教育部高等教育司', 2, NULL, '全国大学生数学建模竞赛是国内规模最大的基础性学科竞赛，创办于1992年，每年一届。', '1. 每队3人；2. 赛期3天；3. 提交论文', '2026-05-01 00:00:00', '2026-06-30 23:59:59', '2026-09-10 00:00:00', '2026-09-13 00:00:00', '线上+线下', 3, 100, 2, 156, NOW(), NOW());
+INSERT INTO `competition` VALUES (2, 'ACM-ICPC程序设计竞赛', '国际计算机学会', 2, NULL, 'ACM国际大学生程序设计竞赛是最具影响力的大学生程序设计竞赛。', '1. 每队3人；2. 5小时；3. C/C++/Java/Python', '2026-04-01 00:00:00', '2026-05-15 23:59:59', '2026-06-01 00:00:00', '2026-06-01 05:00:00', '计算机学院实验室', 3, 50, 2, 89, NOW(), NOW());
+INSERT INTO `competition` VALUES (3, '中国"互联网+"大学生创新创业大赛', '教育部', 3, NULL, '中国"互联网+"大学生创新创业大赛，由教育部与政府、各高校共同主办。', '1. 团队参赛；2. 提交商业计划书；3. 现场路演', '2026-03-01 00:00:00', '2026-04-30 23:59:59', '2026-07-01 00:00:00', '2026-07-03 00:00:00', '学校大礼堂', 5, 30, 2, 210, NOW(), NOW());
+INSERT INTO `competition` VALUES (4, '全国大学生电子设计竞赛', '教育部高等教育司', 3, NULL, '全国大学生电子设计竞赛是面向大学生的群众性科技活动。', '1. 每队3人；2. 4天3夜；3. 完成实物制作', '2026-05-15 00:00:00', '2026-07-15 23:59:59', '2026-08-01 00:00:00', '2026-08-04 00:00:00', '电子信息学院实验室', 3, 40, 1, 45, NOW(), NOW());
+INSERT INTO `competition` VALUES (5, '校园英语演讲比赛', '外国语学院', 2, NULL, '提升大学生英语口语表达能力和跨文化交际能力。', '1. 个人赛；2. 3分钟定题演讲；3. 2分钟即兴', '2026-04-10 00:00:00', '2026-05-10 23:59:59', '2026-05-25 00:00:00', '2026-05-25 12:00:00', '外语学院报告厅', 1, 60, 2, 78, NOW(), NOW());
+INSERT INTO `competition` VALUES (6, '"蓝桥杯"软件设计大赛', '工业和信息化部', 2, NULL, '蓝桥杯全国软件和信息技术专业人才大赛。', '1. 个人赛；2. 4小时；3. C/C++/Java', '2026-02-01 00:00:00', '2026-03-31 23:59:59', '2026-04-15 00:00:00', '2026-04-15 16:00:00', '线上', 1, 200, 4, 320, NOW(), NOW());
 
 -- 报名数据
 INSERT INTO `competition_registration` VALUES (1, 1, NULL, 4, 1, '13700000001', '想参加数学建模竞赛', NULL, 1, '符合条件', NOW(), NOW());
@@ -373,11 +334,6 @@ INSERT INTO `competition_team_member` VALUES (4, 3, 4, NOW(), 1);
 INSERT INTO `competition_result` VALUES (1, 6, 6, 8, NULL, 95.50, 3, 2, '二等奖', '表现优秀', 1, NOW(), NOW());
 INSERT INTO `competition_result` VALUES (2, 1, 1, 4, 1, 88.00, 12, 3, '三等奖', NULL, 1, NOW(), NOW());
 INSERT INTO `competition_result` VALUES (3, 1, 2, 5, 1, 91.50, 8, 2, '二等奖', '建模思路清晰', 1, NOW(), NOW());
-
--- 证书数据
-INSERT INTO `competition_certificate` VALUES (1, 1, 'CERT-2026-001', NULL, '2026-05-01', 1, NOW());
-INSERT INTO `competition_certificate` VALUES (2, 2, 'CERT-2026-002', NULL, '2026-09-20', 1, NOW());
-INSERT INTO `competition_certificate` VALUES (3, 3, 'CERT-2026-003', NULL, '2026-09-20', 1, NOW());
 
 -- 公告数据
 INSERT INTO `sys_notice` VALUES (1, '2026年竞赛报名须知', '<p>请各位同学认真阅读竞赛报名须知，按时完成报名。</p>', 2, 1, 1, NOW(), NOW());
