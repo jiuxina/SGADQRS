@@ -26,7 +26,6 @@ public class SystemService {
     private final DeptMapper deptMapper;
     private final MajorMapper majorMapper;
     private final ClazzMapper clazzMapper;
-    private final CompetitionCategoryMapper categoryMapper;
 
     // ===== 公告管理 =====
 
@@ -171,11 +170,4 @@ public class SystemService {
         return Result.success(clazzMapper.selectList(wrapper));
     }
 
-    // ===== 竞赛分类 =====
-
-    public Result<?> listCategories() {
-        return Result.success(categoryMapper.selectList(
-                new LambdaQueryWrapper<CompetitionCategory>().eq(CompetitionCategory::getStatus, 1).orderByAsc(CompetitionCategory::getSortOrder)
-        ));
-    }
 }

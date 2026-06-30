@@ -19,7 +19,6 @@ import java.util.List;
 public class ResultService {
 
     private final CompetitionResultMapper resultMapper;
-    private final CompetitionCertificateMapper certificateMapper;
     private final CompetitionMapper competitionMapper;
     private final UserMapper userMapper;
     private final CompetitionTeamMapper teamMapper;
@@ -85,22 +84,8 @@ public class ResultService {
             r.setIsPublished(1);
             r.setPublishTime(LocalDateTime.now());
             resultMapper.updateById(r);
-
-            // 获奖则生成证书
-            if (r.getAwardLevel() != null && r.getAwardLevel() <= 5) {
-                generateCertificate(r);
-            }
         });
         return Result.success("发布成功，共发布 " + results.size() + " 条成绩", null);
-    }
-
-    private void generateCertificate(CompetitionResult result) {
-        CompetitionCertificate cert = new CompetitionCertificate();
-        cert.setResultId(result.getId());
-        cert.setCertificateNo("CERT-" + System.currentTimeMillis() + "-" + result.getId());
-        cert.setIssueDate(LocalDateTime.now().toLocalDate());
-        cert.setStatus(1);
-        certificateMapper.insert(cert);
     }
 
     public Result<?> getStudentStats(Long studentId) {
@@ -117,13 +102,6 @@ public class ResultService {
                         .eq(CompetitionResult::getStudentId, studentId)
                         .eq(CompetitionResult::getIsPublished, 1)
                         .isNotNull(CompetitionResult::getAwardLevel)
-        ));
-        // 证书数量
-        stats.put("totalCertificates", certificateMapper.selectCount(
-                new LambdaQueryWrapper<CompetitionCertificate>()
-                        .eq(CompetitionCertificate::getStatus, 1)
-                        .inSql(CompetitionCertificate::getResultId,
-                                "SELECT id FROM competition_result WHERE student_id = " + studentId + " AND is_published = 1")
         ));
         return Result.success(stats);
     }

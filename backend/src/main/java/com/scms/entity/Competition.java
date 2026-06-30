@@ -12,7 +12,6 @@ public class Competition {
     private Long id;
 
     private String competitionName;
-    private Long categoryId;
     private String organizer;
     private Long publisherId;
     private String coverImage;
@@ -37,10 +36,6 @@ public class Competition {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
-    /** 分类名称（非数据库字段） */
-    @TableField(exist = false)
-    private String categoryName;
-
     /** 发布人姓名（非数据库字段） */
     @TableField(exist = false)
     private String publisherName;
@@ -52,10 +47,6 @@ public class Competition {
     /** 当前用户是否已报名（非数据库字段） */
     @TableField(exist = false)
     private Boolean hasRegistered;
-
-    /** 当前用户是否已收藏（非数据库字段） */
-    @TableField(exist = false)
-    private Boolean hasFavorited;
 
     /** 附件列表（非数据库字段） */
     @TableField(exist = false)

@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +16,6 @@ public class StatsService {
     private final CompetitionMapper competitionMapper;
     private final CompetitionRegistrationMapper registrationMapper;
     private final CompetitionResultMapper resultMapper;
-    private final CompetitionCategoryMapper categoryMapper;
     private final UserMapper userMapper;
 
     public Result<?> getAdminStats() {
@@ -40,20 +38,6 @@ public class StatsService {
 
         // 报名统计
         stats.put("totalRegistrations", registrationMapper.selectCount(null));
-
-        // 分类分布
-        List<CompetitionCategory> categories = categoryMapper.selectList(
-                new LambdaQueryWrapper<CompetitionCategory>().eq(CompetitionCategory::getStatus, 1)
-        );
-        List<Map<String, Object>> categoryStats = categories.stream().map(cat -> {
-            Map<String, Object> item = new HashMap<>();
-            item.put("name", cat.getCategoryName());
-            item.put("count", competitionMapper.selectCount(
-                    new LambdaQueryWrapper<Competition>().eq(Competition::getCategoryId, cat.getId())
-            ));
-            return item;
-        }).collect(Collectors.toList());
-        stats.put("categoryDistribution", categoryStats);
 
         // 获奖分布
         Map<String, Long> awardDistribution = new LinkedHashMap<>();

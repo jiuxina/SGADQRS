@@ -25,12 +25,11 @@ public class CompetitionController {
     public Result<?> list(@RequestParam(defaultValue = "1") int current,
                           @RequestParam(defaultValue = "10") int size,
                           @RequestParam(required = false) String keyword,
-                          @RequestParam(required = false) Long categoryId,
                           @RequestParam(required = false) Integer status,
                           @RequestParam(required = false) Long publisherId,
                           @AuthenticationPrincipal LoginUser loginUser) {
         Long userId = loginUser != null ? loginUser.getUserId() : null;
-        return competitionService.listCompetitions(current, size, keyword, categoryId, status, publisherId, userId);
+        return competitionService.listCompetitions(current, size, keyword, status, publisherId, userId);
     }
 
     @Operation(summary = "竞赛详情")
@@ -70,19 +69,6 @@ public class CompetitionController {
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public Result<?> delete(@PathVariable Long id) {
         return competitionService.deleteCompetition(id);
-    }
-
-    @Operation(summary = "竞赛分类列表")
-    @GetMapping("/categories")
-    public Result<?> categories() {
-        return competitionService.getCategories();
-    }
-
-    @Operation(summary = "收藏/取消收藏")
-    @PostMapping("/favorite/{competitionId}")
-    public Result<?> toggleFavorite(@PathVariable Long competitionId,
-                                    @AuthenticationPrincipal LoginUser loginUser) {
-        return competitionService.toggleFavorite(loginUser.getUserId(), competitionId);
     }
 
     @Operation(summary = "仪表盘统计")

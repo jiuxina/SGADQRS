@@ -13,9 +13,6 @@ public class CompetitionDTO {
     @NotBlank(message = "竞赛名称不能为空")
     private String competitionName;
 
-    @NotNull(message = "分类不能为空")
-    private Long categoryId;
-
     private String organizer;
     private String coverImage;
     private String description;

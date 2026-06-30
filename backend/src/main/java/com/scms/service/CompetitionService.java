@@ -5,8 +5,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
 import com.scms.common.Result;
 import com.scms.dto.CompetitionDTO;
-import com.scms.entity.*;
-import com.scms.mapper.*;
+import com.scms.entity.Competition;
+import com.scms.entity.CompetitionAttachment;
+import com.scms.entity.CompetitionRegistration;
+import com.scms.entity.User;
+import com.scms.mapper.CompetitionAttachmentMapper;
+import com.scms.mapper.CompetitionMapper;
+import com.scms.mapper.CompetitionRegistrationMapper;
+import com.scms.mapper.UserMapper;
 import com.scms.security.LoginUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,20 +27,17 @@ import java.util.List;
 public class CompetitionService {
 
     private final CompetitionMapper competitionMapper;
-    private final CompetitionCategoryMapper categoryMapper;
     private final CompetitionAttachmentMapper attachmentMapper;
     private final CompetitionRegistrationMapper registrationMapper;
-    private final CompetitionFavoriteMapper favoriteMapper;
     private final UserMapper userMapper;
 
-    public Result<?> listCompetitions(int current, int size, String keyword, Long categoryId,
+    public Result<?> listCompetitions(int current, int size, String keyword,
                                        Integer status, Long publisherId, Long currentUserId) {
         Page<Competition> page = new Page<>(current, size);
         LambdaQueryWrapper<Competition> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             wrapper.like(Competition::getCompetitionName, keyword);
         }
-        if (categoryId != null) wrapper.eq(Competition::getCategoryId, categoryId);
         if (status != null) wrapper.eq(Competition::getStatus, status);
         if (publisherId != null) wrapper.eq(Competition::getPublisherId, publisherId);
         // 学生只能看到已发布的竞赛
@@ -68,7 +71,6 @@ public class CompetitionService {
     public Result<?> createCompetition(CompetitionDTO dto, Long publisherId) {
         Competition comp = new Competition();
         comp.setCompetitionName(dto.getCompetitionName());
-        comp.setCategoryId(dto.getCategoryId());
         comp.setOrganizer(dto.getOrganizer());
         comp.setPublisherId(publisherId);
         comp.setCoverImage(dto.getCoverImage());
@@ -93,7 +95,6 @@ public class CompetitionService {
         if (comp == null) return Result.error("竞赛不存在");
 
         if (StringUtils.hasText(dto.getCompetitionName())) comp.setCompetitionName(dto.getCompetitionName());
-        if (dto.getCategoryId() != null) comp.setCategoryId(dto.getCategoryId());
         if (dto.getOrganizer() != null) comp.setOrganizer(dto.getOrganizer());
         if (dto.getDescription() != null) comp.setDescription(dto.getDescription());
         if (dto.getRules() != null) comp.setRules(dto.getRules());
@@ -127,32 +128,6 @@ public class CompetitionService {
         return Result.success("删除成功", null);
     }
 
-    public Result<?> getCategories() {
-        List<CompetitionCategory> categories = categoryMapper.selectList(
-                new LambdaQueryWrapper<CompetitionCategory>().eq(CompetitionCategory::getStatus, 1).orderByAsc(CompetitionCategory::getSortOrder)
-        );
-        return Result.success(categories);
-    }
-
-    @Transactional
-    public Result<?> toggleFavorite(Long userId, Long competitionId) {
-        CompetitionFavorite existing = favoriteMapper.selectOne(
-                new LambdaQueryWrapper<CompetitionFavorite>()
-                        .eq(CompetitionFavorite::getUserId, userId)
-                        .eq(CompetitionFavorite::getCompetitionId, competitionId)
-        );
-        if (existing != null) {
-            favoriteMapper.deleteById(existing.getId());
-            return Result.success("已取消收藏", false);
-        } else {
-            CompetitionFavorite fav = new CompetitionFavorite();
-            fav.setUserId(userId);
-            fav.setCompetitionId(competitionId);
-            favoriteMapper.insert(fav);
-            return Result.success("已收藏", true);
-        }
-    }
-
     public Result<?> getDashboardStats(Long userId, String role) {
         java.util.Map<String, Object> stats = new java.util.HashMap<>();
 
@@ -177,19 +152,12 @@ public class CompetitionService {
                     new LambdaQueryWrapper<CompetitionRegistration>().eq(CompetitionRegistration::getStudentId, userId)));
             stats.put("availableCompetitions", competitionMapper.selectCount(
                     new LambdaQueryWrapper<Competition>().eq(Competition::getStatus, 2)));
-            stats.put("myFavorites", favoriteMapper.selectCount(
-                    new LambdaQueryWrapper<CompetitionFavorite>().eq(CompetitionFavorite::getUserId, userId)));
         }
 
         return Result.success(stats);
     }
 
     private void fillCompetitionInfo(Competition c, Long currentUserId) {
-        // 分类名称
-        if (c.getCategoryId() != null) {
-            CompetitionCategory cat = categoryMapper.selectById(c.getCategoryId());
-            if (cat != null) c.setCategoryName(cat.getCategoryName());
-        }
         // 发布人姓名
         if (c.getPublisherId() != null) {
             User publisher = userMapper.selectById(c.getPublisherId());
@@ -205,12 +173,6 @@ public class CompetitionService {
                     new LambdaQueryWrapper<CompetitionRegistration>()
                             .eq(CompetitionRegistration::getCompetitionId, c.getId())
                             .eq(CompetitionRegistration::getStudentId, currentUserId)
-            ) > 0);
-            // 是否已收藏
-            c.setHasFavorited(favoriteMapper.selectCount(
-                    new LambdaQueryWrapper<CompetitionFavorite>()
-                            .eq(CompetitionFavorite::getCompetitionId, c.getId())
-                            .eq(CompetitionFavorite::getUserId, currentUserId)
             ) > 0);
         }
         // 自动判断竞赛状态
