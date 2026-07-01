@@ -11,7 +11,7 @@ import {
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import type { CompetitionItem, CompetitionCategory } from '../api/types'
+import type { CompetitionItem } from '../api/types'
 import CountdownTimer from '../components/CountdownTimer'
 import ConfettiEffect from '../components/ConfettiEffect'
 import FailureEffect from '../components/FailureEffect'
@@ -39,10 +39,8 @@ const statusBadgeLabel: Record<number, string> = {
 export default function StudentCompetitions() {
   const user = useAuthStore((s) => s.user)
   const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<number | 'all'>('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
-  const [categories, setCategories] = useState<CompetitionCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [current, setCurrent] = useState(1)
@@ -59,23 +57,18 @@ export default function StudentCompetitions() {
     try {
       const params: Record<string, unknown> = { current, size: PAGE_SIZE.DEFAULT, status: 2 }
       if (searchQuery) params.keyword = searchQuery
-      if (categoryFilter !== 'all') params.categoryId = categoryFilter
       if (statusFilter !== 'all') params.status = statusFilter
       else params.status = undefined // 显示所有已发布的
 
-      const [compResult, catResult] = await Promise.all([
-        competitionApi.list(params as Parameters<typeof competitionApi.list>[0]),
-        competitionApi.categories(),
-      ])
+      const compResult = await competitionApi.list(params as Parameters<typeof competitionApi.list>[0])
       setCompetitions(compResult.records)
       setTotal(compResult.total)
-      setCategories(catResult)
     } catch (err) {
       console.error('加载竞赛数据失败:', err)
     } finally {
       setLoading(false)
     }
-  }, [current, searchQuery, categoryFilter, statusFilter])
+  }, [current, searchQuery, statusFilter])
 
   useEffect(() => {
     loadData()
@@ -121,27 +114,6 @@ export default function StudentCompetitions() {
         </div>
       </motion.div>
 
-      {/* Category filter chips */}
-      <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.05 }} style={{ marginBottom: '10px' }}>
-        <div className="chip-row">
-          <button
-            className={`chip ${categoryFilter === 'all' ? 'active' : ''}`}
-            onClick={() => { setCategoryFilter('all'); setCurrent(1) }}
-          >
-            全部
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              className={`chip ${categoryFilter === cat.id ? 'active' : ''}`}
-              onClick={() => { setCategoryFilter(cat.id); setCurrent(1) }}
-            >
-              {cat.categoryName}
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
       {/* Status filter chips */}
       <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.1 }} style={{ marginBottom: '20px' }}>
         <div className="chip-row">
@@ -167,7 +139,7 @@ export default function StudentCompetitions() {
       {/* Competition cards grid */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={`${categoryFilter}-${statusFilter}`}
+          key={`${statusFilter}`}
           variants={staggerContainer}
           initial="hidden"
           animate="visible"

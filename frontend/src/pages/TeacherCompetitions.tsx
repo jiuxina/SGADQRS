@@ -106,7 +106,7 @@ export default function TeacherCompetitions() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>竞赛名称</th><th>分类</th><th>报名时间</th><th>报名人数</th><th>状态</th><th style={{ width: '120px' }}>操作</th>
+                <th>竞赛名称</th><th>报名时间</th><th>报名人数</th><th>状态</th><th style={{ width: '120px' }}>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -117,7 +117,6 @@ export default function TeacherCompetitions() {
                     <td style={{ fontWeight: '600', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {comp.competitionName}
                     </td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{comp.categoryName || '-'}</td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
                       {formatShortDate(comp.registrationStart)} ~ {formatShortDate(comp.registrationEnd)}
                     </td>
@@ -135,7 +134,7 @@ export default function TeacherCompetitions() {
                 )
               })}
               {competitions.length === 0 && !loading && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>暂无竞赛</td></tr>
+                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>暂无竞赛</td></tr>
               )}
             </tbody>
           </table>

@@ -54,7 +54,6 @@ export default function StudentAudit() {
           variants={fadeSlideUp} initial="hidden" animate="visible">
           <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>竞赛信息</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-            <div>分类：{competition.categoryName || '-'}</div>
             <div>地点：{competition.location || '-'}</div>
             <div>每队人数：{competition.maxMembers}</div>
             <div>报名截止：{competition.registrationEnd}</div>

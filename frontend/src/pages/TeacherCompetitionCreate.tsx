@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
@@ -7,13 +7,11 @@ import {
 import { fadeSlideUp, staggerContainer, staggerItem } from '../motion/variants'
 import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import type { CompetitionCategory } from '../api/types'
 import { toast } from '../components/Toast'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 interface FormData {
   name: string
-  categoryId: string
   organizer: string
   description: string
   rules: string
@@ -29,11 +27,9 @@ interface FormData {
 export default function TeacherCompetitionCreate() {
   const navigate = useNavigate()
   useAuthStore((s) => s.user)
-  const [categories, setCategories] = useState<CompetitionCategory[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState<FormData>({
     name: '',
-    categoryId: '',
     organizer: '',
     description: '',
     rules: '',
@@ -48,10 +44,6 @@ export default function TeacherCompetitionCreate() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const isMobile = useIsMobile()
 
-  useEffect(() => {
-    competitionApi.categories().then(setCategories).catch(console.error)
-  }, [])
-
   function updateField(field: keyof FormData, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
@@ -62,7 +54,6 @@ export default function TeacherCompetitionCreate() {
   function validate(): boolean {
     const newErrors: Partial<Record<keyof FormData, string>> = {}
     if (!form.name.trim()) newErrors.name = '请输入竞赛名称'
-    if (!form.categoryId) newErrors.categoryId = '请选择竞赛分类'
     if (!form.organizer.trim()) newErrors.organizer = '请输入主办单位'
     if (!form.registrationStart) newErrors.registrationStart = '请选择报名开始时间'
     if (!form.registrationEnd) newErrors.registrationEnd = '请选择报名截止时间'
@@ -76,7 +67,6 @@ export default function TeacherCompetitionCreate() {
     try {
       await competitionApi.create({
         competitionName: form.name,
-        categoryId: Number(form.categoryId),
         organizer: form.organizer,
         description: form.description,
         rules: form.rules,
@@ -101,7 +91,6 @@ export default function TeacherCompetitionCreate() {
     try {
       await competitionApi.create({
         competitionName: form.name,
-        categoryId: Number(form.categoryId),
         organizer: form.organizer,
         description: form.description,
         rules: form.rules,
@@ -160,22 +149,10 @@ export default function TeacherCompetitionCreate() {
             {errors.name && <div style={errorStyle}>{errors.name}</div>}
           </motion.div>
 
-          <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px', marginBottom: '20px' }} variants={staggerItem}>
-            <div>
-              <label style={labelStyle}>竞赛分类 <span style={{ color: 'var(--danger)' }}>*</span></label>
-              <select style={selectStyle} value={form.categoryId} onChange={(e) => updateField('categoryId', e.target.value)}>
-                <option value="">请选择分类</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.categoryName}</option>
-                ))}
-              </select>
-              {errors.categoryId && <div style={errorStyle}>{errors.categoryId}</div>}
-            </div>
-            <div>
-              <label style={labelStyle}>主办单位 <span style={{ color: 'var(--danger)' }}>*</span></label>
-              <input className="glass-input" placeholder="请输入主办单位" value={form.organizer} onChange={(e) => updateField('organizer', e.target.value)} />
-              {errors.organizer && <div style={errorStyle}>{errors.organizer}</div>}
-            </div>
+          <motion.div style={{ marginBottom: '20px' }} variants={staggerItem}>
+            <label style={labelStyle}>主办单位 <span style={{ color: 'var(--danger)' }}>*</span></label>
+            <input className="glass-input" placeholder="请输入主办单位" value={form.organizer} onChange={(e) => updateField('organizer', e.target.value)} />
+            {errors.organizer && <div style={errorStyle}>{errors.organizer}</div>}
           </motion.div>
 
           <motion.div style={fieldGroupStyle} variants={staggerItem}>

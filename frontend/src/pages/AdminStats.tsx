@@ -15,7 +15,6 @@ export default function AdminStats() {
 
   if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
 
-  const categoryDistribution = (stats?.categoryDistribution as Array<Record<string, unknown>>) || []
   const awardDistribution = (stats?.awardDistribution as Record<string, number>) || {}
 
   return (
@@ -35,23 +34,9 @@ export default function AdminStats() {
         ))}
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
         <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '20px' }}
           variants={fadeSlideUp} initial="hidden" animate="visible">
-          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>分类分布</div>
-          {categoryDistribution.map((cat) => (
-            <div key={String(cat.name)} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-primary)', flex: 1 }}>{String(cat.name)}</span>
-              <div style={{ flex: 2, height: 8, borderRadius: 4, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 4, background: 'var(--accent)', width: `${Math.min(Number(cat.count) * 10, 100)}%` }} />
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', width: 30, textAlign: 'right' }}>{String(cat.count)}</span>
-            </div>
-          ))}
-        </motion.div>
-
-        <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '20px' }}
-          variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.05 }}>
           <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>获奖分布</div>
           {Object.entries(awardDistribution).map(([name, count]) => (
             <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>

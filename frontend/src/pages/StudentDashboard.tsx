@@ -62,12 +62,6 @@ export default function StudentDashboard() {
         </motion.div>
 
         <motion.div className="bento-card" variants={staggerItem}>
-          <div className="bento-label">我的收藏</div>
-          <div className="bento-value">{(stats?.myFavorites as number) || 0}</div>
-          <div className="bento-sub">收藏的竞赛</div>
-        </motion.div>
-
-        <motion.div className="bento-card" variants={staggerItem}>
           <div className="bento-label">快捷入口</div>
           {quickActions.map((action) => (
             <div key={action.label} className="bento-action" onClick={() => navigate(action.path)}

@@ -145,7 +145,6 @@ export default function AdminCompetitions() {
               <tr>
                 <th>竞赛名称</th>
                 <th>发布者</th>
-                <th>分类</th>
                 <th>报名时间</th>
                 <th>报名人数</th>
                 <th>状态</th>
@@ -161,7 +160,6 @@ export default function AdminCompetitions() {
                       {comp.competitionName}
                     </td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{comp.publisherName || '-'}</td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{comp.categoryName || '未分类'}</td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
                       {formatShortDate(comp.registrationStart)} ~ {formatShortDate(comp.registrationEnd)}
                     </td>
@@ -197,7 +195,7 @@ export default function AdminCompetitions() {
               })}
               {competitions.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
                     未找到匹配的竞赛
                   </td>
                 </tr>
@@ -245,11 +243,6 @@ export default function AdminCompetitions() {
                 <span className={`glass-badge ${statusBadgeMap[selectedComp.status]?.cls}`} style={{ fontSize: '11px', padding: '3px 10px' }}>
                   {statusBadgeMap[selectedComp.status]?.label}
                 </span>
-                {selectedComp.categoryName && (
-                  <span className="glass-badge" style={{ fontSize: '11px', padding: '3px 10px', background: 'rgba(0,122,255,0.06)' }}>
-                    {selectedComp.categoryName}
-                  </span>
-                )}
               </div>
 
               {selectedComp.description && (
