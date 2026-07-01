@@ -1,9 +1,9 @@
 import { request } from '../request'
-import type { PageResult, CompetitionItem, CompetitionCategory, CompetitionDTO, DashboardStats } from '../types'
+import type { PageResult, CompetitionItem, CompetitionDTO, DashboardStats } from '../types'
 
 export const competitionApi = {
   /** 竞赛列表 */
-  list: (params: { current?: number; size?: number; keyword?: string; categoryId?: number; status?: number; publisherId?: number }) =>
+  list: (params: { current?: number; size?: number; keyword?: string; status?: number; publisherId?: number }) =>
     request.get<PageResult<CompetitionItem>>('/competition/list', { params }),
 
   /** 竞赛详情 */
@@ -21,12 +21,6 @@ export const competitionApi = {
 
   /** 删除竞赛 */
   delete: (id: number) => request.delete(`/competition/${id}`),
-
-  /** 竞赛分类列表 */
-  categories: () => request.get<CompetitionCategory[]>('/competition/categories'),
-
-  /** 收藏/取消收藏 */
-  toggleFavorite: (competitionId: number) => request.post(`/competition/favorite/${competitionId}`),
 
   /** 仪表盘统计 */
   dashboard: () => request.get<DashboardStats>('/competition/dashboard'),

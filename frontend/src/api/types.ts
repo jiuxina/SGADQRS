@@ -62,18 +62,9 @@ export interface UserItem {
 
 // ===== 竞赛相关 =====
 
-export interface CompetitionCategory {
-  id: number
-  categoryName: string
-  categoryCode: string
-  description: string | null
-}
-
 export interface CompetitionItem {
   id: number
   competitionName: string
-  categoryId: number
-  categoryName: string | null
   organizer: string
   publisherId: number
   publisherName: string | null
@@ -91,7 +82,6 @@ export interface CompetitionItem {
   viewCount: number
   registrationCount: number
   hasRegistered: boolean
-  hasFavorited: boolean
   attachments: CompetitionAttachment[]
   createTime: string
 }
@@ -107,7 +97,6 @@ export interface CompetitionAttachment {
 export interface CompetitionDTO {
   id?: number
   competitionName: string
-  categoryId: number
   organizer?: string
   coverImage?: string
   description?: string
