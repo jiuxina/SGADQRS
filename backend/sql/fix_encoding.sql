@@ -21,13 +21,11 @@ DELETE FROM `sys_message`;
 DELETE FROM `sys_notice`;
 DELETE FROM `sys_config`;
 DELETE FROM `sys_user_role`;
-DELETE FROM `sys_role_menu`;
 DELETE FROM `sys_user`;
 DELETE FROM `sys_role`;
 DELETE FROM `sys_class`;
 DELETE FROM `sys_major`;
 DELETE FROM `sys_dept`;
-DELETE FROM `sys_menu`;
 
 -- ===== 重置自增ID =====
 ALTER TABLE `sys_role` AUTO_INCREMENT = 1;
@@ -46,24 +44,24 @@ ALTER TABLE `sys_oper_log` AUTO_INCREMENT = 1;
 ALTER TABLE `sys_config` AUTO_INCREMENT = 1;
 
 -- ===== 重新插入角色数据 =====
-INSERT INTO `sys_role` VALUES (1, '管理员', 'admin', '系统管理员', 1, NOW());
-INSERT INTO `sys_role` VALUES (2, '教师', 'teacher', '教师角色', 1, NOW());
-INSERT INTO `sys_role` VALUES (3, '学生', 'student', '学生角色', 1, NOW());
+INSERT INTO `sys_role` VALUES (1, 'admin', '系统管理员', NOW());
+INSERT INTO `sys_role` VALUES (2, 'teacher', '教师角色', NOW());
+INSERT INTO `sys_role` VALUES (3, 'student', '学生角色', NOW());
 
 -- ===== 重新插入用户数据 =====
 -- 管理员账号（密码: admin123）
-INSERT INTO `sys_user` VALUES (1, 'admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '系统管理员', NULL, 1, '13800000000', 'admin@scms.com', 3, 1, NULL, NULL, NULL, NOW(), NOW(), NOW());
+INSERT INTO `sys_user` VALUES (1, 'admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '系统管理员', NULL, 3, 1, NULL, NULL, NULL, NOW(), NOW(), NOW());
 
 -- 教师账号（密码: 123456）
-INSERT INTO `sys_user` VALUES (2, 'T2024001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '张教授', NULL, 1, '13900000001', 'teacher1@scms.com', 2, 1, 1, NULL, NULL, NOW(), NOW(), NOW());
-INSERT INTO `sys_user` VALUES (3, 'T2024002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '李副教授', NULL, 2, '13900000002', 'teacher2@scms.com', 2, 1, 1, NULL, NULL, NOW(), NOW(), NOW());
+INSERT INTO `sys_user` VALUES (2, 'T2024001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '张教授', NULL, 2, 1, 1, NULL, NULL, NOW(), NOW(), NOW());
+INSERT INTO `sys_user` VALUES (3, 'T2024002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '李副教授', NULL, 2, 1, 1, NULL, NULL, NOW(), NOW(), NOW());
 
 -- 学生账号（密码: 123456）
-INSERT INTO `sys_user` VALUES (4, 'S20210001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '王明', NULL, 1, '13700000001', 'student1@scms.com', 1, 1, 1, 1, 1, NOW(), NOW(), NOW());
-INSERT INTO `sys_user` VALUES (5, 'S20210002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '李华', NULL, 2, '13700000002', 'student2@scms.com', 1, 1, 1, 1, 1, NOW(), NOW(), NOW());
-INSERT INTO `sys_user` VALUES (6, 'S20210003', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '赵强', NULL, 1, '13700000003', 'student3@scms.com', 1, 1, 1, 2, 2, NOW(), NOW(), NOW());
-INSERT INTO `sys_user` VALUES (7, 'S20220001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '陈静', NULL, 2, '13700000004', 'student4@scms.com', 1, 1, 1, 1, 1, NOW(), NOW(), NOW());
-INSERT INTO `sys_user` VALUES (8, 'S20220002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '刘洋', NULL, 1, '13700000005', 'student5@scms.com', 1, 1, 2, 3, 3, NOW(), NOW(), NOW());
+INSERT INTO `sys_user` VALUES (4, 'S20210001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '王明', NULL, 1, 1, 1, 1, 1, NOW(), NOW(), NOW());
+INSERT INTO `sys_user` VALUES (5, 'S20210002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '李华', NULL, 1, 1, 1, 1, 1, NOW(), NOW(), NOW());
+INSERT INTO `sys_user` VALUES (6, 'S20210003', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '赵强', NULL, 1, 1, 1, 2, 2, NOW(), NOW(), NOW());
+INSERT INTO `sys_user` VALUES (7, 'S20220001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '陈静', NULL, 1, 1, 1, 1, 1, NOW(), NOW(), NOW());
+INSERT INTO `sys_user` VALUES (8, 'S20220002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '刘洋', NULL, 1, 1, 2, 3, 3, NOW(), NOW(), NOW());
 
 -- 用户角色关联
 INSERT INTO `sys_user_role` VALUES (1, 1), (2, 2), (3, 2), (4, 3), (5, 3), (6, 3), (7, 3), (8, 3);
@@ -86,12 +84,12 @@ INSERT INTO `sys_class` VALUES (3, 2, '软工2201班', '2022', 1, NOW());
 INSERT INTO `sys_class` VALUES (4, 3, '电信2101班', '2021', 1, NOW());
 
 -- ===== 重新插入竞赛数据 =====
-INSERT INTO `competition` VALUES (1, '全国大学生数学建模竞赛', '教育部高等教育司', 2, NULL, '全国大学生数学建模竞赛是国内规模最大的基础性学科竞赛，创办于1992年，每年一届。', '1. 每队3人；2. 赛期3天；3. 提交论文', '2026-05-01 00:00:00', '2026-06-30 23:59:59', '2026-09-10 00:00:00', '2026-09-13 00:00:00', '线上+线下', 3, 100, 2, 156, NOW(), NOW());
-INSERT INTO `competition` VALUES (2, 'ACM-ICPC程序设计竞赛', '国际计算机学会', 2, NULL, 'ACM国际大学生程序设计竞赛是最具影响力的大学生程序设计竞赛。', '1. 每队3人；2. 5小时；3. C/C++/Java/Python', '2026-04-01 00:00:00', '2026-05-15 23:59:59', '2026-06-01 00:00:00', '2026-06-01 05:00:00', '计算机学院实验室', 3, 50, 2, 89, NOW(), NOW());
-INSERT INTO `competition` VALUES (3, '中国"互联网+"大学生创新创业大赛', '教育部', 3, NULL, '中国"互联网+"大学生创新创业大赛，由教育部与政府、各高校共同主办。', '1. 团队参赛；2. 提交商业计划书；3. 现场路演', '2026-03-01 00:00:00', '2026-04-30 23:59:59', '2026-07-01 00:00:00', '2026-07-03 00:00:00', '学校大礼堂', 5, 30, 2, 210, NOW(), NOW());
-INSERT INTO `competition` VALUES (4, '全国大学生电子设计竞赛', '教育部高等教育司', 3, NULL, '全国大学生电子设计竞赛是面向大学生的群众性科技活动。', '1. 每队3人；2. 4天3夜；3. 完成实物制作', '2026-05-15 00:00:00', '2026-07-15 23:59:59', '2026-08-01 00:00:00', '2026-08-04 00:00:00', '电子信息学院实验室', 3, 40, 1, 45, NOW(), NOW());
-INSERT INTO `competition` VALUES (5, '校园英语演讲比赛', '外国语学院', 2, NULL, '提升大学生英语口语表达能力和跨文化交际能力。', '1. 个人赛；2. 3分钟定题演讲；3. 2分钟即兴', '2026-04-10 00:00:00', '2026-05-10 23:59:59', '2026-05-25 00:00:00', '2026-05-25 12:00:00', '外语学院报告厅', 1, 60, 2, 78, NOW(), NOW());
-INSERT INTO `competition` VALUES (6, '"蓝桥杯"软件设计大赛', '工业和信息化部', 2, NULL, '蓝桥杯全国软件和信息技术专业人才大赛。', '1. 个人赛；2. 4小时；3. C/C++/Java', '2026-02-01 00:00:00', '2026-03-31 23:59:59', '2026-04-15 00:00:00', '2026-04-15 16:00:00', '线上', 1, 200, 4, 320, NOW(), NOW());
+INSERT INTO `competition` VALUES (1, '全国大学生数学建模竞赛', '教育部高等教育司', 2, NULL, '全国大学生数学建模竞赛是国内规模最大的基础性学科竞赛，创办于1992年，每年一届。', '1. 每队3人；2. 赛期3天；3. 提交论文', '2026-05-01 00:00:00', '2026-06-30 23:59:59', '2026-09-10 00:00:00', '2026-09-13 00:00:00', '线上+线下', 3, 100, 2, NOW(), NOW());
+INSERT INTO `competition` VALUES (2, 'ACM-ICPC程序设计竞赛', '国际计算机学会', 2, NULL, 'ACM国际大学生程序设计竞赛是最具影响力的大学生程序设计竞赛。', '1. 每队3人；2. 5小时；3. C/C++/Java/Python', '2026-04-01 00:00:00', '2026-05-15 23:59:59', '2026-06-01 00:00:00', '2026-06-01 05:00:00', '计算机学院实验室', 3, 50, 2, NOW(), NOW());
+INSERT INTO `competition` VALUES (3, '中国"互联网+"大学生创新创业大赛', '教育部', 3, NULL, '中国"互联网+"大学生创新创业大赛，由教育部与政府、各高校共同主办。', '1. 团队参赛；2. 提交商业计划书；3. 现场路演', '2026-03-01 00:00:00', '2026-04-30 23:59:59', '2026-07-01 00:00:00', '2026-07-03 00:00:00', '学校大礼堂', 5, 30, 2, NOW(), NOW());
+INSERT INTO `competition` VALUES (4, '全国大学生电子设计竞赛', '教育部高等教育司', 3, NULL, '全国大学生电子设计竞赛是面向大学生的群众性科技活动。', '1. 每队3人；2. 4天3夜；3. 完成实物制作', '2026-05-15 00:00:00', '2026-07-15 23:59:59', '2026-08-01 00:00:00', '2026-08-04 00:00:00', '电子信息学院实验室', 3, 40, 1, NOW(), NOW());
+INSERT INTO `competition` VALUES (5, '校园英语演讲比赛', '外国语学院', 2, NULL, '提升大学生英语口语表达能力和跨文化交际能力。', '1. 个人赛；2. 3分钟定题演讲；3. 2分钟即兴', '2026-04-10 00:00:00', '2026-05-10 23:59:59', '2026-05-25 00:00:00', '2026-05-25 12:00:00', '外语学院报告厅', 1, 60, 2, NOW(), NOW());
+INSERT INTO `competition` VALUES (6, '"蓝桥杯"软件设计大赛', '工业和信息化部', 2, NULL, '蓝桥杯全国软件和信息技术专业人才大赛。', '1. 个人赛；2. 4小时；3. C/C++/Java', '2026-02-01 00:00:00', '2026-03-31 23:59:59', '2026-04-15 00:00:00', '2026-04-15 16:00:00', '线上', 1, 200, 4, NOW(), NOW());
 
 -- ===== 重新插入报名数据 =====
 INSERT INTO `competition_registration` VALUES (1, 1, NULL, 4, 1, '13700000001', '想参加数学建模竞赛', NULL, 1, '符合条件', NOW(), NOW());
@@ -123,12 +121,12 @@ INSERT INTO `sys_notice` VALUES (2, '系统维护通知', '<p>系统将于本周
 INSERT INTO `sys_notice` VALUES (3, '全国大学生数学建模竞赛报名已开始', '<p>2026年全国大学生数学建模竞赛报名已正式启动，请有意愿的同学抓紧时间报名。</p>', 2, 1, 1, NOW(), NOW());
 
 -- ===== 重新插入消息数据 =====
-INSERT INTO `sys_message` VALUES (1, 4, '报名审核通过', '您报名的"全国大学生数学建模竞赛"已通过审核', 3, 1, NOW());
-INSERT INTO `sys_message` VALUES (2, 4, '成绩已发布', '"蓝桥杯"软件设计大赛成绩已发布，请查看', 4, 1, NOW());
-INSERT INTO `sys_message` VALUES (3, 5, '报名审核通过', '您报名的"全国大学生数学建模竞赛"已通过审核', 3, 1, NOW());
-INSERT INTO `sys_message` VALUES (4, 7, '报名被拒绝', '您报名的"校园英语演讲比赛"未通过审核，原因：名额已满', 3, 0, NOW());
-INSERT INTO `sys_message` VALUES (5, 2, '新报名通知', '学生王明报名了ACM-ICPC程序设计竞赛', 3, 0, NOW());
-INSERT INTO `sys_message` VALUES (6, 8, '竞赛提醒', '"蓝桥杯"软件设计大赛报名即将截止', 2, 0, NOW());
+INSERT INTO `sys_message` VALUES (1, 4, '报名审核通过', '您报名的"全国大学生数学建模竞赛"已通过审核', 1, NOW());
+INSERT INTO `sys_message` VALUES (2, 4, '成绩已发布', '"蓝桥杯"软件设计大赛成绩已发布，请查看', 1, NOW());
+INSERT INTO `sys_message` VALUES (3, 5, '报名审核通过', '您报名的"全国大学生数学建模竞赛"已通过审核', 1, NOW());
+INSERT INTO `sys_message` VALUES (4, 7, '报名被拒绝', '您报名的"校园英语演讲比赛"未通过审核，原因：名额已满', 0, NOW());
+INSERT INTO `sys_message` VALUES (5, 2, '新报名通知', '学生王明报名了ACM-ICPC程序设计竞赛', 0, NOW());
+INSERT INTO `sys_message` VALUES (6, 8, '竞赛提醒', '"蓝桥杯"软件设计大赛报名即将截止', 0, NOW());
 
 -- ===== 重新插入操作日志数据 =====
 INSERT INTO `sys_oper_log` VALUES (1, 1, 'admin', '审核竞赛', 'PUT', '/api/competition/1/audit', '{"status":2}', '127.0.0.1', 45, 1, NULL, NOW());
