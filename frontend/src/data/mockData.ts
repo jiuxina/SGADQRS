@@ -6,42 +6,29 @@
 // ─── Review Status (legacy) ────────────────────────
 export type ReviewStatus = 'pass' | 'fail' | 'pending' | 'reviewing'
 
-// ─── Competition Categories ────────────────────────
-export interface CompetitionCategory {
-  id: string; name: string; code: string; description: string; sortOrder: number
-}
-
-export const mockCategories: CompetitionCategory[] = [
-  { id: '1', name: '学科竞赛', code: 'subject', description: '数学、物理、程序设计等学科类竞赛', sortOrder: 1 },
-  { id: '2', name: '科技竞赛', code: 'tech', description: '人工智能、机器人、电子设计等科技类竞赛', sortOrder: 2 },
-  { id: '3', name: '创新创业', code: 'innovation', description: '互联网+、挑战杯等创新创业类竞赛', sortOrder: 3 },
-  { id: '4', name: '文体活动', code: 'culture', description: '文艺表演、体育竞技等文体类活动', sortOrder: 4 },
-  { id: '5', name: '社会实践', code: 'practice', description: '志愿服务、社会调研等实践类活动', sortOrder: 5 },
-]
-
 // ─── Competitions ──────────────────────────────────
 export interface Competition {
-  id: string; name: string; categoryId: string; organizer: string; publisherName: string
+  id: string; name: string; organizer: string; publisherName: string
   description: string; rules: string
   registrationStart: string; registrationEnd: string; competitionStart: string; competitionEnd: string
   location: string; maxMembers: number; maxTeams: number | null
   status: 'draft' | 'pending' | 'published' | 'ongoing' | 'ended' | 'rejected'
-  registeredCount: number; viewCount: number; isFavorite?: boolean
+  registeredCount: number; viewCount: number
 }
 
 export const mockCompetitions: Competition[] = [
-  { id: '1', name: '全国大学生人工智能大赛', categoryId: '2', organizer: '教育部高等学校计算机类教指委', publisherName: '王建国', description: '面向全国高校学生的AI技术竞赛，涵盖机器学习、深度学习、计算机视觉等方向。', rules: '每队3-5人，提交AI项目作品及答辩PPT', registrationStart: '2025-05-01', registrationEnd: '2025-06-15', competitionStart: '2025-07-01', competitionEnd: '2025-08-15', location: '线上初赛 + 北京决赛', maxMembers: 5, maxTeams: null, status: 'published', registeredCount: 128, viewCount: 3420 },
-  { id: '2', name: '中国"互联网+"大学生创新创业大赛', categoryId: '3', organizer: '教育部', publisherName: '李明华', description: '中国最大的大学生创新创业赛事，涵盖高教主赛道、青年红色筑梦之旅等。', rules: '团队参赛，需提交商业计划书和项目路演', registrationStart: '2025-04-15', registrationEnd: '2025-06-30', competitionStart: '2025-07-15', competitionEnd: '2025-10-30', location: '校赛→省赛→国赛', maxMembers: 5, maxTeams: 200, status: 'published', registeredCount: 256, viewCount: 5680 },
-  { id: '3', name: 'ACM-ICPC国际大学生程序设计竞赛', categoryId: '1', organizer: 'ACM', publisherName: '张伟', description: '全球最具影响力的大学生程序设计竞赛，考验算法设计与编程能力。', rules: '每队3人，5小时解决8-13道算法题', registrationStart: '2025-06-01', registrationEnd: '2025-07-15', competitionStart: '2025-10-01', competitionEnd: '2025-11-30', location: '区域赛 + World Finals', maxMembers: 3, maxTeams: null, status: 'published', registeredCount: 86, viewCount: 2150, isFavorite: true },
-  { id: '4', name: '全国大学生数学建模竞赛', categoryId: '1', organizer: '中国工业与应用数学学会', publisherName: '陈静', description: '全国规模最大的数学建模竞赛，培养团队合作和数学应用能力。', rules: '每队3人，3天内完成数学建模论文', registrationStart: '2025-06-15', registrationEnd: '2025-08-31', competitionStart: '2025-09-05', competitionEnd: '2025-09-08', location: '各参赛学校', maxMembers: 3, maxTeams: null, status: 'published', registeredCount: 312, viewCount: 4200 },
-  { id: '5', name: '全国大学生电子设计竞赛', categoryId: '2', organizer: '教育部、工业和信息化部', publisherName: '刘强', description: '面向电子信息类专业的实践性竞赛，考验电路设计与编程能力。', rules: '每队3人，四天三夜完成电子系统设计', registrationStart: '2025-05-20', registrationEnd: '2025-07-10', competitionStart: '2025-07-25', competitionEnd: '2025-07-29', location: '各参赛学校实验室', maxMembers: 3, maxTeams: 150, status: 'ongoing', registeredCount: 95, viewCount: 1820 },
-  { id: '6', name: '全国大学生信息安全竞赛', categoryId: '2', organizer: '教育部高等学校信息安全教指委', publisherName: '赵刚', description: '信息安全领域全国性竞赛，含CTF、创新作品赛等赛道。', rules: 'CTF赛制：解题+攻防，创新赛：提交作品', registrationStart: '2025-05-10', registrationEnd: '2025-06-20', competitionStart: '2025-07-15', competitionEnd: '2025-08-20', location: '线上初赛 + 线下决赛', maxMembers: 4, maxTeams: null, status: 'published', registeredCount: 76, viewCount: 1650 },
-  { id: '7', name: '全国大学生机器人大赛', categoryId: '2', organizer: '中国自动化协会', publisherName: '王建国', description: '面向机器人设计与控制的全国性竞赛。', rules: '每队3-5人，提交机器人作品并现场演示', registrationStart: '2025-04-01', registrationEnd: '2025-05-31', competitionStart: '2025-06-15', competitionEnd: '2025-07-30', location: '上海世博展览馆', maxMembers: 5, maxTeams: 100, status: 'ongoing', registeredCount: 88, viewCount: 2340 },
-  { id: '8', name: '中国大学生计算机设计大赛', categoryId: '2', organizer: '教育部高等学校计算机类教指委', publisherName: '李明华', description: '涵盖软件应用、微课、大数据、物联网等方向的综合性计算机设计竞赛。', rules: '每队1-5人，按类别提交作品', registrationStart: '2025-03-15', registrationEnd: '2025-05-15', competitionStart: '2025-06-01', competitionEnd: '2025-08-30', location: '省赛→国赛', maxMembers: 5, maxTeams: null, status: 'ended', registeredCount: 420, viewCount: 6800 },
-  { id: '9', name: '全国大学生英语竞赛', categoryId: '1', organizer: '高等学校大学外语教学指导委员会', publisherName: '陈静', description: '全国规模最大的大学生英语综合能力竞赛。', rules: '个人参赛，分A/B/C/D四类', registrationStart: '2025-03-01', registrationEnd: '2025-03-20', competitionStart: '2025-04-13', competitionEnd: '2025-05-18', location: '各参赛学校', maxMembers: 1, maxTeams: null, status: 'ended', registeredCount: 650, viewCount: 8900 },
-  { id: '10', name: '"挑战杯"大学生课外学术科技作品竞赛', categoryId: '3', organizer: '共青团中央、中国科协', publisherName: '张伟', description: '中国大学生课外学术科技领域最高荣誉赛事。', rules: '团队参赛，提交学术论文或科技发明作品', registrationStart: '2025-06-01', registrationEnd: '2025-09-30', competitionStart: '2025-10-15', competitionEnd: '2025-12-01', location: '校赛→省赛→国赛', maxMembers: 8, maxTeams: null, status: 'published', registeredCount: 45, viewCount: 1230 },
-  { id: '11', name: '全国大学生物联网设计竞赛', categoryId: '2', organizer: '教育部高等学校计算机类教指委', publisherName: '刘强', description: '物联网技术应用与创新设计竞赛。', rules: '每队3-5人，提交物联网作品及演示', registrationStart: '2025-05-01', registrationEnd: '2025-07-01', competitionStart: '2025-08-01', competitionEnd: '2025-08-30', location: '区域赛 + 总决赛', maxMembers: 5, maxTeams: 120, status: 'published', registeredCount: 67, viewCount: 1480 },
-  { id: '12', name: '全国大学生统计建模大赛', categoryId: '1', organizer: '中国统计教育学会', publisherName: '陈静', description: '统计建模与数据分析领域全国性竞赛。', rules: '每队3人，提交统计建模论文', registrationStart: '2025-04-10', registrationEnd: '2025-06-10', competitionStart: '2025-06-20', competitionEnd: '2025-07-20', location: '线上提交', maxMembers: 3, maxTeams: null, status: 'ongoing', registeredCount: 178, viewCount: 2890 },
+  { id: '1', name: '全国大学生人工智能大赛', organizer: '教育部高等学校计算机类教指委', publisherName: '王建国', description: '面向全国高校学生的AI技术竞赛，涵盖机器学习、深度学习、计算机视觉等方向。', rules: '每队3-5人，提交AI项目作品及答辩PPT', registrationStart: '2025-05-01', registrationEnd: '2025-06-15', competitionStart: '2025-07-01', competitionEnd: '2025-08-15', location: '线上初赛 + 北京决赛', maxMembers: 5, maxTeams: null, status: 'published', registeredCount: 128, viewCount: 3420 },
+  { id: '2', name: '中国"互联网+"大学生创新创业大赛', organizer: '教育部', publisherName: '李明华', description: '中国最大的大学生创新创业赛事，涵盖高教主赛道、青年红色筑梦之旅等。', rules: '团队参赛，需提交商业计划书和项目路演', registrationStart: '2025-04-15', registrationEnd: '2025-06-30', competitionStart: '2025-07-15', competitionEnd: '2025-10-30', location: '校赛→省赛→国赛', maxMembers: 5, maxTeams: 200, status: 'published', registeredCount: 256, viewCount: 5680 },
+  { id: '3', name: 'ACM-ICPC国际大学生程序设计竞赛', organizer: 'ACM', publisherName: '张伟', description: '全球最具影响力的大学生程序设计竞赛，考验算法设计与编程能力。', rules: '每队3人，5小时解决8-13道算法题', registrationStart: '2025-06-01', registrationEnd: '2025-07-15', competitionStart: '2025-10-01', competitionEnd: '2025-11-30', location: '区域赛 + World Finals', maxMembers: 3, maxTeams: null, status: 'published', registeredCount: 86, viewCount: 2150 },
+  { id: '4', name: '全国大学生数学建模竞赛', organizer: '中国工业与应用数学学会', publisherName: '陈静', description: '全国规模最大的数学建模竞赛，培养团队合作和数学应用能力。', rules: '每队3人，3天内完成数学建模论文', registrationStart: '2025-06-15', registrationEnd: '2025-08-31', competitionStart: '2025-09-05', competitionEnd: '2025-09-08', location: '各参赛学校', maxMembers: 3, maxTeams: null, status: 'published', registeredCount: 312, viewCount: 4200 },
+  { id: '5', name: '全国大学生电子设计竞赛', organizer: '教育部、工业和信息化部', publisherName: '刘强', description: '面向电子信息类专业的实践性竞赛，考验电路设计与编程能力。', rules: '每队3人，四天三夜完成电子系统设计', registrationStart: '2025-05-20', registrationEnd: '2025-07-10', competitionStart: '2025-07-25', competitionEnd: '2025-07-29', location: '各参赛学校实验室', maxMembers: 3, maxTeams: 150, status: 'ongoing', registeredCount: 95, viewCount: 1820 },
+  { id: '6', name: '全国大学生信息安全竞赛', organizer: '教育部高等学校信息安全教指委', publisherName: '赵刚', description: '信息安全领域全国性竞赛，含CTF、创新作品赛等赛道。', rules: 'CTF赛制：解题+攻防，创新赛：提交作品', registrationStart: '2025-05-10', registrationEnd: '2025-06-20', competitionStart: '2025-07-15', competitionEnd: '2025-08-20', location: '线上初赛 + 线下决赛', maxMembers: 4, maxTeams: null, status: 'published', registeredCount: 76, viewCount: 1650 },
+  { id: '7', name: '全国大学生机器人大赛', organizer: '中国自动化协会', publisherName: '王建国', description: '面向机器人设计与控制的全国性竞赛。', rules: '每队3-5人，提交机器人作品并现场演示', registrationStart: '2025-04-01', registrationEnd: '2025-05-31', competitionStart: '2025-06-15', competitionEnd: '2025-07-30', location: '上海世博展览馆', maxMembers: 5, maxTeams: 100, status: 'ongoing', registeredCount: 88, viewCount: 2340 },
+  { id: '8', name: '中国大学生计算机设计大赛', organizer: '教育部高等学校计算机类教指委', publisherName: '李明华', description: '涵盖软件应用、微课、大数据、物联网等方向的综合性计算机设计竞赛。', rules: '每队1-5人，按类别提交作品', registrationStart: '2025-03-15', registrationEnd: '2025-05-15', competitionStart: '2025-06-01', competitionEnd: '2025-08-30', location: '省赛→国赛', maxMembers: 5, maxTeams: null, status: 'ended', registeredCount: 420, viewCount: 6800 },
+  { id: '9', name: '全国大学生英语竞赛', organizer: '高等学校大学外语教学指导委员会', publisherName: '陈静', description: '全国规模最大的大学生英语综合能力竞赛。', rules: '个人参赛，分A/B/C/D四类', registrationStart: '2025-03-01', registrationEnd: '2025-03-20', competitionStart: '2025-04-13', competitionEnd: '2025-05-18', location: '各参赛学校', maxMembers: 1, maxTeams: null, status: 'ended', registeredCount: 650, viewCount: 8900 },
+  { id: '10', name: '"挑战杯"大学生课外学术科技作品竞赛', organizer: '共青团中央、中国科协', publisherName: '张伟', description: '中国大学生课外学术科技领域最高荣誉赛事。', rules: '团队参赛，提交学术论文或科技发明作品', registrationStart: '2025-06-01', registrationEnd: '2025-09-30', competitionStart: '2025-10-15', competitionEnd: '2025-12-01', location: '校赛→省赛→国赛', maxMembers: 8, maxTeams: null, status: 'published', registeredCount: 45, viewCount: 1230 },
+  { id: '11', name: '全国大学生物联网设计竞赛', organizer: '教育部高等学校计算机类教指委', publisherName: '刘强', description: '物联网技术应用与创新设计竞赛。', rules: '每队3-5人，提交物联网作品及演示', registrationStart: '2025-05-01', registrationEnd: '2025-07-01', competitionStart: '2025-08-01', competitionEnd: '2025-08-30', location: '区域赛 + 总决赛', maxMembers: 5, maxTeams: 120, status: 'published', registeredCount: 67, viewCount: 1480 },
+  { id: '12', name: '全国大学生统计建模大赛', organizer: '中国统计教育学会', publisherName: '陈静', description: '统计建模与数据分析领域全国性竞赛。', rules: '每队3人，提交统计建模论文', registrationStart: '2025-04-10', registrationEnd: '2025-06-10', competitionStart: '2025-06-20', competitionEnd: '2025-07-20', location: '线上提交', maxMembers: 3, maxTeams: null, status: 'ongoing', registeredCount: 178, viewCount: 2890 },
 ]
 
 // ─── Registrations ─────────────────────────────────
