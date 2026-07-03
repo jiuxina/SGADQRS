@@ -24,8 +24,6 @@ export interface UserInfo {
   role: string
   userType: number
   gender: number | null
-  phone: string | null
-  email: string | null
   deptId: number | null
   majorId: number | null
   classId: number | null
@@ -48,10 +46,7 @@ export interface UserItem {
   realName: string
   avatar: string | null
   gender: number
-  phone: string | null
-  email: string | null
   userType: number
-  status: number
   deptId: number | null
   majorId: number | null
   classId: number | null
@@ -79,7 +74,6 @@ export interface CompetitionItem {
   maxMembers: number
   maxTeams: number | null
   status: number
-  viewCount: number
   registrationCount: number
   hasRegistered: boolean
   attachments: CompetitionAttachment[]
@@ -198,7 +192,6 @@ export interface MessageItem {
   userId: number
   messageTitle: string
   messageContent: string
-  messageType: number
   isRead: number
   createTime: string
 }

@@ -10,7 +10,7 @@ export const noticeApi = {
 }
 
 export const messageApi = {
-  list: (params: { current?: number; size?: number; messageType?: number; isRead?: number }) =>
+  list: (params: { current?: number; size?: number; isRead?: number }) =>
     request.get<PageResult<MessageItem>>('/message/list', { params }),
   markRead: (id: number) => request.put(`/message/${id}/read`),
   markAllRead: () => request.put('/message/readAll'),

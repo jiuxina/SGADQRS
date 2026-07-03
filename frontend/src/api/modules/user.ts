@@ -3,7 +3,7 @@ import type { PageResult, UserItem } from '../types'
 
 export const userApi = {
   /** 用户列表 */
-  list: (params: { current?: number; size?: number; keyword?: string; userType?: number; status?: number }) =>
+  list: (params: { current?: number; size?: number; keyword?: string; userType?: number }) =>
     request.get<PageResult<UserItem>>('/user/list', { params }),
 
   /** 用户详情 */
@@ -14,9 +14,6 @@ export const userApi = {
 
   /** 更新用户 */
   update: (data: Record<string, unknown>) => request.put('/user', data),
-
-  /** 修改用户状态 */
-  updateStatus: (id: number, status: number) => request.put(`/user/${id}/status`, null, { params: { status } }),
 
   /** 删除用户 */
   delete: (id: number) => request.delete(`/user/${id}`),
