@@ -48,7 +48,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 user.getRealName(),
                 roleCode,
                 user.getUserType(),
-                user.getStatus(),
                 user.getAvatar()
         );
     }

@@ -22,9 +22,8 @@ public class UserController {
     public Result<?> list(@RequestParam(defaultValue = "1") int current,
                           @RequestParam(defaultValue = "10") int size,
                           @RequestParam(required = false) String keyword,
-                          @RequestParam(required = false) Integer userType,
-                          @RequestParam(required = false) Integer status) {
-        return userService.listUsers(current, size, keyword, userType, status);
+                          @RequestParam(required = false) Integer userType) {
+        return userService.listUsers(current, size, keyword, userType);
     }
 
     @Operation(summary = "用户详情")
@@ -43,12 +42,6 @@ public class UserController {
     @PutMapping
     public Result<?> update(@RequestBody UserDTO dto) {
         return userService.updateUser(dto);
-    }
-
-    @Operation(summary = "修改用户状态")
-    @PutMapping("/{id}/status")
-    public Result<?> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
-        return userService.updateUserStatus(id, status);
     }
 
     @Operation(summary = "删除用户")

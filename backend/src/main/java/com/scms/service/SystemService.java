@@ -70,23 +70,21 @@ public class SystemService {
 
     // ===== 消息管理 =====
 
-    public Result<?> listMessages(int current, int size, Long userId, Integer messageType, Integer isRead) {
+    public Result<?> listMessages(int current, int size, Long userId, Integer isRead) {
         Page<Message> page = new Page<>(current, size);
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         if (userId != null) wrapper.eq(Message::getUserId, userId);
-        if (messageType != null) wrapper.eq(Message::getMessageType, messageType);
         if (isRead != null) wrapper.eq(Message::getIsRead, isRead);
         wrapper.orderByDesc(Message::getCreateTime);
         return Result.success(new PageResult<>(messageMapper.selectPage(page, wrapper)));
     }
 
     @Transactional
-    public Result<?> sendMessage(Long userId, String title, String content, Integer type) {
+    public Result<?> sendMessage(Long userId, String title, String content) {
         Message msg = new Message();
         msg.setUserId(userId);
         msg.setMessageTitle(title);
         msg.setMessageContent(content);
-        msg.setMessageType(type);
         msg.setIsRead(0);
         messageMapper.insert(msg);
         return Result.success("发送成功", null);

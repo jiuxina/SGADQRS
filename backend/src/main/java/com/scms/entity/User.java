@@ -16,14 +16,9 @@ public class User {
     private String realName;
     private String avatar;
     private Integer gender;
-    private String phone;
-    private String email;
 
     /** 用户类型：1-学生 2-教师 3-管理员 */
     private Integer userType;
-
-    /** 状态：0-禁用 1-启用 */
-    private Integer status;
 
     private Long deptId;
     private Long majorId;

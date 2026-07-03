@@ -28,8 +28,6 @@ public class Competition {
     /** 状态：0-草稿 1-待审核 2-已发布 3-进行中 4-已结束 5-已驳回 */
     private Integer status;
 
-    private Integer viewCount;
-
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

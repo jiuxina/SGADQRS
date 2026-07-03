@@ -21,10 +21,9 @@ public class MessageController {
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") int current,
                           @RequestParam(defaultValue = "10") int size,
-                          @RequestParam(required = false) Integer messageType,
                           @RequestParam(required = false) Integer isRead,
                           @AuthenticationPrincipal LoginUser loginUser) {
-        return systemService.listMessages(current, size, loginUser.getUserId(), messageType, isRead);
+        return systemService.listMessages(current, size, loginUser.getUserId(), isRead);
     }
 
     @Operation(summary = "标记已读")

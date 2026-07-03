@@ -19,7 +19,6 @@ public class LoginUser implements UserDetails {
     private String realName;
     private String roleCode;
     private Integer userType;
-    private Integer status;
     private String avatar;
 
     @Override
@@ -34,7 +33,7 @@ public class LoginUser implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return status != 0;
+        return true;
     }
 
     @Override
@@ -44,6 +43,6 @@ public class LoginUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return status != 0;
+        return true;
     }
 }

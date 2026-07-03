@@ -18,8 +18,6 @@ public class UserDTO {
 
     private String avatar;
     private Integer gender;
-    private String phone;
-    private String email;
     private Integer userType;
     private Long deptId;
     private Long majorId;

@@ -14,8 +14,6 @@ public class Message {
     private Long userId;
     private String messageTitle;
     private String messageContent;
-    /** 类型：1-系统 2-竞赛 3-报名 4-成绩 */
-    private Integer messageType;
     /** 是否已读：0-未读 1-已读 */
     private Integer isRead;
 

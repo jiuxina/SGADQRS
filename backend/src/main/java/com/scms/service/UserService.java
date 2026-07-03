@@ -27,16 +27,14 @@ public class UserService {
     private final MajorMapper majorMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public Result<?> listUsers(int current, int size, String keyword, Integer userType, Integer status) {
+    public Result<?> listUsers(int current, int size, String keyword, Integer userType) {
         Page<User> page = new Page<>(current, size);
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             wrapper.and(w -> w.like(User::getUsername, keyword)
-                    .or().like(User::getRealName, keyword)
-                    .or().like(User::getPhone, keyword));
+                    .or().like(User::getRealName, keyword));
         }
         if (userType != null) wrapper.eq(User::getUserType, userType);
-        if (status != null) wrapper.eq(User::getStatus, status);
         wrapper.orderByDesc(User::getCreateTime);
 
         Page<User> result = userMapper.selectPage(page, wrapper);
@@ -65,13 +63,10 @@ public class UserService {
         user.setRealName(dto.getRealName());
         user.setAvatar(dto.getAvatar());
         user.setGender(dto.getGender());
-        user.setPhone(dto.getPhone());
-        user.setEmail(dto.getEmail());
         user.setUserType(dto.getUserType());
         user.setDeptId(dto.getDeptId());
         user.setMajorId(dto.getMajorId());
         user.setClassId(dto.getClassId());
-        user.setStatus(1);
         userMapper.insert(user);
 
         // 分配角色
@@ -90,8 +85,6 @@ public class UserService {
 
         if (StringUtils.hasText(dto.getRealName())) user.setRealName(dto.getRealName());
         if (dto.getGender() != null) user.setGender(dto.getGender());
-        if (dto.getPhone() != null) user.setPhone(dto.getPhone());
-        if (dto.getEmail() != null) user.setEmail(dto.getEmail());
         if (dto.getAvatar() != null) user.setAvatar(dto.getAvatar());
         if (dto.getDeptId() != null) user.setDeptId(dto.getDeptId());
         if (dto.getMajorId() != null) user.setMajorId(dto.getMajorId());
@@ -101,15 +94,6 @@ public class UserService {
         }
         userMapper.updateById(user);
         return Result.success("更新成功", null);
-    }
-
-    @Transactional
-    public Result<?> updateUserStatus(Long id, Integer status) {
-        User user = userMapper.selectById(id);
-        if (user == null) return Result.error("用户不存在");
-        user.setStatus(status);
-        userMapper.updateById(user);
-        return Result.success(status == 1 ? "已启用" : "已禁用", null);
     }
 
     @Transactional

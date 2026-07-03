@@ -52,10 +52,6 @@ public class CompetitionService {
         Competition comp = competitionMapper.selectById(id);
         if (comp == null) return Result.error("竞赛不存在");
 
-        // 增加浏览量
-        comp.setViewCount(comp.getViewCount() + 1);
-        competitionMapper.updateById(comp);
-
         fillCompetitionInfo(comp, currentUserId);
 
         // 加载附件
@@ -84,7 +80,6 @@ public class CompetitionService {
         comp.setMaxMembers(dto.getMaxMembers());
         comp.setMaxTeams(dto.getMaxTeams());
         comp.setStatus(dto.getStatus());
-        comp.setViewCount(0);
         competitionMapper.insert(comp);
         return Result.success("创建成功", comp);
     }

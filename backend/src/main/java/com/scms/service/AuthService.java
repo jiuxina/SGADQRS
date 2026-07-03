@@ -35,9 +35,6 @@ public class AuthService {
         if (user == null) {
             return Result.error("用户不存在");
         }
-        if (user.getStatus() == 0) {
-            return Result.error("账号已被禁用");
-        }
 
         // 验证角色
         UserRole userRole = userRoleMapper.selectOne(
@@ -88,7 +85,6 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setRealName(dto.getUsername());
         user.setUserType("teacher".equals(dto.getRole()) ? 2 : 1);
-        user.setStatus(1);
 
         userMapper.insert(user);
 
@@ -131,8 +127,6 @@ public class AuthService {
         info.put("role", roleCode);
         info.put("userType", user.getUserType());
         info.put("gender", user.getGender());
-        info.put("phone", user.getPhone());
-        info.put("email", user.getEmail());
         info.put("deptId", user.getDeptId());
         info.put("majorId", user.getMajorId());
         info.put("classId", user.getClassId());
