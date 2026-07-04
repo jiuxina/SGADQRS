@@ -2,10 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   Bell,
-  Trophy,
-  UserCheck,
-  BarChart3,
-  Settings,
   CheckCheck,
   ChevronRight,
 } from 'lucide-react'
@@ -15,40 +11,8 @@ import { useAuthStore } from '../store/authStore'
 import type { MessageItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 
-type FilterKey = 'all' | 1 | 2 | 3 | 4
-
-const filterLabels: Record<string, string> = {
-  all: '全部',
-  1: '系统通知',
-  2: '竞赛通知',
-  3: '报名通知',
-  4: '成绩通知',
-}
-
-const typeIconMap: Record<number, typeof Bell> = {
-  1: Settings,
-  2: Trophy,
-  3: UserCheck,
-  4: BarChart3,
-}
-
-const typeColorBg: Record<number, string> = {
-  1: 'rgba(142,142,147,0.08)',
-  2: 'rgba(0,122,255,0.08)',
-  3: 'rgba(52,199,89,0.08)',
-  4: 'rgba(175,82,222,0.08)',
-}
-
-const typeColorFg: Record<number, string> = {
-  1: 'var(--gray-1)',
-  2: 'var(--accent)',
-  3: 'var(--success)',
-  4: '#AF52DE',
-}
-
 export default function StudentMessages() {
   const user = useAuthStore((s) => s.user)
-  const [filter, setFilter] = useState<FilterKey>('all')
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [messages, setMessages] = useState<MessageItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,16 +21,14 @@ export default function StudentMessages() {
     if (!user) return
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
-      if (filter !== 'all') params.messageType = filter
-      const result = await messageApi.list(params as Parameters<typeof messageApi.list>[0])
+      const result = await messageApi.list({ current: 1, size: PAGE_SIZE.LARGE })
       setMessages(result.records)
     } catch (err) {
       console.error('加载消息失败:', err)
     } finally {
       setLoading(false)
     }
-  }, [user, filter])
+  }, [user])
 
   useEffect(() => {
     loadData()
@@ -142,23 +104,6 @@ export default function StudentMessages() {
         )}
       </motion.div>
 
-      <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.05 }} style={{ marginBottom: '20px' }}>
-        <div className="chip-row">
-          {(Object.keys(filterLabels) as string[]).map((key) => (
-            <button
-              key={key}
-              className={`chip ${filter === (key === 'all' ? 'all' : Number(key)) ? 'active' : ''}`}
-              onClick={() => setFilter(key === 'all' ? 'all' : Number(key) as FilterKey)}
-            >
-              {filterLabels[key]}
-              {key === 'all' && unreadCount > 0 && (
-                <span style={{ marginLeft: '4px', fontSize: '11px', fontWeight: '700' }}>({unreadCount})</span>
-              )}
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
       <motion.div
         className="glass-card glass-card-vertical glass-card-static"
         style={{ padding: '0' }}
@@ -169,14 +114,13 @@ export default function StudentMessages() {
       >
         <AnimatePresence mode="wait">
           <motion.div
-            key={String(filter)}
+            key="messages"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
             exit={{ opacity: 0, transition: { duration: 0.1 } }}
           >
             {messages.map((notif, i) => {
-              const IconComp = typeIconMap[notif.messageType] ?? Bell
               const isRead = notif.isRead === 1
               const isExpanded = expandedId === notif.id
               return (
@@ -195,11 +139,11 @@ export default function StudentMessages() {
                   >
                     <div style={{
                       width: 34, height: 34, borderRadius: '10px',
-                      background: typeColorBg[notif.messageType] ?? 'var(--gray-5)',
+                      background: 'rgba(142,142,147,0.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       flexShrink: 0, marginTop: '1px',
                     }}>
-                      <IconComp size={16} strokeWidth={1.5} color={typeColorFg[notif.messageType] ?? 'var(--gray-1)'} />
+                      <Bell size={16} strokeWidth={1.5} color="var(--gray-1)" />
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>

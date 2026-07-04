@@ -27,7 +27,7 @@ export default function AdminUsers() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [editingUser, setEditingUser] = useState<UserItem | null>(null)
-  const [editForm, setEditForm] = useState({ realName: '', phone: '', email: '', deptId: '' })
+  const [editForm, setEditForm] = useState({ realName: '', deptId: '' })
   const [depts, setDepts] = useState<DeptItem[]>([])
   const [saving, setSaving] = useState(false)
   const isMobile = useIsMobile()
@@ -54,21 +54,10 @@ export default function AdminUsers() {
     deptApi.list().then(setDepts).catch(() => {})
   }, [])
 
-  const handleToggleStatus = async (id: number, currentStatus: number) => {
-    try {
-      await userApi.updateStatus(id, currentStatus === 1 ? 0 : 1)
-      loadData()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '操作失败')
-    }
-  }
-
   const openEditModal = (user: UserItem) => {
     setEditingUser(user)
     setEditForm({
       realName: user.realName || '',
-      phone: user.phone || '',
-      email: user.email || '',
       deptId: user.deptId != null ? String(user.deptId) : '',
     })
   }
@@ -80,8 +69,6 @@ export default function AdminUsers() {
       await userApi.update({
         id: editingUser.id,
         realName: editForm.realName,
-        phone: editForm.phone || null,
-        email: editForm.email || null,
         deptId: editForm.deptId ? Number(editForm.deptId) : null,
       })
       setEditingUser(null)
@@ -176,11 +163,8 @@ export default function AdminUsers() {
                   <th>真实姓名</th>
                   <th>角色</th>
                   <th>所属院系</th>
-                  <th>手机号</th>
-                  <th>邮箱</th>
-                  <th>状态</th>
                   <th>最后登录</th>
-                  <th style={{ width: '140px' }}>操作</th>
+                  <th style={{ width: '80px' }}>操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -199,28 +183,9 @@ export default function AdminUsers() {
                       </span>
                     </td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{user.deptName || '-'}</td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{user.phone || '-'}</td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{user.email || '-'}</td>
-                    <td>
-                      {user.status === 1 ? (
-                        <span style={{ fontSize: '12px', color: 'var(--success)' }}>正常</span>
-                      ) : (
-                        <span style={{ fontSize: '12px', color: 'var(--danger)' }}>已禁用</span>
-                      )}
-                    </td>
                     <td style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>{formatDate((user as unknown as Record<string, unknown>).lastLoginTime as string ?? null)}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '4px' }}>
-                        <button
-                          className="text-btn"
-                          style={{
-                            fontSize: '12px',
-                            color: user.status === 1 ? 'var(--danger)' : 'var(--success)',
-                          }}
-                          onClick={() => handleToggleStatus(user.id, user.status)}
-                        >
-                          {user.status === 1 ? '禁用' : '启用'}
-                        </button>
                         <button className="text-btn blue" style={{ fontSize: '12px' }}
                           onClick={() => openEditModal(user)}>
                           编辑
@@ -231,7 +196,7 @@ export default function AdminUsers() {
                 ))}
                 {users.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
                       未找到匹配的用户
                     </td>
                   </tr>
@@ -286,26 +251,6 @@ export default function AdminUsers() {
                     className="glass-input"
                     value={editForm.realName}
                     onChange={(e) => setEditForm((f) => ({ ...f, realName: e.target.value }))}
-                    style={{ width: '100%', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>手机号</label>
-                  <input
-                    className="glass-input"
-                    value={editForm.phone}
-                    onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
-                    placeholder="请输入手机号"
-                    style={{ width: '100%', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>邮箱</label>
-                  <input
-                    className="glass-input"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
-                    placeholder="请输入邮箱"
                     style={{ width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>

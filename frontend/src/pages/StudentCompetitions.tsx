@@ -77,7 +77,7 @@ export default function StudentCompetitions() {
   const handleRegister = async (comp: CompetitionItem) => {
     if (!user) return
     try {
-      await registrationApi.register({ competitionId: comp.id, contactPhone: user.phone || '' })
+      await registrationApi.register({ competitionId: comp.id, contactPhone: '' })
       // 显示庆祝特效
       setShowConfetti(true)
       loadData()

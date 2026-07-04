@@ -1,15 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Bell, Trophy, UserCheck, BarChart3, Settings, CheckCheck, ChevronRight } from 'lucide-react'
+import { Bell, CheckCheck, ChevronRight } from 'lucide-react'
 import { fadeSlideUp, expandCollapse } from '../motion/variants'
 import { messageApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { MessageItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
-
-const typeIconMap: Record<number, typeof Bell> = { 1: Settings, 2: Trophy, 3: UserCheck, 4: BarChart3 }
-const typeColorBg: Record<number, string> = { 1: 'rgba(142,142,147,0.08)', 2: 'rgba(0,122,255,0.08)', 3: 'rgba(52,199,89,0.08)', 4: 'rgba(175,82,222,0.08)' }
-const typeColorFg: Record<number, string> = { 1: 'var(--gray-1)', 2: 'var(--accent)', 3: 'var(--success)', 4: '#AF52DE' }
 
 export default function TeacherMessages() {
   const user = useAuthStore((s) => s.user)
@@ -71,14 +67,13 @@ export default function TeacherMessages() {
 
       <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0' }} variants={fadeSlideUp} initial="hidden" animate="visible">
         {messages.map((notif, i) => {
-          const IconComp = typeIconMap[notif.messageType] ?? Bell
           const isRead = notif.isRead === 1
           const isExpanded = expandedId === notif.id
           return (
             <div key={notif.id}>
               <div onClick={() => handleToggleExpand(notif.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 18px', cursor: 'pointer', borderBottom: i < messages.length - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none', background: !isRead ? 'rgba(0,122,255,0.02)' : 'transparent' }}>
-                <div style={{ width: 34, height: 34, borderRadius: '10px', background: typeColorBg[notif.messageType] ?? 'var(--gray-5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                  <IconComp size={16} strokeWidth={1.5} color={typeColorFg[notif.messageType] ?? 'var(--gray-1)'} />
+                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(142,142,147,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                  <Bell size={16} strokeWidth={1.5} color="var(--gray-1)" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
