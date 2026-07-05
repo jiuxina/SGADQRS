@@ -7,6 +7,7 @@ import com.scms.common.Result;
 import com.scms.dto.UserDTO;
 import com.scms.entity.User;
 import com.scms.entity.UserRole;
+import com.scms.mapper.ClazzMapper;
 import com.scms.mapper.DeptMapper;
 import com.scms.mapper.MajorMapper;
 import com.scms.mapper.UserMapper;
@@ -25,6 +26,7 @@ public class UserService {
     private final UserRoleMapper userRoleMapper;
     private final DeptMapper deptMapper;
     private final MajorMapper majorMapper;
+    private final ClazzMapper clazzMapper;
     private final PasswordEncoder passwordEncoder;
 
     public Result<?> listUsers(int current, int size, String keyword, Integer userType) {
@@ -117,6 +119,10 @@ public class UserService {
         if (user.getMajorId() != null) {
             var major = majorMapper.selectById(user.getMajorId());
             if (major != null) user.setMajorName(major.getMajorName());
+        }
+        if (user.getClassId() != null) {
+            var clazz = clazzMapper.selectById(user.getClassId());
+            if (clazz != null) user.setClassName(clazz.getClassName());
         }
     }
 }
