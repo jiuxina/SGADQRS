@@ -52,6 +52,7 @@ export interface UserItem {
   classId: number | null
   deptName: string | null
   majorName: string | null
+  className: string | null
   createTime: string
 }
 
