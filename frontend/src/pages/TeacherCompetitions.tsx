@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { X, UserCheck, UserX } from 'lucide-react'
+import { X, UserCheck, UserX, ImageIcon, ExternalLink } from 'lucide-react'
+
+/** 拼接后端图片完整 URL */
+function resolveCoverUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
+  return url
+}
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
@@ -106,7 +113,7 @@ export default function TeacherCompetitions() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>竞赛名称</th><th>报名时间</th><th>报名人数</th><th>状态</th><th style={{ width: '120px' }}>操作</th>
+                <th style={{ width: '60px' }}>封面</th><th>竞赛名称</th><th>报名时间</th><th>报名人数</th><th>状态</th><th style={{ width: '120px' }}>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -114,6 +121,24 @@ export default function TeacherCompetitions() {
                 const badge = statusBadgeMap[comp.status] || statusBadgeMap[0]
                 return (
                   <tr key={comp.id}>
+                    <td>
+                      {resolveCoverUrl(comp.coverImage) ? (
+                        <img
+                          src={resolveCoverUrl(comp.coverImage)!}
+                          alt=""
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                          style={{ width: '44px', height: '32px', objectFit: 'cover', borderRadius: '6px', display: 'block' }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: '44px', height: '32px', borderRadius: '6px',
+                          background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.10) 100%)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <ImageIcon size={14} strokeWidth={1.2} style={{ color: 'var(--text-tertiary)', opacity: 0.4 }} />
+                        </div>
+                      )}
+                    </td>
                     <td style={{ fontWeight: '600', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {comp.competitionName}
                     </td>
@@ -134,7 +159,7 @@ export default function TeacherCompetitions() {
                 )
               })}
               {competitions.length === 0 && !loading && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>暂无竞赛</td></tr>
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>暂无竞赛</td></tr>
               )}
             </tbody>
           </table>
@@ -189,6 +214,7 @@ export default function TeacherCompetitions() {
                       <th>学生姓名</th>
                       <th>队伍</th>
                       <th>联系电话</th>
+                      <th>附件</th>
                       <th>报名时间</th>
                       <th>状态</th>
                       <th style={{ width: '130px' }}>操作</th>
@@ -204,6 +230,16 @@ export default function TeacherCompetitions() {
                             {reg.teamName || <span style={{ color: 'var(--text-tertiary)' }}>个人</span>}
                           </td>
                           <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{reg.contactPhone || '-'}</td>
+                          <td style={{ fontSize: '12px' }}>
+                            {reg.attachmentUrl ? (
+                              <a href={reg.attachmentUrl} target="_blank" rel="noopener noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: 'var(--accent)', textDecoration: 'none' }}>
+                                <ExternalLink size={11} strokeWidth={1.5} /> 查看
+                              </a>
+                            ) : (
+                              <span style={{ color: 'var(--text-tertiary)' }}>-</span>
+                            )}
+                          </td>
                           <td style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>{reg.createTime?.slice(0, 10) || '-'}</td>
                           <td>
                             <span className={`glass-badge ${badge.cls}`} style={{ fontSize: '11px', padding: '2px 8px' }}>

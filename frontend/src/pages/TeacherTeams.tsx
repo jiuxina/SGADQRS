@@ -50,7 +50,7 @@ export default function TeacherTeams() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>团队名称</th><th>竞赛</th><th>队长</th><th>成员数</th><th>状态</th><th style={{ width: '140px' }}>操作</th>
+              <th>团队名称</th><th>团队口号</th><th>竞赛</th><th>队长</th><th>成员数</th><th>状态</th><th style={{ width: '140px' }}>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -59,6 +59,7 @@ export default function TeacherTeams() {
               return (
                 <tr key={team.id}>
                   <td style={{ fontWeight: '600' }}>{team.teamName}</td>
+                  <td style={{ color: 'var(--text-secondary)', fontSize: '12px', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.teamSlogan || '-'}</td>
                   <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{team.competitionName || '-'}</td>
                   <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{team.leaderName || '-'}</td>
                   <td>{team.members?.length || 0}</td>

@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
   ArrowLeft,
+  Upload,
+  X,
+  ImageIcon,
 } from 'lucide-react'
 import { fadeSlideUp, staggerContainer, staggerItem } from '../motion/variants'
-import { competitionApi } from '../api'
+import { competitionApi, fileApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { toast } from '../components/Toast'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -28,6 +31,9 @@ export default function TeacherCompetitionCreate() {
   const navigate = useNavigate()
   useAuthStore((s) => s.user)
   const [submitting, setSubmitting] = useState(false)
+  const [coverImage, setCoverImage] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<FormData>({
     name: '',
     organizer: '',
@@ -51,6 +57,29 @@ export default function TeacherCompetitionCreate() {
     }
   }
 
+  /** 拼接后端图片完整 URL */
+  function resolveCoverUrl(url: string | null | undefined): string | null {
+    if (!url) return null
+    if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
+    return url
+  }
+
+  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await fileApi.upload(file)
+      setCoverImage(url)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '封面上传失败')
+    } finally {
+      setUploading(false)
+      // 重置 input 以允许重复上传同一文件
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   function validate(): boolean {
     const newErrors: Partial<Record<keyof FormData, string>> = {}
     if (!form.name.trim()) newErrors.name = '请输入竞赛名称'
@@ -68,6 +97,7 @@ export default function TeacherCompetitionCreate() {
       await competitionApi.create({
         competitionName: form.name,
         organizer: form.organizer,
+        coverImage: coverImage ?? undefined,
         description: form.description,
         rules: form.rules,
         registrationStart: form.registrationStart + ' 00:00:00',
@@ -92,6 +122,7 @@ export default function TeacherCompetitionCreate() {
       await competitionApi.create({
         competitionName: form.name,
         organizer: form.organizer,
+        coverImage: coverImage ?? undefined,
         description: form.description,
         rules: form.rules,
         registrationStart: form.registrationStart + ' 00:00:00',
@@ -147,6 +178,66 @@ export default function TeacherCompetitionCreate() {
             <label style={labelStyle}>竞赛名称 <span style={{ color: 'var(--danger)' }}>*</span></label>
             <input className="glass-input" placeholder="请输入竞赛名称" value={form.name} onChange={(e) => updateField('name', e.target.value)} />
             {errors.name && <div style={errorStyle}>{errors.name}</div>}
+          </motion.div>
+
+          {/* 封面图上传 */}
+          <motion.div style={fieldGroupStyle} variants={staggerItem}>
+            <label style={labelStyle}>封面图</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleCoverUpload}
+            />
+            {resolveCoverUrl(coverImage) ? (
+              <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
+                <img
+                  src={resolveCoverUrl(coverImage)!}
+                  alt="封面预览"
+                  style={{
+                    width: '100%', height: '180px', objectFit: 'cover',
+                    borderRadius: '12px', display: 'block',
+                    border: '1px solid rgba(255,255,255,0.55)',
+                  }}
+                />
+                <button
+                  onClick={() => setCoverImage(null)}
+                  style={{
+                    position: 'absolute', top: '8px', right: '8px',
+                    width: '28px', height: '28px', borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff',
+                  }}
+                >
+                  <X size={14} strokeWidth={2} />
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => !uploading && fileInputRef.current?.click()}
+                style={{
+                  width: '100%', maxWidth: '320px', height: '140px',
+                  border: '2px dashed var(--accent)',
+                  borderRadius: '12px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: '8px', cursor: uploading ? 'wait' : 'pointer',
+                  background: 'rgba(99,102,241,0.04)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {uploading ? (
+                  <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>上传中...</span>
+                ) : (
+                  <>
+                    <Upload size={24} strokeWidth={1.5} style={{ color: 'var(--accent)', opacity: 0.6 }} />
+                    <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>点击上传封面图</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', opacity: 0.6 }}>支持 JPG / PNG，建议 16:9</span>
+                  </>
+                )}
+              </div>
+            )}
           </motion.div>
 
           <motion.div style={{ marginBottom: '20px' }} variants={staggerItem}>

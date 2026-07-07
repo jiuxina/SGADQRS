@@ -9,6 +9,8 @@ import {
   Users,
   Calendar,
   UserCheck,
+  Phone,
+  ExternalLink,
 } from 'lucide-react'
 import DigitRoller from '../components/DigitRoller'
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
@@ -227,6 +229,22 @@ export default function StudentRegistration() {
                     <Calendar size={12} strokeWidth={1.5} />
                     报名时间：{formatDate(reg.createTime)}
                   </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                    <Phone size={12} strokeWidth={1.5} />
+                    联系电话：{reg.contactPhone || '-'}
+                  </div>
+                  {reg.attachmentUrl && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                      <ExternalLink size={12} strokeWidth={1.5} />
+                      附件：<a href={reg.attachmentUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>查看附件</a>
+                    </div>
+                  )}
+                  {reg.auditTime && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                      <Clock size={12} strokeWidth={1.5} />
+                      审核时间：{formatDate(reg.auditTime)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Audit remark */}
@@ -328,6 +346,24 @@ export default function StudentRegistration() {
                     </span>
                   </div>
                 </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>联系电话</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.contactPhone || '-'}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>审核时间</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.auditTime ? formatDate(selectedReg.auditTime) : '-'}</div>
+                  </div>
+                </div>
+                {selectedReg.attachmentUrl && (
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>附件</div>
+                    <a href={selectedReg.attachmentUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: 'var(--accent)', textDecoration: 'none' }}>
+                      查看附件
+                    </a>
+                  </div>
+                )}
                 {selectedReg.auditRemark && (
                   <div>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>审核备注</div>

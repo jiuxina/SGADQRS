@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Search, X, Eye, Calendar, MapPin, Users, Clock } from 'lucide-react'
+
+/** 拼接后端图片完整 URL */
+function resolveCoverUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
+  return url
+}
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { competitionApi } from '../api'
 import type { CompetitionItem } from '../api/types'
@@ -27,6 +34,13 @@ const statusBadgeMap: Record<number, { cls: string; label: string }> = {
   4: { cls: 'fail', label: '已结束' },
   0: { cls: 'pending', label: '草稿' },
   5: { cls: 'fail', label: '已驳回' },
+}
+
+function formatFileSize(bytes?: number | null): string {
+  if (bytes == null || bytes <= 0) return '-'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export default function AdminCompetitions() {
@@ -235,6 +249,19 @@ export default function AdminCompetitions() {
                 <X size={16} strokeWidth={1.5} />
               </button>
 
+              {/* Cover Image */}
+              {resolveCoverUrl(selectedComp.coverImage) && (
+                <img
+                  src={resolveCoverUrl(selectedComp.coverImage)!}
+                  alt={selectedComp.competitionName}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                  style={{
+                    width: '100%', height: '180px', objectFit: 'cover',
+                    borderRadius: '12px', marginBottom: '16px',
+                  }}
+                />
+              )}
+
               <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px', paddingRight: '24px' }}>
                 {selectedComp.competitionName}
               </div>
@@ -299,8 +326,10 @@ export default function AdminCompetitions() {
                   <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>附件</div>
                   {selectedComp.attachments.map((att) => (
                     <a key={att.id} href={att.fileUrl} target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'block', fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', padding: '4px 0' }}>
-                      {att.fileName}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', padding: '4px 0' }}>
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.fileName}</span>
+                      {att.fileType && <span style={{ color: 'var(--text-tertiary)', fontSize: '11px', flexShrink: 0 }}>{att.fileType}</span>}
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: '11px', flexShrink: 0 }}>{formatFileSize(att.fileSize)}</span>
                     </a>
                   ))}
                 </div>

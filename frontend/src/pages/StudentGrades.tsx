@@ -304,6 +304,11 @@ export default function StudentGrades() {
                   <Users size={12} strokeWidth={1.5} />
                   队伍：{result.teamName || <span style={{ color: 'var(--text-tertiary)' }}>个人参赛</span>}
                 </div>
+                {result.remark && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                    备注：{result.remark}
+                  </div>
+                )}
                 {result.publishTime && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
                     <Calendar size={12} strokeWidth={1.5} />

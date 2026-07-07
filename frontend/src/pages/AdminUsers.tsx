@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'motion/react'
 import { Search, X } from 'lucide-react'
 import DigitRoller from '../components/DigitRoller'
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
-import { userApi, deptApi } from '../api'
-import type { UserItem, DeptItem } from '../api/types'
+import { userApi, deptApi, fileApi } from '../api'
+import type { UserItem, DeptItem, MajorItem, ClassItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -27,9 +27,12 @@ export default function AdminUsers() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [editingUser, setEditingUser] = useState<UserItem | null>(null)
-  const [editForm, setEditForm] = useState({ realName: '', deptId: '' })
+  const [editForm, setEditForm] = useState({ realName: '', deptId: '', gender: '0', majorId: '', classId: '', avatar: '' })
   const [depts, setDepts] = useState<DeptItem[]>([])
+  const [majors, setMajors] = useState<MajorItem[]>([])
+  const [classes, setClasses] = useState<ClassItem[]>([])
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const isMobile = useIsMobile()
 
   const loadData = useCallback(async () => {
@@ -54,11 +57,31 @@ export default function AdminUsers() {
     deptApi.list().then(setDepts).catch(() => {})
   }, [])
 
+  useEffect(() => {
+    if (editForm.deptId) {
+      deptApi.majors(Number(editForm.deptId)).then(setMajors).catch(() => setMajors([]))
+    } else {
+      setMajors([])
+    }
+  }, [editForm.deptId])
+
+  useEffect(() => {
+    if (editForm.majorId) {
+      deptApi.classes(Number(editForm.majorId)).then(setClasses).catch(() => setClasses([]))
+    } else {
+      setClasses([])
+    }
+  }, [editForm.majorId])
+
   const openEditModal = (user: UserItem) => {
     setEditingUser(user)
     setEditForm({
       realName: user.realName || '',
       deptId: user.deptId != null ? String(user.deptId) : '',
+      gender: String(user.gender ?? 0),
+      majorId: user.majorId != null ? String(user.majorId) : '',
+      classId: user.classId != null ? String(user.classId) : '',
+      avatar: user.avatar || '',
     })
   }
 
@@ -70,6 +93,10 @@ export default function AdminUsers() {
         id: editingUser.id,
         realName: editForm.realName,
         deptId: editForm.deptId ? Number(editForm.deptId) : null,
+        gender: Number(editForm.gender),
+        majorId: editForm.majorId ? Number(editForm.majorId) : null,
+        classId: editForm.classId ? Number(editForm.classId) : null,
+        avatar: editForm.avatar || null,
       })
       setEditingUser(null)
       loadData()
@@ -77,6 +104,20 @@ export default function AdminUsers() {
       toast.error(err instanceof Error ? err.message : '保存失败')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await fileApi.upload(file)
+      setEditForm((f) => ({ ...f, avatar: url }))
+    } catch {
+      toast.error('头像上传失败')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -163,6 +204,9 @@ export default function AdminUsers() {
                   <th>真实姓名</th>
                   <th>角色</th>
                   <th>所属院系</th>
+                  <th>性别</th>
+                  <th>专业</th>
+                  <th>班级</th>
                   <th>最后登录</th>
                   <th style={{ width: '80px' }}>操作</th>
                 </tr>
@@ -183,6 +227,16 @@ export default function AdminUsers() {
                       </span>
                     </td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{user.deptName || '-'}</td>
+                    <td>
+                      <span
+                        className={`glass-badge ${user.gender === 1 ? 'pass' : user.gender === 2 ? 'pending' : ''}`}
+                        style={{ fontSize: '11px', padding: '2px 8px' }}
+                      >
+                        {user.gender === 1 ? '男' : user.gender === 2 ? '女' : '-'}
+                      </span>
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{user.majorName || '-'}</td>
+                    <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{user.className || '-'}</td>
                     <td style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>{formatDate((user as unknown as Record<string, unknown>).lastLoginTime as string ?? null)}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '4px' }}>
@@ -196,7 +250,7 @@ export default function AdminUsers() {
                 ))}
                 {users.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
                       未找到匹配的用户
                     </td>
                   </tr>
@@ -223,7 +277,7 @@ export default function AdminUsers() {
           >
             <motion.div
               className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: isMobile ? 'calc(100vw - 32px)' : '440px', padding: '24px', position: 'relative' }}
+              style={{ width: isMobile ? 'calc(100vw - 32px)' : '520px', padding: '24px', position: 'relative' }}
               variants={panelSlideIn}
               initial="initial"
               animate="animate"
@@ -255,16 +309,85 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div>
+                  <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>性别</label>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    {[{ value: '1', label: '男' }, { value: '2', label: '女' }, { value: '0', label: '未知' }].map((opt) => (
+                      <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}>
+                        <input
+                          type="radio"
+                          name="gender"
+                          value={opt.value}
+                          checked={editForm.gender === opt.value}
+                          onChange={(e) => setEditForm((f) => ({ ...f, gender: e.target.value }))}
+                        />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>头像</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {editForm.avatar && (
+                      <img
+                        src={editForm.avatar}
+                        alt="头像预览"
+                        style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }}
+                      />
+                    )}
+                    <label className="btn primary" style={{ cursor: 'pointer', fontSize: '12px', margin: 0 }}>
+                      {uploading ? '上传中...' : '上传头像'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        style={{ display: 'none' }}
+                        disabled={uploading}
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div>
                   <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>所属院系</label>
                   <select
                     className="glass-input"
                     value={editForm.deptId}
-                    onChange={(e) => setEditForm((f) => ({ ...f, deptId: e.target.value }))}
+                    onChange={(e) => setEditForm((f) => ({ ...f, deptId: e.target.value, majorId: '', classId: '' }))}
                     style={{ width: '100%', boxSizing: 'border-box' }}
                   >
                     <option value="">未分配</option>
                     {depts.map((d) => (
                       <option key={d.id} value={d.id}>{d.deptName}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>专业</label>
+                  <select
+                    className="glass-input"
+                    value={editForm.majorId}
+                    onChange={(e) => setEditForm((f) => ({ ...f, majorId: e.target.value, classId: '' }))}
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                    disabled={!editForm.deptId}
+                  >
+                    <option value="">{editForm.deptId ? '未选择' : '请先选择院系'}</option>
+                    {majors.map((m) => (
+                      <option key={m.id} value={m.id}>{m.majorName}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>班级</label>
+                  <select
+                    className="glass-input"
+                    value={editForm.classId}
+                    onChange={(e) => setEditForm((f) => ({ ...f, classId: e.target.value }))}
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                    disabled={!editForm.majorId}
+                  >
+                    <option value="">{editForm.majorId ? '未选择' : '请先选择专业'}</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>{c.className}</option>
                     ))}
                   </select>
                 </div>

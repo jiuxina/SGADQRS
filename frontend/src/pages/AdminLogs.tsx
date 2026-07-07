@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { Search } from 'lucide-react'
 import DigitRoller from '../components/DigitRoller'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
@@ -27,6 +27,16 @@ export default function AdminLogs() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const isMobile = useIsMobile()
+  const [expandedId, setExpandedId] = useState<number | null>(null)
+
+  const toggleExpand = (id: number) => {
+    setExpandedId((prev) => (prev === id ? null : id))
+  }
+
+  const truncate = (str: string | null, max: number) => {
+    if (!str) return '-'
+    return str.length > max ? str.slice(0, max) + '...' : str
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -93,41 +103,97 @@ export default function AdminLogs() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>时间</th><th>用户</th><th>操作</th><th style={{ width: '80px' }}>方法</th><th>URL</th><th>IP</th><th style={{ width: '80px' }}>耗时</th><th>状态</th>
+                  <th>时间</th><th>用户</th><th>操作</th><th style={{ width: '80px' }}>方法</th><th>URL</th><th>IP</th><th style={{ width: '80px' }}>耗时</th><th>请求参数</th><th>错误信息</th><th>状态</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((log) => {
                   const methodColor = methodColorMap[log.method || ''] || 'var(--text-secondary)'
+                  const isExpanded = expandedId === log.id
                   return (
-                    <tr key={log.id}>
-                      <td style={{ color: 'var(--text-tertiary)', fontSize: '12px', whiteSpace: 'nowrap' }}>{log.createTime}</td>
-                      <td style={{ fontWeight: '500' }}>{log.username || '-'}</td>
-                      <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{log.operation}</td>
-                      <td>
-                        <span style={{ fontSize: '11px', fontWeight: '700', color: methodColor, background: `${methodColor}14`, padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
-                          {log.method || '-'}
-                        </span>
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)', fontSize: '11px', fontFamily: 'monospace', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {log.requestUrl || '-'}
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)', fontSize: '11px', fontFamily: 'monospace' }}>{log.ipAddress || '-'}</td>
-                      <td>
-                        <span style={{ fontSize: '12px', fontWeight: '500', color: (log.spendTime || 0) > 500 ? 'var(--warning)' : 'var(--text-secondary)' }}>
-                          {log.spendTime || 0}ms
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`glass-badge ${log.status === 1 ? 'pass' : 'fail'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
-                          {log.status === 1 ? '成功' : '失败'}
-                        </span>
-                      </td>
-                    </tr>
+                    <AnimatePresence key={log.id} initial={false}>
+                      <tr
+                        onClick={() => toggleExpand(log.id)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <td style={{ color: 'var(--text-tertiary)', fontSize: '12px', whiteSpace: 'nowrap' }}>{log.createTime}</td>
+                        <td style={{ fontWeight: '500' }}>{log.username || '-'}</td>
+                        <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{log.operation}</td>
+                        <td>
+                          <span style={{ fontSize: '11px', fontWeight: '700', color: methodColor, background: `${methodColor}14`, padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                            {log.method || '-'}
+                          </span>
+                        </td>
+                        <td style={{ color: 'var(--text-secondary)', fontSize: '11px', fontFamily: 'monospace', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {log.requestUrl || '-'}
+                        </td>
+                        <td style={{ color: 'var(--text-secondary)', fontSize: '11px', fontFamily: 'monospace' }}>{log.ipAddress || '-'}</td>
+                        <td>
+                          <span style={{ fontSize: '12px', fontWeight: '500', color: (log.spendTime || 0) > 500 ? 'var(--warning)' : 'var(--text-secondary)' }}>
+                            {log.spendTime || 0}ms
+                          </span>
+                        </td>
+                        <td
+                          title={log.requestParams || '-'}
+                          style={{ color: 'var(--text-secondary)', fontSize: '11px', fontFamily: 'monospace', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                        >
+                          {truncate(log.requestParams, 50)}
+                        </td>
+                        <td style={{ color: log.status === 0 ? 'var(--danger)' : 'var(--text-tertiary)', fontSize: '11px', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {log.status === 0 ? (log.errorMsg || '-') : '-'}
+                        </td>
+                        <td>
+                          <span className={`glass-badge ${log.status === 1 ? 'pass' : 'fail'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                            {log.status === 1 ? '成功' : '失败'}
+                          </span>
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={10} style={{ padding: 0, border: 'none' }}>
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                            >
+                              <div className="glass-card glass-card-static" style={{ margin: '4px 0 12px', padding: '16px 20px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px 24px', fontSize: '13px' }}>
+                                  <div>
+                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>请求参数</span>
+                                    <div style={{ marginTop: '4px', fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-all', whiteSpace: 'pre-wrap', maxHeight: '120px', overflow: 'auto' }}>
+                                      {log.requestParams || '-'}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>错误信息</span>
+                                    <div style={{ marginTop: '4px', fontSize: '12px', color: log.status === 0 ? 'var(--danger)' : 'var(--text-secondary)', wordBreak: 'break-all', whiteSpace: 'pre-wrap', maxHeight: '120px', overflow: 'auto' }}>
+                                      {log.errorMsg || '-'}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>请求URL</span>
+                                    <div style={{ marginTop: '4px', fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
+                                      {log.requestUrl || '-'}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>IP地址</span>
+                                    <div style={{ marginTop: '4px', fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                      {log.ipAddress || '-'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          </td>
+                        </tr>
+                      )}
+                    </AnimatePresence>
                   )
                 })}
                 {logs.length === 0 && !loading && (
-                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>未找到匹配的日志</td></tr>
+                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>未找到匹配的日志</td></tr>
                 )}
               </tbody>
             </table>

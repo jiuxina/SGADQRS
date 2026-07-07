@@ -69,7 +69,7 @@ export default function TeacherGrades() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>学生/团队</th><th>分数</th><th>排名</th><th>奖项</th><th>状态</th><th style={{ width: '100px' }}>操作</th>
+                <th>学生/团队</th><th>分数</th><th>排名</th><th>奖项</th><th>备注</th><th>状态</th><th style={{ width: '100px' }}>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -79,6 +79,7 @@ export default function TeacherGrades() {
                   <td>{r.score !== null ? <span style={{ fontWeight: '700' }}>{r.score}</span> : <span style={{ color: 'var(--text-tertiary)' }}>--</span>}</td>
                   <td>{r.ranking !== null ? `第 ${r.ranking} 名` : '-'}</td>
                   <td>{r.awardLevel ? <span style={{ fontWeight: '600', color: r.awardLevel <= 2 ? 'var(--accent)' : 'var(--text-primary)' }}>{awardLevelLabel[r.awardLevel] || r.awardName}</span> : '-'}</td>
+                  <td style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>{r.remark || '-'}</td>
                   <td>
                     <span className={`glass-badge ${r.isPublished === 1 ? 'pass' : 'pending'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
                       {r.isPublished === 1 ? '已发布' : '待发布'}
@@ -93,7 +94,7 @@ export default function TeacherGrades() {
                 </tr>
               ))}
               {results.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>暂无成绩记录</td></tr>
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>暂无成绩记录</td></tr>
               )}
             </tbody>
           </table>

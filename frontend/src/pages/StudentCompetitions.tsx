@@ -7,7 +7,15 @@ import {
   Clock,
   Calendar,
   X,
+  ImageIcon,
 } from 'lucide-react'
+
+/** 拼接后端图片完整 URL */
+function resolveCoverUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
+  return url
+}
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
@@ -36,6 +44,13 @@ const statusBadgeLabel: Record<number, string> = {
   5: '已驳回',
 }
 
+function formatFileSize(bytes?: number | null): string {
+  if (bytes == null || bytes <= 0) return '-'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function StudentCompetitions() {
   const user = useAuthStore((s) => s.user)
   const [searchQuery, setSearchQuery] = useState('')
@@ -50,6 +65,8 @@ export default function StudentCompetitions() {
   const [showFailure, setShowFailure] = useState(false)
   const [failureMessage, setFailureMessage] = useState('')
   const [selectedComp, setSelectedComp] = useState<CompetitionItem | null>(null)
+  const [registeringComp, setRegisteringComp] = useState<CompetitionItem | null>(null)
+  const [contactPhone, setContactPhone] = useState('')
   const isMobile = useIsMobile()
 
   const loadData = useCallback(async () => {
@@ -77,9 +94,11 @@ export default function StudentCompetitions() {
   const handleRegister = async (comp: CompetitionItem) => {
     if (!user) return
     try {
-      await registrationApi.register({ competitionId: comp.id, contactPhone: '' })
+      await registrationApi.register({ competitionId: comp.id, contactPhone })
       // 显示庆祝特效
       setShowConfetti(true)
+      setContactPhone('')
+      setRegisteringComp(null)
       loadData()
     } catch (err) {
       // 显示失败特效
@@ -157,6 +176,29 @@ export default function StudentCompetitions() {
               className="glass-card glass-card-vertical"
               style={{ padding: '18px' }}
             >
+              {/* Cover Image */}
+              {resolveCoverUrl(comp.coverImage) ? (
+                <img
+                  src={resolveCoverUrl(comp.coverImage)!}
+                  alt={comp.competitionName}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                  style={{
+                    width: '100%', height: '140px', objectFit: 'cover',
+                    borderRadius: '12px', marginBottom: '12px',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '100%', height: '100px', borderRadius: '12px', marginBottom: '12px',
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.10) 50%, rgba(236,72,153,0.08) 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <ImageIcon size={28} strokeWidth={1.2} style={{ color: 'var(--text-tertiary)', opacity: 0.4 }} />
+                </div>
+              )}
+
               {/* Top: Name + badges */}
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
@@ -243,7 +285,7 @@ export default function StudentCompetitions() {
                       已报名
                     </button>
                   ) : (
-                    <button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }} onClick={() => handleRegister(comp)}>
+                    <button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }} onClick={() => { setRegisteringComp(comp); setContactPhone('') }}>
                       立即报名
                     </button>
                   )
@@ -308,6 +350,18 @@ export default function StudentCompetitions() {
               <button onClick={() => setSelectedComp(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}>
                 <X size={16} strokeWidth={1.5} />
               </button>
+              {/* Cover Image */}
+              {resolveCoverUrl(selectedComp.coverImage) && (
+                <img
+                  src={resolveCoverUrl(selectedComp.coverImage)!}
+                  alt={selectedComp.competitionName}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                  style={{
+                    width: '100%', height: '180px', objectFit: 'cover',
+                    borderRadius: '12px', marginBottom: '16px',
+                  }}
+                />
+              )}
               <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px', lineHeight: 1.4 }}>
                 {selectedComp.competitionName}
               </div>
@@ -333,12 +387,72 @@ export default function StudentCompetitions() {
                   <div><span style={{ color: 'var(--text-tertiary)' }}>已报名：</span><span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{selectedComp.registrationCount}{selectedComp.maxTeams ? ` / ${selectedComp.maxTeams} 队` : ' 人'}</span></div>
                 </div>
                 {selectedComp.rules && <div><span style={{ color: 'var(--text-tertiary)' }}>规则：</span><span style={{ color: 'var(--text-primary)', lineHeight: 1.6 }}>{selectedComp.rules}</span></div>}
+                {selectedComp.attachments && selectedComp.attachments.length > 0 && (
+                  <div>
+                    <span style={{ color: 'var(--text-tertiary)' }}>附件：</span>
+                    <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {selectedComp.attachments.map((att) => (
+                        <a key={att.id} href={att.fileUrl} target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', padding: '2px 0' }}>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.fileName}</span>
+                          {att.fileType && <span style={{ color: 'var(--text-tertiary)', fontSize: '11px', flexShrink: 0 }}>{att.fileType}</span>}
+                          <span style={{ color: 'var(--text-tertiary)', fontSize: '11px', flexShrink: 0 }}>{formatFileSize(att.fileSize)}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button className="btn ghost" onClick={() => setSelectedComp(null)}>关闭</button>
                 {selectedComp.status === 2 && !selectedComp.hasRegistered && (
-                  <button className="btn ghost" onClick={() => { handleRegister(selectedComp); setSelectedComp(null) }}>立即报名</button>
+                  <button className="btn ghost" onClick={() => { setRegisteringComp(selectedComp); setContactPhone(''); setSelectedComp(null) }}>立即报名</button>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 报名确认模态框 */}
+      <AnimatePresence>
+        {registeringComp && (
+          <motion.div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
+            }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setRegisteringComp(null)}
+          >
+            <motion.div
+              className="glass-card glass-card-vertical glass-card-static"
+              style={{ width: isMobile ? 'calc(100vw - 32px)' : '380px', padding: '24px', position: 'relative' }}
+              variants={panelSlideIn} initial="initial" animate="animate" exit="exit"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button onClick={() => setRegisteringComp(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}>
+                <X size={16} strokeWidth={1.5} />
+              </button>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>确认报名</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                {registeringComp.competitionName}
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>联系电话</label>
+                <input
+                  type="tel"
+                  className="glass-search"
+                  placeholder="请输入联系电话"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  style={{ width: '100%', marginBottom: 0 }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button className="btn ghost" onClick={() => setRegisteringComp(null)}>取消</button>
+                <button className="btn ghost" onClick={() => handleRegister(registeringComp)}>确认报名</button>
               </div>
             </motion.div>
           </motion.div>
