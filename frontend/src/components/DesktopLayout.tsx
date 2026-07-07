@@ -19,6 +19,7 @@ import {
   Plus,
   Menu,
   X,
+  Building2,
 } from 'lucide-react'
 import { useGlassShimmerContainer } from '../hooks/useAnimations'
 import { useAuthStore } from '../store/authStore'
@@ -49,6 +50,7 @@ const navItemsByRole: Record<string, NavItem[]> = {
     { id: 'dashboard', label: '系统总览', icon: LayoutDashboard, path: '/admin/dashboard' },
     { id: 'competitions', label: '竞赛审核', icon: ClipboardCheck, path: '/admin/competitions', badge: 3 },
     { id: 'users', label: '用户管理', icon: Users, path: '/admin/users' },
+    { id: 'org-tree', label: '组织架构', icon: Building2, path: '/admin/org-tree' },
     { id: 'stats', label: '数据统计', icon: BarChart3, path: '/admin/stats' },
     { id: 'notices', label: '公告管理', icon: Megaphone, path: '/admin/notices' },
     { id: 'logs', label: '系统日志', icon: ScrollText, path: '/admin/logs' },
@@ -98,6 +100,7 @@ const titleMap: Record<string, string> = {
   '/admin/dashboard': '系统总览',
   '/admin/competitions': '竞赛审核',
   '/admin/users': '用户管理',
+  '/admin/org-tree': '组织架构',
   '/admin/stats': '数据统计',
   '/admin/notices': '公告管理',
   '/admin/logs': '系统日志',
@@ -123,6 +126,15 @@ function positionTooltip(e: React.MouseEvent<HTMLElement>) {
   tooltip.style.left = `${rect.right + 14}px`
   tooltip.style.top = `${rect.top + rect.height / 2}px`
   tooltip.style.transform = 'translateY(-50%)'
+}
+
+function getAvatarSrc(user: { avatar?: string | null; gender?: number | null; id?: number } | null): string {
+  if (user?.avatar) {
+    return user.avatar.startsWith('/uploads') ? `http://localhost:8080${user.avatar}` : user.avatar
+  }
+  const gender = user?.gender || 3
+  const idx = ((user?.id ?? 0) % 20) + 1
+  return `/avatar/s${gender}-${idx}.webp`
 }
 
 export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
@@ -275,7 +287,11 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                 <div className="drawer-header">
                   <div className="drawer-user">
                     <div className="drawer-avatar">
-                      {user?.realName?.charAt(0) || (role === 'admin' ? '管' : role === 'teacher' ? '师' : '学')}
+                      <img
+                        src={getAvatarSrc(user)}
+                        alt="avatar"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = getAvatarSrc(null) }}
+                      />
                     </div>
                     <div>
                       <div className="drawer-user-name">{user?.realName || (role === 'admin' ? '管理员' : role === 'teacher' ? '教师' : '学生')}</div>
@@ -367,7 +383,11 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
         <div className="sidebar-footer">
           <div className="sidebar-user">
             <div className="sidebar-user-avatar">
-              {user?.realName?.charAt(0) || (role === 'admin' ? '管' : role === 'teacher' ? '师' : '学')}
+              <img
+                src={getAvatarSrc(user)}
+                alt="avatar"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = getAvatarSrc(null) }}
+              />
             </div>
           </div>
           <motion.button
