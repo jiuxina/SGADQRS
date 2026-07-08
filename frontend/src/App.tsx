@@ -7,6 +7,7 @@ import AdminStats from './pages/AdminStats'
 import AdminNotices from './pages/AdminNotices'
 import AdminLogs from './pages/AdminLogs'
 import AdminSettings from './pages/AdminSettings'
+import AdminOrgTree from './pages/AdminOrgTree'
 import TeacherDashboard from './pages/TeacherDashboard'
 import TeacherCompetitions from './pages/TeacherCompetitions'
 import TeacherCompetitionCreate from './pages/TeacherCompetitionCreate'
@@ -47,6 +48,7 @@ function App() {
           <Route path="/admin/notices" element={<AuthGuard allowedRoles={['admin']}><AdminNotices /></AuthGuard>} />
           <Route path="/admin/logs" element={<AuthGuard allowedRoles={['admin']}><AdminLogs /></AuthGuard>} />
           <Route path="/admin/settings" element={<AuthGuard allowedRoles={['admin']}><AdminSettings /></AuthGuard>} />
+          <Route path="/admin/org-tree" element={<AuthGuard allowedRoles={['admin']}><AdminOrgTree /></AuthGuard>} />
 
           {/* Teacher routes */}
           <Route path="/teacher/dashboard" element={<AuthGuard allowedRoles={['teacher']}><TeacherDashboard /></AuthGuard>} />
