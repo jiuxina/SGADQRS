@@ -5,15 +5,17 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  X,
   Users,
   Calendar,
   UserCheck,
   Phone,
   ExternalLink,
 } from 'lucide-react'
+import EmptyState from '../components/EmptyState'
+import { ListSkeleton } from '../components/PageSkeleton'
 import DigitRoller from '../components/DigitRoller'
-import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
+import { fadeInList, fadeSlideUp } from '../motion/variants'
+import GlassModal from '../components/GlassModal'
 import { registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { RegistrationItem } from '../api/types'
@@ -21,6 +23,7 @@ import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
 import { confirmDialog } from '../components/ConfirmDialog'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { formatDate } from '../utils/format'
 
 type FilterKey = 'all' | 0 | 1 | 2
 
@@ -89,14 +92,8 @@ export default function StudentRegistration() {
     rejected: registrations.filter((r) => r.status === 2).length,
   }
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-'
-    const d = new Date(dateStr)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }
-
   if (loading && registrations.length === 0) {
-    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+    return <ListSkeleton />
   }
 
   return (
@@ -104,11 +101,11 @@ export default function StudentRegistration() {
       {/* Summary stats row */}
       <motion.div
         style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '10px' }}
-        variants={staggerContainer}
+        variants={fadeInList}
         initial="hidden"
         animate="visible"
       >
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+        <div className="metric-card" style={{ padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <FileText size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>总报名数</span>
@@ -116,8 +113,8 @@ export default function StudentRegistration() {
           <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             <DigitRoller value={stats.total} />
           </div>
-        </motion.div>
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+        </div>
+        <div className="metric-card" style={{ padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <CheckCircle size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>已通过</span>
@@ -125,8 +122,8 @@ export default function StudentRegistration() {
           <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             <DigitRoller value={stats.approved} />
           </div>
-        </motion.div>
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+        </div>
+        <div className="metric-card" style={{ padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <Clock size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>待审核</span>
@@ -134,8 +131,8 @@ export default function StudentRegistration() {
           <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             <DigitRoller value={stats.pending} />
           </div>
-        </motion.div>
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+        </div>
+        <div className="metric-card" style={{ padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <XCircle size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>已拒绝</span>
@@ -143,7 +140,7 @@ export default function StudentRegistration() {
           <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             <DigitRoller value={stats.rejected} />
           </div>
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Filter chips */}
@@ -173,7 +170,7 @@ export default function StudentRegistration() {
       <AnimatePresence mode="wait">
         <motion.div
           key={String(filter)}
-          variants={staggerContainer}
+          variants={fadeInList}
           initial="hidden"
           animate="visible"
           exit={{ opacity: 0, transition: { duration: 0.15 } }}
@@ -187,9 +184,8 @@ export default function StudentRegistration() {
             const st = statusMap[reg.status] || statusMap[0]
             const accentColor = statusColorMap[reg.status] || 'var(--gray-2)'
             return (
-              <motion.div
+              <div
                 key={reg.id}
-                variants={staggerItem}
                 className="glass-card glass-card-vertical"
                 style={{ padding: '18px' }}
               >
@@ -273,90 +269,56 @@ export default function StudentRegistration() {
                     </button>
                   )}
                 </div>
-              </motion.div>
+              </div>
             )
           })}
         </motion.div>
       </AnimatePresence>
 
       {registrations.length === 0 && !loading && (
-        <motion.div
-          variants={fadeSlideUp}
-          initial="hidden"
-          animate="visible"
-          style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            color: 'var(--text-tertiary)',
-            fontSize: '14px',
-          }}
-        >
-          暂无报名记录
-        </motion.div>
+        <EmptyState text="暂无报名记录" />
       )}
 
-      <div style={{ paddingBottom: '40px' }} />
-
       {/* Detail Modal */}
-      <AnimatePresence>
-        {selectedReg && (
-          <motion.div
-            style={{
-              position: 'fixed', inset: 0, zIndex: 999,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
-            }}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setSelectedReg(null)}
-          >
-            <motion.div
-              className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: isMobile ? 'calc(100vw - 32px)' : '420px', padding: '24px', position: 'relative' }}
-              variants={panelSlideIn} initial="initial" animate="animate" exit="exit"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button onClick={() => setSelectedReg(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}>
-                <X size={16} strokeWidth={1.5} />
-              </button>
-              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>报名详情</div>
+      <GlassModal open={!!selectedReg} onClose={() => setSelectedReg(null)} title="报名详情" maxWidth="420px">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
                   <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>竞赛名称</div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>{selectedReg.competitionName || '-'}</div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>{selectedReg?.competitionName || '-'}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '20px' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>队伍名称</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.teamName || '--'}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.teamName || '--'}</div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>角色</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.isTeamLeader === 1 ? '队长' : '队员'}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.isTeamLeader === 1 ? '队长' : '队员'}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '20px' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>报名时间</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{formatDate(selectedReg.createTime)}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg ? formatDate(selectedReg.createTime) : '-'}</div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>状态</div>
-                    <span className={`glass-badge ${(statusMap[selectedReg.status] || statusMap[0]).badge}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
-                      {(statusMap[selectedReg.status] || statusMap[0]).label}
+                    <span className={`glass-badge ${(statusMap[selectedReg?.status ?? 0] || statusMap[0]).badge}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                      {(statusMap[selectedReg?.status ?? 0] || statusMap[0]).label}
                     </span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '20px' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>联系电话</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.contactPhone || '-'}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.contactPhone || '-'}</div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>审核时间</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.auditTime ? formatDate(selectedReg.auditTime) : '-'}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.auditTime ? formatDate(selectedReg.auditTime) : '-'}</div>
                   </div>
                 </div>
-                {selectedReg.attachmentUrl && (
+                {selectedReg?.attachmentUrl && (
                   <div>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>附件</div>
                     <a href={selectedReg.attachmentUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: 'var(--accent)', textDecoration: 'none' }}>
@@ -364,23 +326,20 @@ export default function StudentRegistration() {
                     </a>
                   </div>
                 )}
-                {selectedReg.auditRemark && (
+                {selectedReg?.auditRemark && (
                   <div>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>审核备注</div>
                     <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.auditRemark}</div>
                   </div>
                 )}
-                {selectedReg.remark && (
+                {selectedReg?.remark && (
                   <div>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>备注</div>
                     <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.remark}</div>
                   </div>
                 )}
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </GlassModal>
     </>
   )
 }

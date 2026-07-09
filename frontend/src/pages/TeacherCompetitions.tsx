@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { X, UserCheck, UserX, ImageIcon, ExternalLink } from 'lucide-react'
-
-/** 拼接后端图片完整 URL */
-function resolveCoverUrl(url: string | null | undefined): string | null {
-  if (!url) return null
-  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-  return url
-}
-import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
+import { motion } from 'motion/react'
+import { UserCheck, UserX, ImageIcon, ExternalLink } from 'lucide-react'
+import EmptyState from '../components/EmptyState'
+import { ListSkeleton } from '../components/PageSkeleton'
+import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import GlassModal from '../components/GlassModal'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem, RegistrationItem } from '../api/types'
@@ -16,6 +12,7 @@ import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
 import { confirmDialog } from '../components/ConfirmDialog'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { resolveCoverUrl } from '../utils/format'
 
 const statusBadgeMap: Record<number, { cls: string; label: string }> = {
   0: { cls: 'pending', label: '草稿' },
@@ -92,7 +89,7 @@ export default function TeacherCompetitions() {
 
   const formatShortDate = (dateStr: string) => dateStr ? dateStr.slice(5, 10) : '-'
 
-  if (loading && competitions.length === 0) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+  if (loading && competitions.length === 0) return <ListSkeleton />
 
   return (
     <>
@@ -159,7 +156,7 @@ export default function TeacherCompetitions() {
                 )
               })}
               {competitions.length === 0 && !loading && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>暂无竞赛</td></tr>
+                <tr><td colSpan={6}><EmptyState text="暂无竞赛" /></td></tr>
               )}
             </tbody>
           </table>
@@ -167,37 +164,10 @@ export default function TeacherCompetitions() {
       </motion.div>
 
       {/* Manage Modal */}
-      <AnimatePresence>
-        {managingComp && (
-          <motion.div
-            style={{
-              position: 'fixed', inset: 0, zIndex: 999,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setManagingComp(null)}
-          >
-            <motion.div
-              className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: isMobile ? 'calc(100vw - 32px)' : '600px', maxHeight: '80vh', overflow: 'auto', padding: '24px', position: 'relative' }}
-              variants={panelSlideIn}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setManagingComp(null)}
-                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}
-              >
-                <X size={16} strokeWidth={1.5} />
-              </button>
+      <GlassModal open={!!managingComp} onClose={() => setManagingComp(null)} maxWidth="600px">
 
               <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px', paddingRight: '24px' }}>
-                {managingComp.competitionName}
+                {managingComp?.competitionName}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '20px' }}>
                 报名管理 · 共 {registrations.length} 条报名记录
@@ -206,7 +176,7 @@ export default function TeacherCompetitions() {
               {regLoading ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>加载中...</div>
               ) : registrations.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>暂无报名记录</div>
+                <EmptyState text="暂无报名记录" />
               ) : (
                 <table className="data-table">
                   <thead>
@@ -274,12 +244,8 @@ export default function TeacherCompetitions() {
                   </tbody>
                 </table>
               )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </GlassModal>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

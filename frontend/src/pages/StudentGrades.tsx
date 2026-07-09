@@ -8,13 +8,16 @@ import {
   Users,
   Calendar,
 } from 'lucide-react'
+import EmptyState from '../components/EmptyState'
+import { ListSkeleton } from '../components/PageSkeleton'
 import DigitRoller from '../components/DigitRoller'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import { fadeInList, fadeSlideUp } from '../motion/variants'
 import { resultApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { ResultItem } from '../api/types'
 import { PAGE_SIZE, CANVAS_CONFIG } from '../config/constants'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { formatDate } from '../utils/format'
 
 const awardLevelLabel: Record<number, string> = {
   1: '特等奖',
@@ -145,13 +148,7 @@ export default function StudentGrades() {
   })()
 
   if (loading && results.length === 0) {
-    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
-  }
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-'
-    const d = new Date(dateStr)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return <ListSkeleton />
   }
 
   return (
@@ -159,11 +156,11 @@ export default function StudentGrades() {
       {/* Summary metric cards */}
       <motion.div
         style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '10px' }}
-        variants={staggerContainer}
+        variants={fadeInList}
         initial="hidden"
         animate="visible"
       >
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+        <div className="metric-card" style={{ padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <BarChart3 size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>参赛次数</span>
@@ -171,8 +168,8 @@ export default function StudentGrades() {
           <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             <DigitRoller value={results.length} />
           </div>
-        </motion.div>
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+        </div>
+        <div className="metric-card" style={{ padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <Trophy size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>获奖次数</span>
@@ -180,8 +177,8 @@ export default function StudentGrades() {
           <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             <DigitRoller value={awardResults.length} />
           </div>
-        </motion.div>
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+        </div>
+        <div className="metric-card" style={{ padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <Award size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>最高奖项</span>
@@ -189,8 +186,8 @@ export default function StudentGrades() {
           <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
             {highestAward}
           </div>
-        </motion.div>
-        <motion.div className="metric-card" variants={staggerItem} style={{ padding: '12px 14px' }}>
+        </div>
+        <div className="metric-card" style={{ padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <BarChart3 size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>平均成绩</span>
@@ -198,7 +195,7 @@ export default function StudentGrades() {
           <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             {avgScore}
           </div>
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Section header */}
@@ -213,7 +210,7 @@ export default function StudentGrades() {
 
       {/* Results cards grid */}
       <motion.div
-        variants={staggerContainer}
+        variants={fadeInList}
         initial="hidden"
         animate="visible"
         style={{
@@ -228,9 +225,8 @@ export default function StudentGrades() {
             ? (result.awardLevel <= 2 ? '#d97706' : result.awardLevel <= 4 ? 'var(--accent)' : 'var(--gray-2)')
             : 'var(--gray-3)'
           return (
-            <motion.div
+            <div
               key={result.id}
-              variants={staggerItem}
               className="glass-card glass-card-vertical"
               style={{ padding: '18px' }}
             >
@@ -288,7 +284,6 @@ export default function StudentGrades() {
                   gap: '6px',
                   padding: '8px 12px',
                   borderRadius: '10px',
-                  background: result.awardLevel <= 2 ? 'rgba(217, 119, 6, 0.06)' : 'rgba(0, 122, 255, 0.04)',
                   marginBottom: '12px',
                 }}>
                   <Trophy size={14} strokeWidth={1.8} color={awardColor || 'var(--text-secondary)'} />
@@ -338,28 +333,15 @@ export default function StudentGrades() {
                   {result.isPublished !== 1 ? '成绩待公布' : '暂无奖项证书'}
                 </div>
               )}
-            </motion.div>
+            </div>
           )
         })}
       </motion.div>
 
       {results.length === 0 && !loading && (
-        <motion.div
-          variants={fadeSlideUp}
-          initial="hidden"
-          animate="visible"
-          style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            color: 'var(--text-tertiary)',
-            fontSize: '14px',
-          }}
-        >
-          暂无成绩记录
-        </motion.div>
+        <EmptyState text="暂无成绩记录" />
       )}
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

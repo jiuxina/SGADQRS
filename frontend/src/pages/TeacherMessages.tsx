@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Bell, CheckCheck, ChevronRight } from 'lucide-react'
+import EmptyState from '../components/EmptyState'
+import { ListSkeleton } from '../components/PageSkeleton'
 import { fadeSlideUp, expandCollapse } from '../motion/variants'
 import { messageApi } from '../api'
 import { useAuthStore } from '../store/authStore'
@@ -49,7 +51,7 @@ export default function TeacherMessages() {
     return `${d.getMonth() + 1}月${d.getDate()}日`
   }
 
-  if (loading && messages.length === 0) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+  if (loading && messages.length === 0) return <ListSkeleton />
 
   return (
     <>
@@ -100,11 +102,10 @@ export default function TeacherMessages() {
           )
         })}
         {messages.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)', fontSize: '14px' }}>暂无消息</div>
+          <EmptyState text="暂无消息" />
         )}
       </motion.div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

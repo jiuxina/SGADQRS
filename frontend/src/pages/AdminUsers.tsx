@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { Search, X } from 'lucide-react'
+import { motion } from 'motion/react'
+import { Search } from 'lucide-react'
+import { TableSkeleton } from '../components/PageSkeleton'
 import DigitRoller from '../components/DigitRoller'
-import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
+import { fadeInList, fadeSlideUp } from '../motion/variants'
+import GlassModal from '../components/GlassModal'
 import { userApi, deptApi, fileApi } from '../api'
 import type { UserItem, DeptItem, MajorItem, ClassItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { formatDate } from '../utils/format'
 
 type FilterType = 'all' | 1 | 2 | 3
 
@@ -124,21 +127,15 @@ export default function AdminUsers() {
   const studentCount = users.filter((u) => u.userType === 1).length
   const teacherCount = users.filter((u) => u.userType === 2).length
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-'
-    const d = new Date(dateStr)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }
-
   if (loading && users.length === 0) {
-    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+    return <TableSkeleton />
   }
 
   return (
     <>
       <motion.div
         style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}
-        variants={staggerContainer}
+        variants={fadeInList}
         initial="hidden"
         animate="visible"
       >
@@ -147,7 +144,7 @@ export default function AdminUsers() {
           { label: '学生数', value: studentCount, footer: '在校学生账号' },
           { label: '教师数', value: teacherCount, footer: '教师账号' },
         ].map((item) => (
-          <motion.div key={item.label} className="metric-card" style={{ padding: '16px' }} variants={staggerItem}>
+          <div key={item.label} className="metric-card" style={{ padding: '16px' }}>
             <div style={{ marginBottom: '10px' }}>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.label}</span>
             </div>
@@ -155,7 +152,7 @@ export default function AdminUsers() {
               <DigitRoller value={item.value} />
             </div>
             <div className="metric-card-footer">{item.footer}</div>
-          </motion.div>
+          </div>
         ))}
       </motion.div>
 
@@ -195,8 +192,8 @@ export default function AdminUsers() {
           </div>
         </div>
 
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-          <motion.div variants={staggerItem}>
+        <motion.div variants={fadeInList} initial="hidden" animate="visible">
+          <div>
             <table className="data-table">
               <thead>
                 <tr>
@@ -257,46 +254,16 @@ export default function AdminUsers() {
                 )}
               </tbody>
             </table>
-          </motion.div>
+          </div>
         </motion.div>
       </motion.div>
 
       {/* Edit Modal */}
-      <AnimatePresence>
-        {editingUser && (
-          <motion.div
-            style={{
-              position: 'fixed', inset: 0, zIndex: 999,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setEditingUser(null)}
-          >
-            <motion.div
-              className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: isMobile ? 'calc(100vw - 32px)' : '520px', padding: '24px', position: 'relative' }}
-              variants={panelSlideIn}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setEditingUser(null)}
-                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}
-              >
-                <X size={16} strokeWidth={1.5} />
-              </button>
+      <GlassModal open={!!editingUser} onClose={() => setEditingUser(null)} title="编辑用户">
 
-              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>
-                编辑用户
-                <span style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
-                  {editingUser.username}
-                </span>
-              </div>
+              <div style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-tertiary)', marginBottom: '16px' }}>
+                  {editingUser?.username}
+                </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
@@ -399,12 +366,8 @@ export default function AdminUsers() {
                   {saving ? '保存中...' : '保存'}
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </GlassModal>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

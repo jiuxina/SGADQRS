@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Search } from 'lucide-react'
+import { TableSkeleton } from '../components/PageSkeleton'
 import DigitRoller from '../components/DigitRoller'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import { fadeInList, fadeSlideUp } from '../motion/variants'
 import { logApi } from '../api'
 import type { LogItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
@@ -59,21 +60,21 @@ export default function AdminLogs() {
   const successCount = logs.filter((l) => l.status === 1).length
   const failCount = logs.filter((l) => l.status === 0).length
 
-  if (loading && logs.length === 0) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+  if (loading && logs.length === 0) return <TableSkeleton />
 
   return (
     <>
-      <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }} variants={staggerContainer} initial="hidden" animate="visible">
+      <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }} variants={fadeInList} initial="hidden" animate="visible">
         {[
           { label: '总日志数', value: total, footer: '系统操作记录' },
           { label: '成功操作', value: successCount, footer: '执行成功' },
           { label: '失败操作', value: failCount, footer: '执行失败' },
         ].map((item) => (
-          <motion.div key={item.label} className="metric-card" style={{ padding: '16px' }} variants={staggerItem}>
+          <div key={item.label} className="metric-card" style={{ padding: '16px' }}>
             <div style={{ marginBottom: '10px' }}><span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.label}</span></div>
             <div className="metric-card-value"><DigitRoller value={item.value} /></div>
             <div className="metric-card-footer">{item.footer}</div>
-          </motion.div>
+          </div>
         ))}
       </motion.div>
 
@@ -98,8 +99,8 @@ export default function AdminLogs() {
           </div>
         </div>
 
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-          <motion.div variants={staggerItem}>
+        <motion.div variants={fadeInList} initial="hidden" animate="visible">
+          <div>
             <table className="data-table">
               <thead>
                 <tr>
@@ -197,11 +198,10 @@ export default function AdminLogs() {
                 )}
               </tbody>
             </table>
-          </motion.div>
+          </div>
         </motion.div>
       </motion.div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

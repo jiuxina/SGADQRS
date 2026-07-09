@@ -1,21 +1,20 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
   ClipboardCheck,
   Users,
   BarChart3,
   Settings,
-  ArrowUpRight,
   AlertTriangle,
 } from 'lucide-react'
+import { DashboardSkeleton } from '../components/PageSkeleton'
+import QuickActions from '../components/QuickActions'
 import { staggerContainer, staggerItem } from '../motion/variants'
 import { competitionApi, statsApi, logApi } from '../api'
 import type { CompetitionItem, LogItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 
 export default function AdminDashboard() {
-  const navigate = useNavigate()
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [logs, setLogs] = useState<LogItem[]>([])
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
@@ -56,7 +55,7 @@ export default function AdminDashboard() {
     { icon: Settings, label: '系统设置', path: '/admin/settings' },
   ]
 
-  if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+  if (loading) return <DashboardSkeleton />
 
   return (
     <>
@@ -154,18 +153,10 @@ export default function AdminDashboard() {
         {/* 快捷入口 */}
         <motion.div className="bento-card" variants={staggerItem} style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="bento-label" style={{ marginBottom: '6px' }}>快捷入口</div>
-          {quickActions.map((action) => (
-            <div key={action.label} className="bento-action" onClick={() => navigate(action.path)}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
-              <action.icon size={14} color="var(--text-secondary)" strokeWidth={1.5} />
-              <span style={{ flex: 1, fontSize: '12px', color: 'var(--text-primary)' }}>{action.label}</span>
-              <ArrowUpRight size={12} color="var(--text-tertiary)" />
-            </div>
-          ))}
+          <QuickActions items={quickActions} />
         </motion.div>
       </motion.div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

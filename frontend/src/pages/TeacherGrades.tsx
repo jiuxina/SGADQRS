@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import EmptyState from '../components/EmptyState'
+import { TableSkeleton } from '../components/PageSkeleton'
+import { fadeInList, fadeSlideUp } from '../motion/variants'
 import { competitionApi, resultApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem, ResultItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/Toast'
 import { confirmDialog } from '../components/ConfirmDialog'
-import { promptDialog } from '../components/PromptDialog'
+import { editGradeDialog } from '../components/EditGradeDialog'
 
 const awardLevelLabel: Record<number, string> = { 1: '特等奖', 2: '一等奖', 3: '二等奖', 4: '三等奖', 5: '优秀奖' }
 
@@ -43,7 +45,7 @@ export default function TeacherGrades() {
     catch (err) { toast.error(err instanceof Error ? err.message : '发布失败') }
   }
 
-  if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+  if (loading) return <TableSkeleton />
 
   return (
     <>
@@ -64,8 +66,8 @@ export default function TeacherGrades() {
       </motion.div>
 
       <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0' }}
-        variants={staggerContainer} initial="hidden" animate="visible">
-        <motion.div variants={staggerItem}>
+        variants={fadeInList} initial="hidden" animate="visible">
+        <div>
           <table className="data-table">
             <thead>
               <tr>
@@ -87,21 +89,30 @@ export default function TeacherGrades() {
                   </td>
                   <td>
                     <button className="text-btn blue" style={{ fontSize: '12px' }} onClick={async () => {
-                      const score = await promptDialog({ title: '编辑分数', message: `请输入 ${r.studentName || r.teamName || '该学生'} 的分数：`, defaultValue: String(r.score ?? ''), placeholder: '请输入分数' })
-                      if (score !== null) { try { await resultApi.update({ id: r.id, score: Number(score) }); loadResults() } catch (err) { toast.error('更新失败') } }
+                      const result = await editGradeDialog({
+                        studentName: r.studentName || r.teamName || '该学生',
+                        defaultScore: r.score,
+                        defaultRemark: r.remark,
+                      })
+                      if (result !== null) {
+                        try {
+                          await resultApi.update({ id: r.id, score: result.score, remark: result.remark })
+                          loadResults()
+                          toast.success('更新成功')
+                        } catch (err) { toast.error('更新失败') }
+                      }
                     }}>编辑</button>
                   </td>
                 </tr>
               ))}
               {results.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>暂无成绩记录</td></tr>
+                <tr><td colSpan={7}><EmptyState text="暂无成绩记录" /></td></tr>
               )}
             </tbody>
           </table>
-        </motion.div>
+        </div>
       </motion.div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

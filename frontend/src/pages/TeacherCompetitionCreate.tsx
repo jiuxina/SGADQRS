@@ -7,11 +7,12 @@ import {
   X,
   ImageIcon,
 } from 'lucide-react'
-import { fadeSlideUp, staggerContainer, staggerItem } from '../motion/variants'
+import { fadeSlideUp, instant } from '../motion/variants'
 import { competitionApi, fileApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { toast } from '../components/Toast'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { resolveCoverUrl } from '../utils/format'
 
 interface FormData {
   name: string
@@ -55,13 +56,6 @@ export default function TeacherCompetitionCreate() {
     if (errors[field]) {
       setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
     }
-  }
-
-  /** 拼接后端图片完整 URL */
-  function resolveCoverUrl(url: string | null | undefined): string | null {
-    if (!url) return null
-    if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-    return url
   }
 
   async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -173,15 +167,15 @@ export default function TeacherCompetitionCreate() {
       </motion.div>
 
       <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '28px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-          <motion.div style={fieldGroupStyle} variants={staggerItem}>
+        <motion.div variants={instant} initial="hidden" animate="visible">
+          <div style={fieldGroupStyle}>
             <label style={labelStyle}>竞赛名称 <span style={{ color: 'var(--danger)' }}>*</span></label>
             <input className="glass-input" placeholder="请输入竞赛名称" value={form.name} onChange={(e) => updateField('name', e.target.value)} />
             {errors.name && <div style={errorStyle}>{errors.name}</div>}
-          </motion.div>
+          </div>
 
           {/* 封面图上传 */}
-          <motion.div style={fieldGroupStyle} variants={staggerItem}>
+          <div style={fieldGroupStyle}>
             <label style={labelStyle}>封面图</label>
             <input
               ref={fileInputRef}
@@ -190,7 +184,7 @@ export default function TeacherCompetitionCreate() {
               style={{ display: 'none' }}
               onChange={handleCoverUpload}
             />
-            {resolveCoverUrl(coverImage) ? (
+            {coverImage ? (
               <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
                 <img
                   src={resolveCoverUrl(coverImage)!}
@@ -238,25 +232,25 @@ export default function TeacherCompetitionCreate() {
                 )}
               </div>
             )}
-          </motion.div>
+          </div>
 
-          <motion.div style={{ marginBottom: '20px' }} variants={staggerItem}>
+          <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>主办单位 <span style={{ color: 'var(--danger)' }}>*</span></label>
             <input className="glass-input" placeholder="请输入主办单位" value={form.organizer} onChange={(e) => updateField('organizer', e.target.value)} />
             {errors.organizer && <div style={errorStyle}>{errors.organizer}</div>}
-          </motion.div>
+          </div>
 
-          <motion.div style={fieldGroupStyle} variants={staggerItem}>
+          <div style={fieldGroupStyle}>
             <label style={labelStyle}>竞赛描述</label>
             <textarea style={textareaStyle} placeholder="请输入竞赛描述" value={form.description} onChange={(e) => updateField('description', e.target.value)} />
-          </motion.div>
+          </div>
 
-          <motion.div style={fieldGroupStyle} variants={staggerItem}>
+          <div style={fieldGroupStyle}>
             <label style={labelStyle}>竞赛规则</label>
             <textarea style={textareaStyle} placeholder="请输入竞赛规则" value={form.rules} onChange={(e) => updateField('rules', e.target.value)} />
-          </motion.div>
+          </div>
 
-          <motion.div style={{ marginBottom: '20px' }} variants={staggerItem}>
+          <div style={{ marginBottom: '20px' }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '12px' }}>时间安排</div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
               <div>
@@ -280,9 +274,9 @@ export default function TeacherCompetitionCreate() {
                 {errors.competitionEnd && <div style={errorStyle}>{errors.competitionEnd}</div>}
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: '20px', marginBottom: '28px' }} variants={staggerItem}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: '20px', marginBottom: '28px' }}>
             <div>
               <label style={labelStyle}>竞赛地点</label>
               <input className="glass-input" placeholder="请输入竞赛地点" value={form.location} onChange={(e) => updateField('location', e.target.value)} />
@@ -295,20 +289,19 @@ export default function TeacherCompetitionCreate() {
               <label style={{ ...labelStyle, color: 'var(--text-secondary)' }}>最大报名队伍数</label>
               <input className="glass-input" type="number" min={0} placeholder="不限" value={form.maxTeams} onChange={(e) => updateField('maxTeams', e.target.value)} />
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }} variants={staggerItem}>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
             <button className="btn ghost" onClick={handleSaveDraft} disabled={submitting}>
               保存草稿
             </button>
             <button className="btn filled-primary" onClick={handleSubmit} disabled={submitting}>
               {submitting ? '提交中...' : '提交审核'}
             </button>
-          </motion.div>
+          </div>
         </motion.div>
       </motion.div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

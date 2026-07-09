@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
+import { ListSkeleton } from '../components/PageSkeleton'
 import { fadeSlideUp } from '../motion/variants'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
@@ -29,7 +30,7 @@ export default function StudentAudit() {
     }).catch(console.error).finally(() => setLoading(false))
   }, [compId, user])
 
-  if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+  if (loading) return <ListSkeleton />
   if (!competition) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>竞赛不存在</div>
 
   const statusMap: Record<number, { cls: string; label: string }> = {
@@ -87,7 +88,6 @@ export default function StudentAudit() {
         </motion.div>
       </div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

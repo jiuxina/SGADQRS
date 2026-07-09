@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Plus, Pencil, Send, RotateCcw, Trash2, Pin, X } from 'lucide-react'
-import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
+import ListMeta from '../components/ListMeta'
+import { fadeInList, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { noticeApi } from '../api'
 import type { NoticeItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
@@ -105,10 +106,12 @@ export default function AdminNotices() {
         initial="hidden"
         animate="visible"
       >
-        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-          共 {sorted.length} 条
-          {filter !== 'all' && ` (${filterOptions.find((o) => o.key === filter)?.label})`}
-        </span>
+        <ListMeta count={sorted.length} />
+        {filter !== 'all' && (
+          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+            ({filterOptions.find((o) => o.key === filter)?.label})
+          </span>
+        )}
         <button
           className="btn primary"
           style={{ gap: '6px' }}
@@ -144,8 +147,8 @@ export default function AdminNotices() {
         animate="visible"
         transition={{ delay: 0.1 }}
       >
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-          <motion.div variants={staggerItem}>
+        <motion.div variants={fadeInList} initial="hidden" animate="visible">
+          <div>
             <table className="data-table">
               <thead>
                 <tr>
@@ -215,7 +218,7 @@ export default function AdminNotices() {
                 )}
               </tbody>
             </table>
-          </motion.div>
+          </div>
         </motion.div>
       </motion.div>
 
@@ -332,7 +335,6 @@ export default function AdminNotices() {
         )}
       </AnimatePresence>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

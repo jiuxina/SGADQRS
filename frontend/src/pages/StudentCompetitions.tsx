@@ -6,17 +6,13 @@ import {
   Users,
   Clock,
   Calendar,
-  X,
   ImageIcon,
 } from 'lucide-react'
-
-/** 拼接后端图片完整 URL */
-function resolveCoverUrl(url: string | null | undefined): string | null {
-  if (!url) return null
-  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-  return url
-}
-import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
+import ListMeta from '../components/ListMeta'
+import EmptyState from '../components/EmptyState'
+import { ListSkeleton } from '../components/PageSkeleton'
+import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import GlassModal from '../components/GlassModal'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem } from '../api/types'
@@ -25,6 +21,7 @@ import ConfettiEffect from '../components/ConfettiEffect'
 import FailureEffect from '../components/FailureEffect'
 import { PAGE_SIZE } from '../config/constants'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { formatDate, resolveCoverUrl, formatFileSize } from '../utils/format'
 
 type StatusFilter = 'all' | 2 | 3 | 4
 
@@ -42,13 +39,6 @@ const statusBadgeLabel: Record<number, string> = {
   3: '进行中',
   4: '已结束',
   5: '已驳回',
-}
-
-function formatFileSize(bytes?: number | null): string {
-  if (bytes == null || bytes <= 0) return '-'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export default function StudentCompetitions() {
@@ -107,14 +97,8 @@ export default function StudentCompetitions() {
     }
   }
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-'
-    const d = new Date(dateStr)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }
-
   if (loading && competitions.length === 0) {
-    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+    return <ListSkeleton />
   }
 
   return (
@@ -150,9 +134,7 @@ export default function StudentCompetitions() {
 
       {/* Results count */}
       <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.12 }} style={{ marginBottom: '14px' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-          共 <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{total}</span> 个竞赛
-        </span>
+        <ListMeta count={total} unit="个" />
       </motion.div>
 
       {/* Competition cards grid */}
@@ -297,22 +279,8 @@ export default function StudentCompetitions() {
       </AnimatePresence>
 
       {competitions.length === 0 && !loading && (
-        <motion.div
-          variants={fadeSlideUp}
-          initial="hidden"
-          animate="visible"
-          style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            color: 'var(--text-tertiary)',
-            fontSize: '14px',
-          }}
-        >
-          暂无符合条件的竞赛
-        </motion.div>
+        <EmptyState text="暂无符合条件的竞赛" />
       )}
-
-      <div style={{ paddingBottom: '40px' }} />
 
       {/* 庆祝特效 */}
       <ConfettiEffect
@@ -330,26 +298,8 @@ export default function StudentCompetitions() {
       />
 
       {/* 竞赛详情模态框 */}
-      <AnimatePresence>
-        {selectedComp && (
-          <motion.div
-            style={{
-              position: 'fixed', inset: 0, zIndex: 999,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
-            }}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setSelectedComp(null)}
-          >
-            <motion.div
-              className="glass-card glass-card-vertical glass-card-static no-glass-sheen"
-              style={{ width: isMobile ? 'calc(100vw - 32px)' : '520px', maxHeight: '80vh', overflow: 'auto', padding: '24px', position: 'relative' }}
-              variants={panelSlideIn} initial="initial" animate="animate" exit="exit"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button onClick={() => setSelectedComp(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}>
-                <X size={16} strokeWidth={1.5} />
-              </button>
+      <GlassModal open={!!selectedComp} onClose={() => setSelectedComp(null)} title="竞赛详情">
+        {selectedComp && (<>
               {/* Cover Image */}
               {resolveCoverUrl(selectedComp.coverImage) && (
                 <img
@@ -409,35 +359,13 @@ export default function StudentCompetitions() {
                   <button className="btn ghost" onClick={() => { setRegisteringComp(selectedComp); setContactPhone(''); setSelectedComp(null) }}>立即报名</button>
                 )}
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </>)}
+      </GlassModal>
 
       {/* 报名确认模态框 */}
-      <AnimatePresence>
-        {registeringComp && (
-          <motion.div
-            style={{
-              position: 'fixed', inset: 0, zIndex: 1000,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
-            }}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setRegisteringComp(null)}
-          >
-            <motion.div
-              className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: isMobile ? 'calc(100vw - 32px)' : '380px', padding: '24px', position: 'relative' }}
-              variants={panelSlideIn} initial="initial" animate="animate" exit="exit"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button onClick={() => setRegisteringComp(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}>
-                <X size={16} strokeWidth={1.5} />
-              </button>
-              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>确认报名</div>
+      <GlassModal open={!!registeringComp} onClose={() => setRegisteringComp(null)} title="确认报名" maxWidth="380px">
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                {registeringComp.competitionName}
+                {registeringComp?.competitionName}
               </div>
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>联系电话</label>
@@ -452,12 +380,9 @@ export default function StudentCompetitions() {
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button className="btn ghost" onClick={() => setRegisteringComp(null)}>取消</button>
-                <button className="btn ghost" onClick={() => handleRegister(registeringComp)}>确认报名</button>
+                <button className="btn ghost" onClick={() => handleRegister(registeringComp!)}>确认报名</button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </GlassModal>
     </>
   )
 }

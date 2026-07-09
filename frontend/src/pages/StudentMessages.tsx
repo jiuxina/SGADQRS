@@ -5,7 +5,9 @@ import {
   CheckCheck,
   ChevronRight,
 } from 'lucide-react'
-import { staggerContainer, staggerItem, fadeSlideUp, expandCollapse } from '../motion/variants'
+import EmptyState from '../components/EmptyState'
+import { ListSkeleton } from '../components/PageSkeleton'
+import { fadeInList, fadeSlideUp, expandCollapse } from '../motion/variants'
 import { messageApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { MessageItem } from '../api/types'
@@ -73,7 +75,7 @@ export default function StudentMessages() {
   }
 
   if (loading && messages.length === 0) {
-    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+    return <ListSkeleton />
   }
 
   return (
@@ -115,7 +117,7 @@ export default function StudentMessages() {
         <AnimatePresence mode="wait">
           <motion.div
             key="messages"
-            variants={staggerContainer}
+            variants={fadeInList}
             initial="hidden"
             animate="visible"
             exit={{ opacity: 0, transition: { duration: 0.1 } }}
@@ -124,7 +126,7 @@ export default function StudentMessages() {
               const isRead = notif.isRead === 1
               const isExpanded = expandedId === notif.id
               return (
-                <motion.div key={notif.id} variants={staggerItem}>
+                <div key={notif.id}>
                   <div
                     onClick={() => handleToggleExpand(notif.id)}
                     style={{
@@ -187,20 +189,17 @@ export default function StudentMessages() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </div>
               )
             })}
           </motion.div>
         </AnimatePresence>
 
         {messages.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)', fontSize: '14px' }}>
-            暂无消息
-          </div>
+          <EmptyState text="暂无消息" />
         )}
       </motion.div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

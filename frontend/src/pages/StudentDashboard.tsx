@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Trophy, Clock, Medal, FileText, ArrowUpRight } from 'lucide-react'
+import { Trophy, Clock, Medal, FileText } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../motion/variants'
+import QuickActions from '../components/QuickActions'
 import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 
 export default function StudentDashboard() {
-  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
@@ -63,18 +62,10 @@ export default function StudentDashboard() {
 
         <motion.div className="bento-card" variants={staggerItem}>
           <div className="bento-label">快捷入口</div>
-          {quickActions.map((action) => (
-            <div key={action.label} className="bento-action" onClick={() => navigate(action.path)}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
-              <action.icon size={14} color="var(--text-secondary)" strokeWidth={1.5} />
-              <span style={{ flex: 1, fontSize: '12px', color: 'var(--text-primary)' }}>{action.label}</span>
-              <ArrowUpRight size={12} color="var(--text-tertiary)" />
-            </div>
-          ))}
+          <QuickActions items={quickActions} />
         </motion.div>
       </motion.div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

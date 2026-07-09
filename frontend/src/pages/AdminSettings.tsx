@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Pencil, Check, X, Server, Shield, Clock, Database } from 'lucide-react'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import ListMeta from '../components/ListMeta'
+import { ListSkeleton } from '../components/PageSkeleton'
+import { instant, fadeSlideUp } from '../motion/variants'
 import { configApi } from '../api'
 import type { ConfigItem } from '../api/types'
 import { toast } from '../components/Toast'
@@ -51,26 +53,23 @@ export default function AdminSettings() {
     return Server
   }
 
-  if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+  if (loading) return <ListSkeleton />
 
   return (
     <>
       <motion.div style={{ marginBottom: '20px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
-        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-          共 {configs.length} 项系统配置
-        </span>
+        <ListMeta count={configs.length} unit="项" />
       </motion.div>
 
       <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0', maxWidth: '720px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+        <motion.div variants={instant} initial="hidden" animate="visible">
           {configs.map((config) => {
             const isEditing = editStates[config.id]
             const IconComp = getIcon(config.configKey)
             return (
-              <motion.div
+              <div
                 key={config.id}
                 className="setting-row"
-                variants={staggerItem}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -79,20 +78,7 @@ export default function AdminSettings() {
                   borderBottom: '1px solid rgba(0,0,0,0.04)',
                 }}
               >
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: '10px',
-                    background: 'rgba(0,122,255,0.06)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <IconComp size={16} strokeWidth={1.5} color="var(--accent)" />
-                </div>
+                <IconComp size={18} strokeWidth={1.5} color="var(--accent)" />
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px' }}>
@@ -131,13 +117,12 @@ export default function AdminSettings() {
                     </button>
                   </div>
                 )}
-              </motion.div>
+              </div>
             )
           })}
         </motion.div>
       </motion.div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

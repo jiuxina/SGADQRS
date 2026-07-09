@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import { ListSkeleton } from '../components/PageSkeleton'
+import { instant, fadeSlideUp } from '../motion/variants'
 import { statsApi } from '../api'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -13,24 +14,24 @@ export default function AdminStats() {
     statsApi.admin().then((data) => setStats(data as Record<string, unknown>)).catch(console.error).finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+  if (loading) return <ListSkeleton />
 
   const awardDistribution = (stats?.awardDistribution as Record<string, number>) || {}
 
   return (
     <>
       <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}
-        variants={staggerContainer} initial="hidden" animate="visible">
+        variants={instant} initial="hidden" animate="visible">
         {[
           { label: '总用户', value: (stats?.totalUsers as number) || 0 },
           { label: '总竞赛', value: (stats?.totalCompetitions as number) || 0 },
           { label: '总报名', value: (stats?.totalRegistrations as number) || 0 },
           { label: '进行中', value: (stats?.ongoingCompetitions as number) || 0 },
         ].map((item) => (
-          <motion.div key={item.label} className="metric-card" style={{ padding: '16px' }} variants={staggerItem}>
+          <div key={item.label} className="metric-card" style={{ padding: '16px' }}>
             <div style={{ marginBottom: '10px' }}><span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.label}</span></div>
             <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.value}</div>
-          </motion.div>
+          </div>
         ))}
       </motion.div>
 
@@ -50,7 +51,6 @@ export default function AdminStats() {
         </motion.div>
       </div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

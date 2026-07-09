@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { ChevronRight, Building2, BookOpen, Users } from 'lucide-react'
-import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
+import ListMeta from '../components/ListMeta'
+import { ListSkeleton } from '../components/PageSkeleton'
+import { instant, fadeSlideUp } from '../motion/variants'
 import { deptApi } from '../api'
 import type { DeptItem, MajorItem, ClassItem } from '../api/types'
 
@@ -102,19 +104,13 @@ export default function AdminOrgTree() {
   }
 
   if (loading) {
-    return (
-      <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-        加载中...
-      </div>
-    )
+    return <ListSkeleton />
   }
 
   return (
     <>
       <motion.div style={{ marginBottom: '20px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
-        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-          共 {departments.length} 个部门节点
-        </span>
+        <ListMeta count={departments.length} unit="个" />
       </motion.div>
 
       <motion.div
@@ -124,9 +120,9 @@ export default function AdminOrgTree() {
         initial="hidden"
         animate="visible"
       >
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+        <motion.div variants={instant} initial="hidden" animate="visible">
           {deptTree.map((dept) => (
-            <motion.div key={dept.id} variants={staggerItem}>
+            <div key={dept.id}>
               {/* Department Node */}
               <div
                 style={{
@@ -148,20 +144,7 @@ export default function AdminOrgTree() {
                   <ChevronRight size={16} strokeWidth={1.5} color="var(--text-secondary)" />
                 </motion.div>
 
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: '10px',
-                    background: 'rgba(0,122,255,0.06)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Building2 size={16} strokeWidth={1.5} color="var(--accent)" />
-                </div>
+                <Building2 size={18} strokeWidth={1.5} color="var(--accent)" />
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
@@ -226,20 +209,7 @@ export default function AdminOrgTree() {
                                 <ChevronRight size={14} strokeWidth={1.5} color="var(--text-tertiary)" />
                               </motion.div>
 
-                              <div
-                                style={{
-                                  width: 30,
-                                  height: 30,
-                                  borderRadius: '8px',
-                                  background: 'rgba(52,199,89,0.06)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <BookOpen size={14} strokeWidth={1.5} color="#34C759" />
-                              </div>
+                              <BookOpen size={16} strokeWidth={1.5} color="#34C759" />
 
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div
@@ -283,20 +253,7 @@ export default function AdminOrgTree() {
                                             borderBottom: '1px solid rgba(0,0,0,0.02)',
                                           }}
                                         >
-                                          <div
-                                            style={{
-                                              width: 26,
-                                              height: 26,
-                                              borderRadius: '7px',
-                                              background: 'rgba(255,149,0,0.06)',
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              flexShrink: 0,
-                                            }}
-                                          >
-                                            <Users size={12} strokeWidth={1.5} color="#FF9500" />
-                                          </div>
+                                          <Users size={14} strokeWidth={1.5} color="#FF9500" />
 
                                           <div style={{ flex: 1, minWidth: 0 }}>
                                             <span
@@ -369,12 +326,11 @@ export default function AdminOrgTree() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
           ))}
         </motion.div>
       </motion.div>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

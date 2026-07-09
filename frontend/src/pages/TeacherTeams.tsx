@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
+import EmptyState from '../components/EmptyState'
+import { ListSkeleton } from '../components/PageSkeleton'
 import { fadeSlideUp } from '../motion/variants'
 import { registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
@@ -36,7 +38,7 @@ export default function TeacherTeams() {
     catch (err) { toast.error(err instanceof Error ? err.message : '操作失败') }
   }
 
-  if (loading && teams.length === 0) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+  if (loading && teams.length === 0) return <ListSkeleton />
 
   return (
     <>
@@ -82,10 +84,10 @@ export default function TeacherTeams() {
           </tbody>
         </table>
         {teams.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', padding: '50px', color: 'var(--text-tertiary)', fontSize: '14px' }}>暂无团队数据</div>
+          <EmptyState text="暂无团队数据" />
         )}
       </motion.div>
-      <div style={{ paddingBottom: '40px' }} />
+
     </>
   )
 }
