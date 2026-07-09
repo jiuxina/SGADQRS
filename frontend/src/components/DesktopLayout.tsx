@@ -97,6 +97,7 @@ const mobileTabItemsByRole: Record<string, NavItem[]> = {
 }
 
 const titleMap: Record<string, string> = {
+  '/profile': '个人中心',
   '/admin/dashboard': '系统总览',
   '/admin/competitions': '竞赛审核',
   '/admin/users': '用户管理',
@@ -284,7 +285,7 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                 transition={{ type: 'spring', stiffness: 350, damping: 32 }}
               >
                 {/* Drawer Header */}
-                <div className="drawer-header">
+                <div className="drawer-header" onClick={() => handleNavigate('/profile')} style={{ cursor: 'pointer' }}>
                   <div className="drawer-user">
                     <div className="drawer-avatar">
                       <img
@@ -298,7 +299,7 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                       <div className="drawer-user-role">{role === 'admin' ? '管理员' : role === 'teacher' ? '教师' : '学生'}</div>
                     </div>
                   </div>
-                  <button className="drawer-close-btn" onClick={() => setDrawerOpen(false)}>
+                  <button className="drawer-close-btn" onClick={(e) => { e.stopPropagation(); setDrawerOpen(false) }}>
                     <X size={20} strokeWidth={1.8} />
                   </button>
                 </div>
@@ -381,15 +382,31 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-user">
-            <div className="sidebar-user-avatar">
-              <img
-                src={getAvatarSrc(user)}
-                alt="avatar"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = getAvatarSrc(null) }}
+          <motion.button
+            className={`sidebar-item ${location.pathname === '/profile' ? 'active' : ''}`}
+            onClick={() => navigate('/profile')}
+            onMouseEnter={positionTooltip}
+            whileTap={{ scale: 0.88 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+          >
+            {location.pathname === '/profile' && (
+              <motion.div
+                className="sidebar-active-bg"
+                layoutId="sidebar-indicator"
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
               />
+            )}
+            <div className="sidebar-user">
+              <div className="sidebar-user-avatar">
+                <img
+                  src={getAvatarSrc(user)}
+                  alt="avatar"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = getAvatarSrc(null) }}
+                />
+              </div>
             </div>
-          </div>
+            <div className="sidebar-tooltip">个人中心</div>
+          </motion.button>
           <motion.button
             className="sidebar-item"
             onClick={handleLogout}
