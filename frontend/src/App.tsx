@@ -20,11 +20,13 @@ import StudentRegistration from './pages/StudentRegistration'
 import StudentGrades from './pages/StudentGrades'
 import StudentMessages from './pages/StudentMessages'
 import StudentAudit from './pages/StudentAudit'
+import ProfilePage from './pages/ProfilePage'
 import DesktopLayout from './components/DesktopLayout'
 import AuthGuard from './components/AuthGuard'
 import { ToastContainer } from './components/Toast'
 import { ConfirmContainer } from './components/ConfirmDialog'
 import { PromptContainer } from './components/PromptDialog'
+import { EditGradeContainer } from './components/EditGradeDialog'
 
 function DashboardLayout() {
   return (
@@ -40,6 +42,9 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<AuthGuard><DashboardLayout /></AuthGuard>}>
+          {/* Common routes */}
+          <Route path="/profile" element={<ProfilePage />} />
+
           {/* Admin routes */}
           <Route path="/admin/dashboard" element={<AuthGuard allowedRoles={['admin']}><AdminDashboard /></AuthGuard>} />
           <Route path="/admin/competitions" element={<AuthGuard allowedRoles={['admin']}><AdminCompetitions /></AuthGuard>} />
@@ -73,6 +78,7 @@ function App() {
       <ToastContainer />
       <ConfirmContainer />
       <PromptContainer />
+      <EditGradeContainer />
     </div>
   )
 }

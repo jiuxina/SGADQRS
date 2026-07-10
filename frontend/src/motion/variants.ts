@@ -49,6 +49,27 @@ export const fadeSlideUp: Variants = {
 }
 
 /**
+ * Lightweight fade-in for dense content (tables, lists).
+ * No spring, no stagger — items appear together quickly.
+ */
+export const fadeInList: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1] },
+  },
+}
+
+/**
+ * Near-instant appearance for forms and settings pages.
+ * Minimal animation — content just fades in.
+ */
+export const instant: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.15 } },
+}
+
+/**
  * Page route transition (Scheme F).
  */
 export const pageTransition: Variants = {
