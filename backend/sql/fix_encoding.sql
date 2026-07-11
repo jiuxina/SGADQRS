@@ -44,9 +44,9 @@ ALTER TABLE `sys_oper_log` AUTO_INCREMENT = 1;
 ALTER TABLE `sys_config` AUTO_INCREMENT = 1;
 
 -- ===== 重新插入角色数据 =====
-INSERT INTO `sys_role` VALUES (1, 'admin', '系统管理员', NOW());
-INSERT INTO `sys_role` VALUES (2, 'teacher', '教师角色', NOW());
-INSERT INTO `sys_role` VALUES (3, 'student', '学生角色', NOW());
+INSERT INTO `sys_role` VALUES (1, 'admin', NOW());
+INSERT INTO `sys_role` VALUES (2, 'teacher', NOW());
+INSERT INTO `sys_role` VALUES (3, 'student', NOW());
 
 -- ===== 重新插入用户数据 =====
 -- 管理员账号（密码: admin123）

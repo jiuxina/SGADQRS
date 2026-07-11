@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
 CREATE TABLE IF NOT EXISTS `sys_role` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `role_code` VARCHAR(50) NOT NULL COMMENT '角色编码',
-    `description` VARCHAR(200) DEFAULT NULL COMMENT '角色描述',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_role_code` (`role_code`)
@@ -236,9 +235,9 @@ CREATE TABLE IF NOT EXISTS `sys_config` (
 -- ============================================
 
 -- 角色数据
-INSERT INTO `sys_role` (id, role_code, description, create_time) VALUES (1, 'admin', '系统管理员', NOW());
-INSERT INTO `sys_role` (id, role_code, description, create_time) VALUES (2, 'teacher', '教师角色', NOW());
-INSERT INTO `sys_role` (id, role_code, description, create_time) VALUES (3, 'student', '学生角色', NOW());
+INSERT INTO `sys_role` (id, role_code, create_time) VALUES (1, 'admin', NOW());
+INSERT INTO `sys_role` (id, role_code, create_time) VALUES (2, 'teacher', NOW());
+INSERT INTO `sys_role` (id, role_code, create_time) VALUES (3, 'student', NOW());
 
 -- 管理员账号（密码: admin123）
 -- BCrypt加密: $2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi
