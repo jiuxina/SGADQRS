@@ -15,6 +15,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Tag(name = "文件上传")
@@ -50,7 +52,14 @@ public class FileController {
             Files.write(filePath, file.getBytes());
 
             String url = "/uploads/" + datePath + "/" + newFilename;
-            return Result.success("上传成功", url);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("url", url);
+            result.put("fileName", originalFilename);
+            result.put("fileSize", file.getSize());
+            result.put("fileType", file.getContentType());
+
+            return Result.success("上传成功", result);
         } catch (IOException e) {
             return Result.error("上传失败: " + e.getMessage());
         }

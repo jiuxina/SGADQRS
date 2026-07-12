@@ -34,7 +34,7 @@ public class SystemService {
         LambdaQueryWrapper<Notice> wrapper = new LambdaQueryWrapper<>();
         if (noticeType != null) wrapper.eq(Notice::getNoticeType, noticeType);
         if (status != null) wrapper.eq(Notice::getStatus, status);
-        wrapper.orderByDesc(Notice::getCreateTime);
+        wrapper.orderByDesc(Notice::getIsTop).orderByDesc(Notice::getCreateTime);
         return Result.success(new PageResult<>(noticeMapper.selectPage(page, wrapper)));
     }
 
@@ -66,6 +66,15 @@ public class SystemService {
     public Result<?> deleteNotice(Long id) {
         noticeMapper.deleteById(id);
         return Result.success("删除成功", null);
+    }
+
+    @Transactional
+    public Result<?> toggleNoticeTop(Long id) {
+        Notice notice = noticeMapper.selectById(id);
+        if (notice == null) return Result.error("公告不存在");
+        notice.setIsTop(notice.getIsTop() != null && notice.getIsTop() == 1 ? 0 : 1);
+        noticeMapper.updateById(notice);
+        return Result.success(notice.getIsTop() == 1 ? "已置顶" : "已取消置顶", null);
     }
 
     // ===== 消息管理 =====

@@ -47,4 +47,11 @@ public class NoticeController {
     public Result<?> delete(@PathVariable Long id) {
         return systemService.deleteNotice(id);
     }
+
+    @Operation(summary = "置顶/取消置顶公告")
+    @PutMapping("/{id}/top")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<?> toggleTop(@PathVariable Long id) {
+        return systemService.toggleNoticeTop(id);
+    }
 }

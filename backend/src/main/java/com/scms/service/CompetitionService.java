@@ -91,6 +91,7 @@ public class CompetitionService {
 
         if (StringUtils.hasText(dto.getCompetitionName())) comp.setCompetitionName(dto.getCompetitionName());
         if (dto.getOrganizer() != null) comp.setOrganizer(dto.getOrganizer());
+        if (dto.getCoverImage() != null) comp.setCoverImage(dto.getCoverImage());
         if (dto.getDescription() != null) comp.setDescription(dto.getDescription());
         if (dto.getRules() != null) comp.setRules(dto.getRules());
         if (dto.getRegistrationStart() != null) comp.setRegistrationStart(dto.getRegistrationStart());
@@ -121,6 +122,26 @@ public class CompetitionService {
         attachmentMapper.delete(new LambdaQueryWrapper<CompetitionAttachment>().eq(CompetitionAttachment::getCompetitionId, id));
         registrationMapper.delete(new LambdaQueryWrapper<CompetitionRegistration>().eq(CompetitionRegistration::getCompetitionId, id));
         return Result.success("删除成功", null);
+    }
+
+    @Transactional
+    public Result<?> addAttachment(Long competitionId, String fileName, String fileUrl, Long fileSize, String fileType) {
+        Competition comp = competitionMapper.selectById(competitionId);
+        if (comp == null) return Result.error("竞赛不存在");
+        CompetitionAttachment attachment = new CompetitionAttachment();
+        attachment.setCompetitionId(competitionId);
+        attachment.setFileName(fileName);
+        attachment.setFileUrl(fileUrl);
+        attachment.setFileSize(fileSize);
+        attachment.setFileType(fileType);
+        attachmentMapper.insert(attachment);
+        return Result.success("附件添加成功", attachment);
+    }
+
+    @Transactional
+    public Result<?> deleteAttachment(Long attachmentId) {
+        attachmentMapper.deleteById(attachmentId);
+        return Result.success("附件删除成功", null);
     }
 
     public Result<?> getDashboardStats(Long userId, String role) {

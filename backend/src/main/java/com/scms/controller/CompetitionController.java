@@ -71,6 +71,24 @@ public class CompetitionController {
         return competitionService.deleteCompetition(id);
     }
 
+    @Operation(summary = "添加竞赛附件")
+    @PostMapping("/{id}/attachment")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public Result<?> addAttachment(@PathVariable Long id,
+                                   @RequestParam String fileName,
+                                   @RequestParam String fileUrl,
+                                   @RequestParam(required = false, defaultValue = "0") Long fileSize,
+                                   @RequestParam(required = false) String fileType) {
+        return competitionService.addAttachment(id, fileName, fileUrl, fileSize, fileType);
+    }
+
+    @Operation(summary = "删除竞赛附件")
+    @DeleteMapping("/attachment/{attachmentId}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public Result<?> deleteAttachment(@PathVariable Long attachmentId) {
+        return competitionService.deleteAttachment(attachmentId);
+    }
+
     @Operation(summary = "仪表盘统计")
     @GetMapping("/dashboard")
     public Result<?> dashboard(@AuthenticationPrincipal LoginUser loginUser) {

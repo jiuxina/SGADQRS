@@ -12,7 +12,6 @@ public class Role {
     private Long id;
 
     private String roleCode;
-    private String description;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
