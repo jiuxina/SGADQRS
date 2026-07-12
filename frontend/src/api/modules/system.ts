@@ -1,11 +1,12 @@
 import { request } from '../request'
-import type { PageResult, NoticeItem, MessageItem, LogItem, ConfigItem, DeptItem, MajorItem, ClassItem } from '../types'
+import type { PageResult, NoticeItem, MessageItem, LogItem, ConfigItem, DeptItem, MajorItem, ClassItem, FileUploadResult } from '../types'
 
 export const noticeApi = {
   list: (params: { current?: number; size?: number; noticeType?: number; status?: number }) =>
     request.get<PageResult<NoticeItem>>('/notice/list', { params }),
   create: (data: Record<string, unknown>) => request.post('/notice', data),
   update: (data: Record<string, unknown>) => request.put('/notice', data),
+  toggleTop: (id: number) => request.put(`/notice/${id}/top`),
   delete: (id: number) => request.delete(`/notice/${id}`),
 }
 
@@ -41,7 +42,7 @@ export const fileApi = {
   upload: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return request.post<string>('/file/upload', formData, {
+    return request.post<FileUploadResult>('/file/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },

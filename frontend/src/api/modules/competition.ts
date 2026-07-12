@@ -1,5 +1,5 @@
 import { request } from '../request'
-import type { PageResult, CompetitionItem, CompetitionDTO, DashboardStats } from '../types'
+import type { PageResult, CompetitionItem, CompetitionDTO, DashboardStats, CompetitionAttachment } from '../types'
 
 export const competitionApi = {
   /** 竞赛列表 */
@@ -21,6 +21,13 @@ export const competitionApi = {
 
   /** 删除竞赛 */
   delete: (id: number) => request.delete(`/competition/${id}`),
+
+  /** 添加附件 */
+  addAttachment: (id: number, params: { fileName: string; fileUrl: string; fileSize?: number; fileType?: string }) =>
+    request.post<CompetitionAttachment>(`/competition/${id}/attachment`, null, { params }),
+
+  /** 删除附件 */
+  deleteAttachment: (attachmentId: number) => request.delete(`/competition/attachment/${attachmentId}`),
 
   /** 仪表盘统计 */
   dashboard: () => request.get<DashboardStats>('/competition/dashboard'),

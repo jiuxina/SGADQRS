@@ -106,6 +106,13 @@ export interface CompetitionDTO {
   status?: number
 }
 
+export interface FileUploadResult {
+  url: string
+  fileName: string
+  fileSize: number
+  fileType: string
+}
+
 // ===== 报名相关 =====
 
 export interface RegistrationItem {
