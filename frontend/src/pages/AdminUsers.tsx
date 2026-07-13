@@ -115,8 +115,8 @@ export default function AdminUsers() {
     if (!file) return
     setUploading(true)
     try {
-      const url = await fileApi.upload(file)
-      setEditForm((f) => ({ ...f, avatar: url }))
+      const result = await fileApi.upload(file)
+      setEditForm((f) => ({ ...f, avatar: result.url }))
     } catch {
       toast.error('头像上传失败')
     } finally {

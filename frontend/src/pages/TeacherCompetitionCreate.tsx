@@ -63,8 +63,8 @@ export default function TeacherCompetitionCreate() {
     if (!file) return
     setUploading(true)
     try {
-      const url = await fileApi.upload(file)
-      setCoverImage(url)
+      const result = await fileApi.upload(file)
+      setCoverImage(result.url)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '封面上传失败')
     } finally {

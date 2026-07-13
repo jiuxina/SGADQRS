@@ -91,6 +91,14 @@ export default function AdminNotices() {
     catch (err) { toast.error(err instanceof Error ? err.message : '发布失败') }
   }
 
+  const handleToggleTop = async (id: number, currentIsTop: number) => {
+    try {
+      await noticeApi.toggleTop(id)
+      toast.success(currentIsTop === 1 ? '已取消置顶' : '已置顶')
+      loadData()
+    } catch (err) { toast.error(err instanceof Error ? err.message : '操作失败') }
+  }
+
   const sorted = [...filtered].sort((a, b) => {
     if (a.isTop && !b.isTop) return -1
     if (!a.isTop && b.isTop) return 1
@@ -157,7 +165,7 @@ export default function AdminNotices() {
                   <th>类型</th>
                   <th>状态</th>
                   <th>发布时间</th>
-                  <th style={{ width: '180px' }}>操作</th>
+                  <th style={{ width: '240px' }}>操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -189,6 +197,10 @@ export default function AdminNotices() {
                         <button className="text-btn blue" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}
                           onClick={() => handleEdit(notice)}>
                           <Pencil size={11} strokeWidth={1.5} /> 编辑
+                        </button>
+                        <button className="text-btn" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '3px', color: notice.isTop === 1 ? 'var(--warning)' : 'var(--text-tertiary)' }}
+                          onClick={() => handleToggleTop(notice.id, notice.isTop)}>
+                          <Pin size={11} strokeWidth={1.5} /> {notice.isTop === 1 ? '取消置顶' : '置顶'}
                         </button>
                         {notice.status === 0 ? (
                           <button className="text-btn blue" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}
