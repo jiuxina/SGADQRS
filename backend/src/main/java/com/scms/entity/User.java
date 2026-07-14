@@ -20,6 +20,9 @@ public class User {
     /** 用户类型：1-学生 2-教师 3-管理员 */
     private Integer userType;
 
+    /** 状态：1-启用 0-禁用 */
+    private Integer status;
+
     private Long deptId;
     private Long majorId;
     private Long classId;

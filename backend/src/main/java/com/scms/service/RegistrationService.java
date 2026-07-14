@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
 import com.scms.common.Result;
 import com.scms.dto.AuditDTO;
+import com.scms.dto.BatchAuditDTO;
 import com.scms.dto.RegistrationDTO;
 import com.scms.dto.TeamDTO;
 import com.scms.entity.*;
@@ -37,8 +38,7 @@ public class RegistrationService {
 
         // 教师只能看自己发布的竞赛的报名
         if (publisherId != null) {
-            wrapper.inSql(CompetitionRegistration::getCompetitionId,
-                    "SELECT id FROM competition WHERE publisher_id = " + publisherId);
+            wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
         }
 
         wrapper.orderByDesc(CompetitionRegistration::getCreateTime);
@@ -93,11 +93,37 @@ public class RegistrationService {
     }
 
     @Transactional
+    public Result<?> batchAuditRegistration(BatchAuditDTO dto) {
+        List<Long> ids = dto.getIds();
+        if (ids == null || ids.isEmpty()) {
+            return Result.error("请选择要审核的报名记录");
+        }
+        Integer status = dto.getStatus();
+        if (status == null || (status != 1 && status != 2)) {
+            return Result.error("审核状态无效");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long id : ids) {
+            CompetitionRegistration reg = registrationMapper.selectById(id);
+            if (reg == null) continue;
+            reg.setStatus(status);
+            reg.setAuditRemark(dto.getAuditRemark());
+            reg.setAuditTime(now);
+            registrationMapper.updateById(reg);
+        }
+
+        String msg = status == 1 ? "批量审核通过" : "已批量拒绝";
+        return Result.success(msg, null);
+    }
+
+    @Transactional
     public Result<?> cancelRegistration(Long id, Long studentId) {
         CompetitionRegistration reg = registrationMapper.selectById(id);
         if (reg == null) return Result.error("报名记录不存在");
         if (!reg.getStudentId().equals(studentId)) return Result.error("无权操作");
-        registrationMapper.deleteById(id);
+        reg.setStatus(-1);
+        registrationMapper.updateById(reg);
         return Result.success("已取消报名", null);
     }
 
@@ -109,8 +135,7 @@ public class RegistrationService {
         if (competitionId != null) wrapper.eq(CompetitionTeam::getCompetitionId, competitionId);
         if (status != null) wrapper.eq(CompetitionTeam::getStatus, status);
         if (publisherId != null) {
-            wrapper.inSql(CompetitionTeam::getCompetitionId,
-                    "SELECT id FROM competition WHERE publisher_id = " + publisherId);
+            wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
         }
         wrapper.orderByDesc(CompetitionTeam::getCreateTime);
 

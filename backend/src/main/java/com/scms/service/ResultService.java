@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +34,7 @@ public class ResultService {
         if (awardLevel != null) wrapper.eq(CompetitionResult::getAwardLevel, awardLevel);
         if (isPublished != null) wrapper.eq(CompetitionResult::getIsPublished, isPublished);
         if (publisherId != null) {
-            wrapper.inSql(CompetitionResult::getCompetitionId,
-                    "SELECT id FROM competition WHERE publisher_id = " + publisherId);
+            wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
         }
         wrapper.orderByDesc(CompetitionResult::getCreateTime);
 
@@ -52,7 +53,8 @@ public class ResultService {
         result.setScore(dto.getScore());
         result.setRanking(dto.getRanking());
         result.setAwardLevel(dto.getAwardLevel());
-        result.setAwardName(dto.getAwardName());
+        // 从竞赛的自定义奖项中查找awardName
+        result.setAwardName(resolveAwardName(dto.getCompetitionId(), dto.getAwardLevel(), dto.getAwardName()));
         result.setRemark(dto.getRemark());
         result.setIsPublished(0);
         resultMapper.insert(result);
@@ -66,8 +68,13 @@ public class ResultService {
 
         if (dto.getScore() != null) result.setScore(dto.getScore());
         if (dto.getRanking() != null) result.setRanking(dto.getRanking());
-        if (dto.getAwardLevel() != null) result.setAwardLevel(dto.getAwardLevel());
-        if (dto.getAwardName() != null) result.setAwardName(dto.getAwardName());
+        if (dto.getAwardLevel() != null) {
+            result.setAwardLevel(dto.getAwardLevel());
+            // 从竞赛的自定义奖项中查找awardName
+            result.setAwardName(resolveAwardName(result.getCompetitionId(), dto.getAwardLevel(), dto.getAwardName()));
+        } else if (dto.getAwardName() != null) {
+            result.setAwardName(dto.getAwardName());
+        }
         if (dto.getRemark() != null) result.setRemark(dto.getRemark());
         resultMapper.updateById(result);
         return Result.success("更新成功", null);
@@ -119,5 +126,30 @@ public class ResultService {
             CompetitionTeam team = teamMapper.selectById(r.getTeamId());
             if (team != null) r.setTeamName(team.getTeamName());
         }
+    }
+
+    /**
+     * 从竞赛的自定义奖项中解析awardName
+     */
+    private String resolveAwardName(Long competitionId, Integer awardLevel, String fallbackName) {
+        if (competitionId == null || awardLevel == null) return fallbackName;
+        Competition comp = competitionMapper.selectById(competitionId);
+        if (comp == null || comp.getAwards() == null) return fallbackName;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            List<java.util.Map<String, Object>> awards = mapper.readValue(
+                    comp.getAwards(), new TypeReference<List<java.util.Map<String, Object>>>() {});
+            for (java.util.Map<String, Object> award : awards) {
+                Object levelObj = award.get("level");
+                if (levelObj != null) {
+                    int level = levelObj instanceof Number ? ((Number) levelObj).intValue() : Integer.parseInt(levelObj.toString());
+                    if (level == awardLevel) {
+                        return award.get("name") != null ? award.get("name").toString() : fallbackName;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return fallbackName;
     }
 }

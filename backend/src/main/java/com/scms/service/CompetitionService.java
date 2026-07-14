@@ -79,6 +79,7 @@ public class CompetitionService {
         comp.setLocation(dto.getLocation());
         comp.setMaxMembers(dto.getMaxMembers());
         comp.setMaxTeams(dto.getMaxTeams());
+        comp.setAwards(dto.getAwards());
         comp.setStatus(dto.getStatus());
         competitionMapper.insert(comp);
         return Result.success("创建成功", comp);
@@ -101,6 +102,7 @@ public class CompetitionService {
         if (dto.getLocation() != null) comp.setLocation(dto.getLocation());
         if (dto.getMaxMembers() != null) comp.setMaxMembers(dto.getMaxMembers());
         if (dto.getMaxTeams() != null) comp.setMaxTeams(dto.getMaxTeams());
+        if (dto.getAwards() != null) comp.setAwards(dto.getAwards());
         if (dto.getStatus() != null) comp.setStatus(dto.getStatus());
 
         competitionMapper.updateById(comp);
@@ -157,12 +159,11 @@ public class CompetitionService {
             stats.put("myCompetitions", competitionMapper.selectCount(
                     new LambdaQueryWrapper<Competition>().eq(Competition::getPublisherId, userId)));
             stats.put("totalRegistrations", registrationMapper.selectCount(
-                    new LambdaQueryWrapper<CompetitionRegistration>().inSql(CompetitionRegistration::getCompetitionId,
-                            "SELECT id FROM competition WHERE publisher_id = " + userId)));
+                    new LambdaQueryWrapper<CompetitionRegistration>().apply(
+                            "competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", userId)));
             stats.put("pendingAudit", registrationMapper.selectCount(
                     new LambdaQueryWrapper<CompetitionRegistration>().eq(CompetitionRegistration::getStatus, 0)
-                            .inSql(CompetitionRegistration::getCompetitionId,
-                                    "SELECT id FROM competition WHERE publisher_id = " + userId)));
+                            .apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", userId)));
         } else {
             stats.put("myRegistrations", registrationMapper.selectCount(
                     new LambdaQueryWrapper<CompetitionRegistration>().eq(CompetitionRegistration::getStudentId, userId)));

@@ -25,6 +25,9 @@ public class Competition {
     private Integer maxMembers;
     private Integer maxTeams;
 
+    /** 自定义奖项列表（JSON格式） */
+    private String awards;
+
     /** 状态：0-草稿 1-待审核 2-已发布 3-进行中 4-已结束 5-已驳回 */
     private Integer status;
 

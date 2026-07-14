@@ -69,6 +69,7 @@ public class UserService {
         user.setDeptId(dto.getDeptId());
         user.setMajorId(dto.getMajorId());
         user.setClassId(dto.getClassId());
+        user.setStatus(1); // 默认启用
         userMapper.insert(user);
 
         // 分配角色
@@ -91,6 +92,7 @@ public class UserService {
         if (dto.getDeptId() != null) user.setDeptId(dto.getDeptId());
         if (dto.getMajorId() != null) user.setMajorId(dto.getMajorId());
         if (dto.getClassId() != null) user.setClassId(dto.getClassId());
+        if (dto.getUserType() != null) user.setUserType(dto.getUserType());
         if (StringUtils.hasText(dto.getPassword())) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
@@ -103,6 +105,24 @@ public class UserService {
         userMapper.deleteById(id);
         userRoleMapper.delete(new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, id));
         return Result.success("删除成功", null);
+    }
+
+    @Transactional
+    public Result<?> toggleUserStatus(Long id, Integer status) {
+        User user = userMapper.selectById(id);
+        if (user == null) return Result.error("用户不存在");
+        user.setStatus(status);
+        userMapper.updateById(user);
+        return Result.success(status == 1 ? "启用成功" : "禁用成功", null);
+    }
+
+    @Transactional
+    public Result<?> resetPassword(Long id) {
+        User user = userMapper.selectById(id);
+        if (user == null) return Result.error("用户不存在");
+        user.setPassword(passwordEncoder.encode("123456"));
+        userMapper.updateById(user);
+        return Result.success("密码重置成功，新密码为 123456", null);
     }
 
     private void assignRole(Long userId, String roleCode) {

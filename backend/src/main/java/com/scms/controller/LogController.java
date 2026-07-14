@@ -5,8 +5,11 @@ import com.scms.service.SystemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @Tag(name = "系统日志")
 @RestController
@@ -23,7 +26,9 @@ public class LogController {
                           @RequestParam(defaultValue = "10") int size,
                           @RequestParam(required = false) String username,
                           @RequestParam(required = false) String method,
-                          @RequestParam(required = false) Integer status) {
-        return systemService.listLogs(current, size, username, method, status);
+                          @RequestParam(required = false) Integer status,
+                          @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
+                          @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate) {
+        return systemService.listLogs(current, size, username, method, status, startDate, endDate);
     }
 }

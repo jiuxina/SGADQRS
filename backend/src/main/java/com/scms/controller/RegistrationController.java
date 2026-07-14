@@ -2,6 +2,7 @@ package com.scms.controller;
 
 import com.scms.common.Result;
 import com.scms.dto.AuditDTO;
+import com.scms.dto.BatchAuditDTO;
 import com.scms.dto.RegistrationDTO;
 import com.scms.dto.TeamDTO;
 import com.scms.security.LoginUser;
@@ -46,6 +47,13 @@ public class RegistrationController {
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public Result<?> audit(@PathVariable Long id, @RequestBody AuditDTO dto) {
         return registrationService.auditRegistration(id, dto);
+    }
+
+    @Operation(summary = "批量审核报名")
+    @PutMapping("/batch-audit")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public Result<?> batchAudit(@Valid @RequestBody BatchAuditDTO dto) {
+        return registrationService.batchAuditRegistration(dto);
     }
 
     @Operation(summary = "取消报名")
