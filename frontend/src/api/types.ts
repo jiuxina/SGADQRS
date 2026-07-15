@@ -47,6 +47,7 @@ export interface UserItem {
   avatar: string | null
   gender: number
   userType: number
+  status: number
   deptId: number | null
   majorId: number | null
   classId: number | null
@@ -74,6 +75,7 @@ export interface CompetitionItem {
   location: string | null
   maxMembers: number
   maxTeams: number | null
+  awards: Array<{ name: string; level: number }> | null
   status: number
   registrationCount: number
   hasRegistered: boolean
@@ -103,6 +105,7 @@ export interface CompetitionDTO {
   location?: string
   maxMembers?: number
   maxTeams?: number
+  awards?: string
   status?: number
 }
 
@@ -175,6 +178,7 @@ export interface ResultItem {
   awardLevel: number | null
   awardName: string | null
   remark: string | null
+  certificateUrl: string | null
   isPublished: number
   publishTime: string | null
   createTime: string
@@ -221,15 +225,6 @@ export interface LogItem {
   createTime: string
 }
 
-// ===== 配置相关 =====
-
-export interface ConfigItem {
-  id: number
-  configKey: string
-  configValue: string
-  description: string | null
-}
-
 // ===== 组织架构 =====
 
 export interface DeptItem {
@@ -257,4 +252,39 @@ export interface ClassItem {
 
 export interface DashboardStats {
   [key: string]: unknown
+}
+
+export interface EnrollmentTrend {
+  month: string
+  count: number
+}
+
+export interface CollegeStat {
+  name: string
+  count: number
+}
+
+export interface CompetitionRanking {
+  id: number
+  name: string
+  count: number
+  status: number
+}
+
+export interface UpcomingDeadline {
+  id: number
+  competitionName: string
+  deadlineType: string
+  deadlineTime: string
+}
+
+export interface UpcomingStart {
+  id: number
+  competitionName: string
+  startTime: string
+}
+
+export interface UpcomingStats {
+  upcomingDeadlines: UpcomingDeadline[]
+  upcomingStarts: UpcomingStart[]
 }

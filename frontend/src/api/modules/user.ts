@@ -17,4 +17,10 @@ export const userApi = {
 
   /** 删除用户 */
   delete: (id: number) => request.delete(`/user/${id}`),
+
+  /** 禁用/启用用户 */
+  toggleStatus: (id: number, status: number) => request.put(`/user/disable/${id}`, { status }),
+
+  /** 重置密码 */
+  resetPassword: (id: number) => request.put(`/user/reset-password/${id}`),
 }

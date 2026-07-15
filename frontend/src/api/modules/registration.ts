@@ -14,6 +14,10 @@ export const registrationApi = {
   audit: (id: number, data: { status: number; auditRemark?: string }) =>
     request.put(`/registration/${id}/audit`, data),
 
+  /** 批量审核报名 */
+  batchAudit: (data: { ids: number[]; status: number; auditRemark?: string }) =>
+    request.put('/registration/batch-audit', data),
+
   /** 取消报名 */
   cancel: (id: number) => request.delete(`/registration/${id}`),
 

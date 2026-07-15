@@ -25,6 +25,9 @@ instance.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+// 防止多个并发401同时触发跳转
+let isRedirecting = false
+
 // 响应拦截器：统一错误处理
 instance.interceptors.response.use(
   (response: AxiosResponse<Result>) => {
@@ -35,10 +38,19 @@ instance.interceptors.response.use(
     return response
   },
   (error) => {
-    if (error.response?.status === API_CONFIG.AUTH_EXPIRED_STATUS) {
+    const status = error.response?.status
+    const url = error.config?.url || ''
+
+    // 只在以下情况清除token并跳转登录页：
+    // 1. 非登录接口返回401（真正的token过期）
+    // 2. 没有正在跳转（防止并发请求重复触发）
+    if (status === API_CONFIG.AUTH_EXPIRED_STATUS && !url.includes('/auth/login') && !isRedirecting) {
+      isRedirecting = true
       localStorage.removeItem(STORAGE_KEYS.TOKEN)
       localStorage.removeItem(STORAGE_KEYS.USER)
       window.location.href = ROUTES.LOGIN
+      // 重置标记（页面刷新后自然重置）
+      setTimeout(() => { isRedirecting = false }, 3000)
     }
     const message = error.response?.data?.message || error.message || '网络错误'
     return Promise.reject(new Error(message))

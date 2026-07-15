@@ -3,7 +3,7 @@ import type { PageResult, ResultItem } from '../types'
 
 export const resultApi = {
   /** 成绩列表 */
-  list: (params: { current?: number; size?: number; competitionId?: number; studentId?: number; awardLevel?: number; isPublished?: number }) =>
+  list: (params: { current?: number; size?: number; competitionId?: number; studentId?: number; isPublished?: number }) =>
     request.get<PageResult<ResultItem>>('/result/list', { params }),
 
   /** 录入成绩 */
