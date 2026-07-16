@@ -1,14 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Plus, Pencil, Send, RotateCcw, Trash2, Pin, X } from 'lucide-react'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import LinkExtension from '@tiptap/extension-link'
+import { Plus, Pencil, Send, RotateCcw, Trash2, Pin, X, Link } from 'lucide-react'
 import ListMeta from '../components/ListMeta'
 import { fadeInList, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { noticeApi } from '../api'
 import type { NoticeItem } from '../api/types'
-import { PAGE_SIZE } from '../config/constants'
-import { toast } from '../components/Toast'
-import { confirmDialog } from '../components/ConfirmDialog'
+import { toast } from '../components/toastUtils'
+import { confirmDialog } from '../components/confirmDialogUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 type FilterType = 'all' | 'notice' | 'announcement' | 'published' | 'draft'
 
@@ -20,6 +24,67 @@ const filterOptions: { key: FilterType; label: string }[] = [
   { key: 'draft', label: '草稿' },
 ]
 
+/* ── Rich Text Editor ── */
+function RichTextEditor({ content, onChange }: { content: string; onChange: (html: string) => void }) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      LinkExtension.configure({ openOnClick: false }),
+    ],
+    content,
+    onUpdate: ({ editor: ed }) => onChange(ed.getHTML()),
+    editorProps: {
+      attributes: { class: 'ProseMirror-editor' },
+    },
+  })
+
+  const setLink = useCallback(() => {
+    if (!editor) return
+    const prev = editor.getAttributes('link').href ?? ''
+    const url = window.prompt('输入链接地址', prev)
+    if (url === null) return
+    if (url === '') { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  }, [editor])
+
+  if (!editor) return null
+
+  const btn = (label: string | JSX.Element, active: boolean, onClick: () => void) => (
+    <button
+      type="button"
+      onMouseDown={(e) => { e.preventDefault(); onClick() }}
+      style={{
+        width: 30, height: 30, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13,
+        background: active ? 'var(--accent)' : 'transparent',
+        color: active ? '#fff' : 'var(--text-secondary)',
+      }}
+    >
+      {label}
+    </button>
+  )
+
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+      {/* Toolbar */}
+      <div style={{ display: 'flex', gap: 2, padding: '6px 8px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary, #f5f5f5)', flexWrap: 'wrap' }}>
+        {btn('<b>B</b>', editor.isActive('bold'), () => editor.chain().focus().toggleBold().run())}
+        {btn('<i>I</i>', editor.isActive('italic'), () => editor.chain().focus().toggleItalic().run())}
+        <span style={{ width: 1, background: 'var(--border)', margin: '0 4px' }} />
+        {btn('UL', editor.isActive('bulletList'), () => editor.chain().focus().toggleBulletList().run())}
+        {btn('OL', editor.isActive('orderedList'), () => editor.chain().focus().toggleOrderedList().run())}
+        <span style={{ width: 1, background: 'var(--border)', margin: '0 4px' }} />
+        {btn(<Link size={13} />, editor.isActive('link'), setLink)}
+      </div>
+      {/* Editor body */}
+      <div style={{ padding: '8px 12px', minHeight: 140 }}>
+        <EditorContent editor={editor} />
+      </div>
+    </div>
+  )
+}
+
+/* ── Page Component ── */
 export default function AdminNotices() {
   const [filter, setFilter] = useState<FilterType>('all')
   const [showModal, setShowModal] = useState(false)
@@ -27,30 +92,47 @@ export default function AdminNotices() {
   const [newContent, setNewContent] = useState('')
   const [newType, setNewType] = useState<'notice' | 'announcement'>('notice')
   const [notices, setNotices] = useState<NoticeItem[]>([])
+  const [total, setTotal] = useState(0)
   const [, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<number | null>(null)
   const isMobile = useIsMobile()
+  const pagination = usePagination()
+
+  const buildParams = useCallback(() => {
+    const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
+    if (filter === 'notice') params.noticeType = 1
+    else if (filter === 'announcement') params.noticeType = 2
+    else if (filter === 'published') params.status = 1
+    else if (filter === 'draft') params.status = 0
+    return params
+  }, [filter, pagination.current, pagination.pageSize])
+
+  const fetchData = useCallback(async () => {
+    const params = buildParams()
+    return noticeApi.list(params as Parameters<typeof noticeApi.list>[0])
+  }, [buildParams])
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
-      if (filter === 'notice') params.noticeType = 1
-      else if (filter === 'announcement') params.noticeType = 2
-      const result = await noticeApi.list(params as Parameters<typeof noticeApi.list>[0])
+      const result = await fetchData()
       setNotices(result.records)
+      setTotal(result.total)
+      pagination.setTotal(result.total)
     } catch (err) { console.error('加载公告失败:', err) }
     finally { setLoading(false) }
-  }, [filter])
+  }, [fetchData])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    fetchData().then(result => {
+      setNotices(result.records)
+      setTotal(result.total)
+      pagination.setTotal(result.total)
+    }).catch(err => { console.error('加载公告失败:', err) }).finally(() => setLoading(false))
+  }, [fetchData])
 
-  const filtered = notices.filter((n) => {
-    if (filter === 'all') return true
-    if (filter === 'published') return n.status === 1
-    if (filter === 'draft') return n.status === 0
-    return true
-  })
+  // 筛选条件变化时重置到第1页
+  useEffect(() => { pagination.resetPage() }, [filter])
 
   const handleCreate = async () => {
     if (!newTitle.trim()) return
@@ -99,6 +181,9 @@ export default function AdminNotices() {
     } catch (err) { toast.error(err instanceof Error ? err.message : '操作失败') }
   }
 
+  // 筛选已在服务端完成，直接使用
+  const filtered = notices
+
   const sorted = [...filtered].sort((a, b) => {
     if (a.isTop && !b.isTop) return -1
     if (!a.isTop && b.isTop) return 1
@@ -107,6 +192,23 @@ export default function AdminNotices() {
 
   return (
     <>
+      <style>{`
+        .ProseMirror-editor { outline: none; min-height: 120px; font-size: 13px; line-height: 1.6; color: var(--text-primary); }
+        .ProseMirror-editor p { margin: 0 0 6px; }
+        .ProseMirror-editor p:last-child { margin-bottom: 0; }
+        .ProseMirror-editor ul,
+        .ProseMirror-editor ol { padding-left: 1.4em; margin: 0 0 6px; }
+        .ProseMirror-editor li { margin-bottom: 2px; }
+        .ProseMirror-editor a { color: var(--accent, #3b82f6); text-decoration: underline; cursor: pointer; }
+        .ProseMirror-editor [contenteditable="false"] { cursor: default; }
+        .ProseMirror p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: left;
+          color: var(--text-tertiary, #aaa);
+          pointer-events: none;
+          height: 0;
+        }
+      `}</style>
       {/* Header row */}
       <motion.div
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}
@@ -114,7 +216,7 @@ export default function AdminNotices() {
         initial="hidden"
         animate="visible"
       >
-        <ListMeta count={sorted.length} />
+        <ListMeta count={total} />
         {filter !== 'all' && (
           <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
             ({filterOptions.find((o) => o.key === filter)?.label})
@@ -234,6 +336,15 @@ export default function AdminNotices() {
         </motion.div>
       </motion.div>
 
+      <Pagination
+        current={pagination.current}
+        totalPages={pagination.totalPages}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setCurrent}
+        onPageSizeChange={pagination.setPageSize}
+      />
+
       {/* Publish Modal */}
       <AnimatePresence>
         {showModal && (
@@ -314,22 +425,13 @@ export default function AdminNotices() {
                 />
               </div>
 
-              {/* Content textarea */}
+              {/* Content — rich text editor */}
               <div style={{ marginBottom: '20px' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>内容</div>
-                <textarea
-                  className="glass-input"
-                  placeholder="请输入内容..."
-                  value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
-                  rows={5}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    resize: 'vertical',
-                    fontFamily: 'inherit',
-                    fontSize: '13px',
-                  }}
+                <RichTextEditor
+                  key={editingId ?? 'new'}
+                  content={newContent}
+                  onChange={setNewContent}
                 />
               </div>
 

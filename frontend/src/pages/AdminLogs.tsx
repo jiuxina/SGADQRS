@@ -6,8 +6,9 @@ import DigitRoller from '../components/DigitRoller'
 import { fadeInList, fadeSlideUp } from '../motion/variants'
 import { logApi } from '../api'
 import type { LogItem } from '../api/types'
-import { PAGE_SIZE } from '../config/constants'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 type FilterStatus = 'all' | 1 | 0
 
@@ -21,14 +22,20 @@ const methodColorMap: Record<string, string> = {
   GET: '#007AFF', POST: '#34C759', PUT: '#FF9500', DELETE: '#FF3B30',
 }
 
+const httpMethods = ['GET', 'POST', 'PUT', 'DELETE']
+
 export default function AdminLogs() {
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [methodFilter, setMethodFilter] = useState('')
   const [logs, setLogs] = useState<LogItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const isMobile = useIsMobile()
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const pagination = usePagination()
 
   const toggleExpand = (id: number) => {
     setExpandedId((prev) => (prev === id ? null : id))
@@ -39,23 +46,28 @@ export default function AdminLogs() {
     return str.length > max ? str.slice(0, max) + '...' : str
   }
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
-      if (filter !== 'all') params.status = filter
-      if (searchQuery) params.username = searchQuery
-      const result = await logApi.list(params as Parameters<typeof logApi.list>[0])
+  const fetchData = useCallback(async () => {
+    const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
+    if (filter !== 'all') params.level = filter
+    if (searchQuery) params.keyword = searchQuery
+    if (startDate) params.startDate = startDate + ' 00:00:00'
+    if (endDate) params.endDate = endDate + ' 23:59:59'
+    if (methodFilter) params.method = methodFilter
+    return logApi.list(params as Parameters<typeof logApi.list>[0])
+  }, [filter, searchQuery, startDate, endDate, methodFilter, pagination.current, pagination.pageSize])
+
+  useEffect(() => {
+    fetchData().then(result => {
       setLogs(result.records)
       setTotal(result.total)
-    } catch (err) {
+      pagination.setTotal(result.total)
+    }).catch(err => {
       console.error('加载日志失败:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [filter, searchQuery])
+    }).finally(() => setLoading(false))
+  }, [fetchData])
 
-  useEffect(() => { loadData() }, [loadData])
+  // 筛选条件变化时重置到第1页
+  useEffect(() => { pagination.resetPage() }, [filter, searchQuery, startDate, endDate, methodFilter])
 
   const successCount = logs.filter((l) => l.status === 1).length
   const failCount = logs.filter((l) => l.status === 0).length
@@ -87,6 +99,22 @@ export default function AdminLogs() {
             <Search strokeWidth={1.5} />
             <input className="glass-search" placeholder="搜索用户 / 操作 / URL..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ marginBottom: 0 }} />
           </div>
+        </div>
+
+        <div style={{ padding: '0 18px 12px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="glass-search" style={{ width: '160px', marginBottom: 0 }} />
+          <span style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>~</span>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="glass-search" style={{ width: '160px', marginBottom: 0 }} />
+          <select value={methodFilter} onChange={(e) => setMethodFilter(e.target.value)}
+            style={{
+              height: '32px', padding: '0 10px', borderRadius: '8px', border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
+              cursor: 'pointer', minWidth: '100px',
+            }}
+          >
+            <option value="">全部方法</option>
+            {httpMethods.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
         </div>
 
         <div style={{ padding: '0 18px 12px' }}>
@@ -201,6 +229,15 @@ export default function AdminLogs() {
           </div>
         </motion.div>
       </motion.div>
+
+      <Pagination
+        current={pagination.current}
+        totalPages={pagination.totalPages}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setCurrent}
+        onPageSizeChange={pagination.setPageSize}
+      />
 
     </>
   )

@@ -1,21 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, startTransition } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { User, Lock, Save, Camera, Building2, BookOpen, Users } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
-import { userApi } from '../api'
-import { toast } from '../components/Toast'
+import { userApi, fileApi } from '../api'
+import { toast } from '../components/toastUtils'
 import { fadeSlideUp } from '../motion/variants'
 import type { UserItem } from '../api/types'
 
 export default function ProfilePage() {
+  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const setUser = useAuthStore((s) => s.setUser)
+  const logout = useAuthStore((s) => s.logout)
 
   const [profile, setProfile] = useState<UserItem | null>(null)
   const [formData, setFormData] = useState({
     realName: '',
     gender: 0,
     avatar: '',
+    email: '',
+    phone: '',
   })
   const [passwordData, setPasswordData] = useState({
     oldPassword: '',
@@ -24,13 +29,44 @@ export default function ProfilePage() {
   })
   const [saving, setSaving] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('图片大小不能超过5MB')
+      return
+    }
+    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+      toast.error('仅支持 JPG/PNG/GIF/WebP 格式')
+      return
+    }
+    setUploading(true)
+    try {
+      const res = await fileApi.upload(file)
+      setFormData((prev) => ({ ...prev, avatar: res.url }))
+      toast.success('头像上传成功')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '上传失败')
+    } finally {
+      setUploading(false)
+      // 重置 input 以便再次选择同一文件
+      e.target.value = ''
+    }
+  }
 
   useEffect(() => {
     if (user) {
-      setFormData({
-        realName: user.realName || '',
-        gender: user.gender || 0,
-        avatar: user.avatar || '',
+      startTransition(() => {
+        setFormData({
+          realName: user.realName || '',
+          gender: user.gender || 0,
+          avatar: user.avatar || '',
+          email: (user as unknown as Record<string, unknown>).email as string || '',
+          phone: (user as unknown as Record<string, unknown>).phone as string || '',
+        })
       })
       // 获取完整的用户信息（包含院系、专业、班级名称）
       userApi.getById(user.id).then(setProfile).catch(console.error)
@@ -50,6 +86,8 @@ export default function ProfilePage() {
         realName: formData.realName,
         gender: formData.gender,
         avatar: formData.avatar,
+        email: formData.email,
+        phone: formData.phone,
       })
       // 更新本地用户信息
       setUser({ ...user, ...formData })
@@ -86,8 +124,10 @@ export default function ProfilePage() {
         oldPassword: passwordData.oldPassword,
         password: passwordData.newPassword,
       })
+      logout()
       setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' })
-      toast.success('密码修改成功')
+      toast.success('密码已修改，请重新登录')
+      setTimeout(() => navigate('/login'), 2000)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '密码修改失败')
     } finally {
@@ -118,8 +158,19 @@ export default function ProfilePage() {
   return (
     <motion.div variants={fadeSlideUp} initial="hidden" animate="visible">
       {/* 用户信息卡片 */}
-      <div className="glass-card" style={{ padding: '32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '24px' }}>
-        <div style={{ position: 'relative' }}>
+      <div className="glass-card glass-card-static" style={{ padding: '32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '24px' }}>
+        {/* 隐藏的文件选择器 */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          onChange={handleAvatarUpload}
+          style={{ display: 'none' }}
+        />
+        <div
+          style={{ position: 'relative', cursor: 'pointer' }}
+          onClick={() => fileInputRef.current?.click()}
+        >
           <img
             src={getAvatarSrc()}
             alt="avatar"
@@ -129,6 +180,8 @@ export default function ProfilePage() {
               borderRadius: '50%',
               objectFit: 'cover',
               border: '3px solid rgba(0, 122, 255, 0.2)',
+              opacity: uploading ? 0.6 : 1,
+              transition: 'opacity 0.2s',
             }}
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = `/avatar/s3-1.webp`
@@ -141,15 +194,33 @@ export default function ProfilePage() {
             width: '28px',
             height: '28px',
             borderRadius: '50%',
-            background: '#007AFF',
+            background: uploading ? '#999' : '#007AFF',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
+            pointerEvents: 'none',
             boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
           }}>
             <Camera size={14} color="#fff" />
           </div>
+          {uploading && (
+            <div style={{
+              position: 'absolute',
+              inset: '0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <div className="spinner" style={{
+                width: '24px',
+                height: '24px',
+                border: '3px solid rgba(255,255,255,0.3)',
+                borderTopColor: '#fff',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+              }} />
+            </div>
+          )}
         </div>
         <div>
           <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
@@ -182,7 +253,7 @@ export default function ProfilePage() {
       </div>
 
       {/* 编辑个人信息 */}
-      <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
+      <div className="glass-card glass-card-static" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
           <User size={18} strokeWidth={1.8} color="#007AFF" />
           <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
@@ -200,6 +271,33 @@ export default function ProfilePage() {
               value={formData.realName}
               onChange={(e) => setFormData({ ...formData, realName: e.target.value })}
               placeholder="请输入真实姓名"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              邮箱
+            </label>
+            <input
+              className="glass-input"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="请输入邮箱（可选）"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              手机号
+            </label>
+            <input
+              className="glass-input"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="请输入手机号（可选）"
               style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>
@@ -256,19 +354,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-              头像URL
-            </label>
-            <input
-              className="glass-input"
-              value={formData.avatar}
-              onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
-              placeholder="请输入头像URL（可选）"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-            />
-          </div>
-
           <button
             className="btn"
             onClick={handleSaveProfile}
@@ -282,7 +367,7 @@ export default function ProfilePage() {
       </div>
 
       {/* 修改密码 */}
-      <div className="glass-card" style={{ padding: '24px' }}>
+      <div className="glass-card glass-card-static" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
           <Lock size={18} strokeWidth={1.8} color="#007AFF" />
           <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>

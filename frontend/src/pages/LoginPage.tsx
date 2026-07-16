@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { env } from '../config/env'
-import { toast } from '../components/Toast'
+import { toast } from '../components/toastUtils'
 
 type Role = 'admin' | 'teacher' | 'student'
 

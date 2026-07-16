@@ -19,11 +19,12 @@ import GlassModal from '../components/GlassModal'
 import { registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { RegistrationItem } from '../api/types'
-import { PAGE_SIZE } from '../config/constants'
-import { toast } from '../components/Toast'
-import { confirmDialog } from '../components/ConfirmDialog'
+import { toast } from '../components/toastUtils'
+import { confirmDialog } from '../components/confirmDialogUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { formatDate } from '../utils/format'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 type FilterKey = 'all' | 0 | 1 | 2
 
@@ -53,25 +54,41 @@ export default function StudentRegistration() {
   const [loading, setLoading] = useState(true)
   const [selectedReg, setSelectedReg] = useState<RegistrationItem | null>(null)
   const isMobile = useIsMobile()
+  const pagination = usePagination()
+
+  const fetchData = useCallback(async () => {
+    if (!user) return null
+    const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize, studentId: user.id }
+    if (filter !== 'all') params.status = filter
+    return registrationApi.list(params as Parameters<typeof registrationApi.list>[0])
+  }, [user, filter, pagination.current, pagination.pageSize])
 
   const loadData = useCallback(async () => {
-    if (!user) return
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE, studentId: user.id }
-      if (filter !== 'all') params.status = filter
-      const result = await registrationApi.list(params as Parameters<typeof registrationApi.list>[0])
+      const result = await fetchData()
+      if (!result) return
       setRegistrations(result.records)
+      pagination.setTotal(result.total)
     } catch (err) {
       console.error('加载报名数据失败:', err)
     } finally {
       setLoading(false)
     }
-  }, [user, filter])
+  }, [fetchData])
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    fetchData().then(result => {
+      if (!result) return
+      setRegistrations(result.records)
+      pagination.setTotal(result.total)
+    }).catch(err => {
+      console.error('加载报名数据失败:', err)
+    }).finally(() => setLoading(false))
+  }, [fetchData])
+
+  // 筛选条件变化时重置到第1页
+  useEffect(() => { pagination.resetPage() }, [filter])
 
   const handleCancel = async (id: number) => {
     const confirmed = await confirmDialog({ message: '确定要取消报名吗？', variant: 'danger', confirmText: '取消报名' })
@@ -186,7 +203,7 @@ export default function StudentRegistration() {
             return (
               <div
                 key={reg.id}
-                className="glass-card glass-card-vertical"
+                className="glass-card glass-card-vertical glass-card-static"
                 style={{ padding: '18px' }}
               >
                 {/* Top: Name + status */}
@@ -279,63 +296,91 @@ export default function StudentRegistration() {
         <EmptyState text="暂无报名记录" />
       )}
 
+      <Pagination
+        current={pagination.current}
+        totalPages={pagination.totalPages}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setCurrent}
+        onPageSizeChange={pagination.setPageSize}
+      />
+
       {/* Detail Modal */}
-      <GlassModal open={!!selectedReg} onClose={() => setSelectedReg(null)} title="报名详情" maxWidth="420px">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>竞赛名称</div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>{selectedReg?.competitionName || '-'}</div>
-                </div>
-                <div style={{ display: 'flex', gap: '20px' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>队伍名称</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.teamName || '--'}</div>
+      <GlassModal open={!!selectedReg} onClose={() => setSelectedReg(null)} title="报名详情" maxWidth="80vw">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {/* Left Column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>竞赛名称</div>
+                    <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', lineHeight: 1.4 }}>{selectedReg?.competitionName || '-'}</div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>角色</div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>队伍名称</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.teamName || '暂未分配'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>角色</div>
                     <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.isTeamLeader === 1 ? '队长' : '队员'}</div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', gap: '20px' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>报名时间</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg ? formatDate(selectedReg.createTime) : '-'}</div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>联系电话</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.contactPhone || '-'}</div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>状态</div>
-                    <span className={`glass-badge ${(statusMap[selectedReg?.status ?? 0] || statusMap[0]).badge}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                </div>
+
+                {/* Right Column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>状态</div>
+                    <span className={`glass-badge ${(statusMap[selectedReg?.status ?? 0] || statusMap[0]).badge}`} style={{ fontSize: '12px', padding: '3px 10px' }}>
                       {(statusMap[selectedReg?.status ?? 0] || statusMap[0]).label}
                     </span>
                   </div>
-                </div>
-                <div style={{ display: 'flex', gap: '20px' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>联系电话</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.contactPhone || '-'}</div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>报名时间</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg ? formatDate(selectedReg.createTime) : '-'}</div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>审核时间</div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>审核时间</div>
                     <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg?.auditTime ? formatDate(selectedReg.auditTime) : '-'}</div>
                   </div>
+                  {selectedReg?.attachmentUrl && (
+                    <div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>附件</div>
+                      <a href={selectedReg.attachmentUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <ExternalLink size={14} strokeWidth={1.5} />
+                        查看附件
+                      </a>
+                    </div>
+                  )}
                 </div>
-                {selectedReg?.attachmentUrl && (
-                  <div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>附件</div>
-                    <a href={selectedReg.attachmentUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: 'var(--accent)', textDecoration: 'none' }}>
-                      查看附件
-                    </a>
-                  </div>
-                )}
+              </div>
+
+              {/* Full-width sections below */}
+              <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {selectedReg?.auditRemark && (
                   <div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>审核备注</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.auditRemark}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>审核备注</div>
+                    <div style={{
+                      fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.6,
+                      padding: '12px 14px', borderRadius: '10px',
+                      background: selectedReg.status === 2 ? 'rgba(239,68,68,0.06)' : 'var(--bg-secondary)',
+                      border: '1px solid var(--border-color)',
+                    }}>
+                      {selectedReg.auditRemark}
+                    </div>
                   </div>
                 )}
                 {selectedReg?.remark && (
                   <div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>备注</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedReg.remark}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>备注</div>
+                    <div style={{
+                      fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.6,
+                      padding: '12px 14px', borderRadius: '10px',
+                      background: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
+                    }}>
+                      {selectedReg.remark}
+                    </div>
                   </div>
                 )}
               </div>

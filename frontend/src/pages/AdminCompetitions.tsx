@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Search, X, Eye, Calendar, MapPin, Users, Clock } from 'lucide-react'
+import { Search, X, Eye, Calendar, MapPin, Users, Clock, Download } from 'lucide-react'
 
 /** 拼接后端图片完整 URL */
 function resolveCoverUrl(url: string | null | undefined): string | null {
@@ -9,11 +9,14 @@ function resolveCoverUrl(url: string | null | undefined): string | null {
   return url
 }
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
-import { competitionApi } from '../api'
+import { competitionApi, exportApi } from '../api'
 import type { CompetitionItem } from '../api/types'
-import { PAGE_SIZE } from '../config/constants'
-import { toast } from '../components/Toast'
+import { toast } from '../components/toastUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useNavigate } from 'react-router-dom'
+import { confirmDialog } from '../components/confirmDialogUtils'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 type FilterStatus = 'all' | 1 | 2 | 3 | 4 | 0 | 5
 
@@ -49,28 +52,58 @@ export default function AdminCompetitions() {
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const pagination = usePagination()
   const [selectedComp, setSelectedComp] = useState<CompetitionItem | null>(null)
+  const [rejectModal, setRejectModal] = useState<{ id: number; name: string } | null>(null)
+  const [rejectRemark, setRejectRemark] = useState('')
   const isMobile = useIsMobile()
+  const navigate = useNavigate()
+
+  const handleDelete = async (id: number, name: string, registrationCount: number) => {
+    if (registrationCount > 0) {
+      toast.error('该竞赛已有报名记录，无法删除')
+      return
+    }
+    const confirmed = await confirmDialog({
+      message: `确定要删除竞赛「${name}」吗？`,
+      variant: 'danger',
+      confirmText: '删除',
+    })
+    if (!confirmed) return
+    try {
+      await competitionApi.delete(id)
+      toast.success('删除成功')
+      loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '删除失败')
+    }
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
+      const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
       if (filter !== 'all') params.status = filter
       if (searchQuery) params.keyword = searchQuery
       const result = await competitionApi.list(params as Parameters<typeof competitionApi.list>[0])
       setCompetitions(result.records)
       setTotal(result.total)
+      pagination.setTotal(result.total)
     } catch (err) {
       console.error('加载竞赛数据失败:', err)
     } finally {
       setLoading(false)
     }
-  }, [filter, searchQuery])
+  }, [filter, searchQuery, pagination.current, pagination.pageSize])
 
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // 筛选条件变化时重置到第1页
+  useEffect(() => {
+    pagination.resetPage()
+  }, [filter, searchQuery])
 
   const handleAudit = async (id: number, status: number) => {
     try {
@@ -81,7 +114,32 @@ export default function AdminCompetitions() {
     }
   }
 
+  const handleRejectConfirm = async () => {
+    if (!rejectModal) return
+    try {
+      await competitionApi.audit(rejectModal.id, 5, rejectRemark)
+      toast.success('已驳回')
+      setRejectModal(null)
+      setRejectRemark('')
+      loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '操作失败')
+    }
+  }
+
   const pendingCount = competitions.filter((c) => c.status === 1).length
+
+  const handleExport = async () => {
+    try {
+      const params: { status?: number; keyword?: string } = {}
+      if (filter !== 'all') params.status = filter as number
+      if (searchQuery) params.keyword = searchQuery
+      await exportApi.competitions(params)
+      toast.success('导出成功')
+    } catch {
+      toast.error('导出失败')
+    }
+  }
 
   const formatShortDate = (dateStr: string) => {
     if (!dateStr) return '-'
@@ -116,15 +174,25 @@ export default function AdminCompetitions() {
             )}
           </span>
         </div>
-        <div className="search-wrap" style={{ width: '220px' }}>
-          <Search strokeWidth={1.5} />
-          <input
-            className="glass-search"
-            placeholder="搜索竞赛名称 / 发布者..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ marginBottom: 0 }}
-          />
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            className="btn ghost"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px' }}
+            onClick={handleExport}
+          >
+            <Download size={14} strokeWidth={1.5} />
+            导出
+          </button>
+          <div className="search-wrap" style={{ width: '220px' }}>
+            <Search strokeWidth={1.5} />
+            <input
+              className="glass-search"
+              placeholder="搜索竞赛名称 / 发布者..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ marginBottom: 0 }}
+            />
+          </div>
         </div>
       </motion.div>
 
@@ -193,15 +261,27 @@ export default function AdminCompetitions() {
                             通过
                           </button>
                           <button className="text-btn danger" style={{ fontSize: '12px' }}
-                            onClick={() => handleAudit(comp.id, 5)}>
+                            onClick={() => setRejectModal({ id: comp.id, name: comp.competitionName })}>
                             拒绝
                           </button>
                         </div>
                       ) : (
-                        <button className="text-btn blue" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          onClick={() => setSelectedComp(comp)}>
-                          <Eye size={12} strokeWidth={1.5} /> 查看详情
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {(comp.status === 0 || comp.status === 5) && (
+                            <button className="text-btn" style={{ fontSize: '12px', color: 'var(--accent)' }}
+                              onClick={() => navigate(`/teacher/competitions/${comp.id}/edit`)}>
+                              编辑
+                            </button>
+                          )}
+                          <button className="text-btn blue" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            onClick={() => setSelectedComp(comp)}>
+                            <Eye size={12} strokeWidth={1.5} /> 详情
+                          </button>
+                          <button className="text-btn" style={{ fontSize: '12px', color: 'var(--danger)' }}
+                            onClick={() => handleDelete(comp.id, comp.competitionName, comp.registrationCount)}>
+                            删除
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -209,7 +289,7 @@ export default function AdminCompetitions() {
               })}
               {competitions.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
                     未找到匹配的竞赛
                   </td>
                 </tr>
@@ -218,6 +298,15 @@ export default function AdminCompetitions() {
           </table>
         </motion.div>
       </motion.div>
+
+      <Pagination
+        current={pagination.current}
+        totalPages={pagination.totalPages}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setCurrent}
+        onPageSizeChange={pagination.setPageSize}
+      />
 
       {/* Detail Modal */}
       <AnimatePresence>
@@ -334,6 +423,87 @@ export default function AdminCompetitions() {
                   ))}
                 </div>
               )}
+
+              {/* Admin actions in detail modal */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+                {(selectedComp.status === 0 || selectedComp.status === 5) && (
+                  <button className="text-btn" style={{ fontSize: '13px', color: 'var(--accent)' }}
+                    onClick={() => { navigate(`/teacher/competitions/${selectedComp.id}/edit`); setSelectedComp(null) }}>
+                    编辑竞赛
+                  </button>
+                )}
+                <button className="text-btn danger" style={{ fontSize: '13px' }}
+                  onClick={() => {
+                    const comp = selectedComp
+                    setSelectedComp(null)
+                    handleDelete(comp!.id, comp!.competitionName, comp!.registrationCount)
+                  }}>
+                  删除竞赛
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Reject Modal */}
+      <AnimatePresence>
+        {rejectModal && (
+          <motion.div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => { setRejectModal(null); setRejectRemark('') }}
+          >
+            <motion.div
+              className="glass-card glass-card-vertical glass-card-static"
+              style={{ width: isMobile ? 'calc(100vw - 32px)' : '420px', padding: '24px', position: 'relative' }}
+              variants={panelSlideIn}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>驳回竞赛</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                确定要驳回「{rejectModal.name}」吗？
+              </div>
+
+              <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>备注（选填）</div>
+              <textarea
+                value={rejectRemark}
+                onChange={(e) => setRejectRemark(e.target.value)}
+                placeholder="请输入驳回原因..."
+                rows={4}
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: '8px',
+                  border: '1px solid var(--border-color)', background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)', fontSize: '13px', resize: 'vertical',
+                  outline: 'none', boxSizing: 'border-box', marginBottom: '20px',
+                }}
+              />
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  className="text-btn"
+                  style={{ fontSize: '13px' }}
+                  onClick={() => { setRejectModal(null); setRejectRemark('') }}
+                >
+                  取消
+                </button>
+                <button
+                  className="text-btn danger"
+                  style={{ fontSize: '13px', fontWeight: '600' }}
+                  onClick={handleRejectConfirm}
+                >
+                  确认驳回
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

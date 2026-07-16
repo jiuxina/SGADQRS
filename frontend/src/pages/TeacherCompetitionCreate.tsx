@@ -1,16 +1,17 @@
-import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useRef, useEffect, startTransition } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
   ArrowLeft,
   Upload,
   X,
-  ImageIcon,
+  File,
 } from 'lucide-react'
+import type { CompetitionAttachment } from '../api/types'
 import { fadeSlideUp, instant } from '../motion/variants'
 import { competitionApi, fileApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import { toast } from '../components/Toast'
+import { toast } from '../components/toastUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { resolveCoverUrl } from '../utils/format'
 
@@ -28,13 +29,31 @@ interface FormData {
   maxTeams: string
 }
 
+interface AwardItem {
+  name: string
+  level: number
+}
+
+/** 从日期时间字符串中提取日期部分 YYYY-MM-DD */
+function extractDate(datetime: string | null | undefined): string {
+  if (!datetime) return ''
+  return datetime.slice(0, 10)
+}
+
 export default function TeacherCompetitionCreate() {
   const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const isEdit = Boolean(id)
+  const editId = id ? Number(id) : undefined
   useAuthStore((s) => s.user)
   const [submitting, setSubmitting] = useState(false)
+  const [loadingData, setLoadingData] = useState(false)
   const [coverImage, setCoverImage] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [attachments, setAttachments] = useState<CompetitionAttachment[]>([])
+  const [uploadingAttachment, setUploadingAttachment] = useState(false)
+  const attachmentInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<FormData>({
     name: '',
     organizer: '',
@@ -48,8 +67,39 @@ export default function TeacherCompetitionCreate() {
     maxMembers: '5',
     maxTeams: '',
   })
+  const [awards, setAwards] = useState<AwardItem[]>([])
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const isMobile = useIsMobile()
+
+  // 编辑模式：加载已有竞赛数据
+  useEffect(() => {
+    if (!isEdit || !editId) return
+    startTransition(() => setLoadingData(true))
+    competitionApi.getById(editId)
+      .then((comp) => {
+        setForm({
+          name: comp.competitionName ?? '',
+          organizer: comp.organizer ?? '',
+          description: comp.description ?? '',
+          rules: comp.rules ?? '',
+          registrationStart: extractDate(comp.registrationStart),
+          registrationEnd: extractDate(comp.registrationEnd),
+          competitionStart: extractDate(comp.competitionStart),
+          competitionEnd: extractDate(comp.competitionEnd),
+          location: comp.location ?? '',
+          maxMembers: String(comp.maxMembers ?? 5),
+          maxTeams: comp.maxTeams != null ? String(comp.maxTeams) : '',
+        })
+        if (comp.awards) setAwards(comp.awards)
+        if (comp.coverImage) setCoverImage(comp.coverImage)
+        if (comp.attachments) setAttachments(comp.attachments)
+      })
+      .catch((err) => {
+        toast.error(err instanceof Error ? err.message : '加载竞赛数据失败')
+        navigate(-1)
+      })
+      .finally(() => setLoadingData(false))
+  }, [isEdit, editId, navigate])
 
   function updateField(field: keyof FormData, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -82,13 +132,63 @@ export default function TeacherCompetitionCreate() {
     if (!form.registrationEnd) newErrors.registrationEnd = '请选择报名截止时间'
     if (!form.competitionStart) newErrors.competitionStart = '请选择比赛开始时间'
     if (!form.competitionEnd) newErrors.competitionEnd = '请选择比赛结束时间'
+
+    // 四个时间均已填写时，校验先后顺序：报名开始 < 报名结束 < 竞赛开始 < 竞赛结束
+    if (form.registrationStart && form.registrationEnd && form.competitionStart && form.competitionEnd) {
+      if (form.registrationStart >= form.registrationEnd) {
+        newErrors.registrationEnd = '报名截止时间必须晚于报名开始时间'
+      }
+      if (form.registrationEnd >= form.competitionStart) {
+        newErrors.competitionStart = '比赛开始时间必须晚于报名截止时间'
+      }
+      if (form.competitionStart >= form.competitionEnd) {
+        newErrors.competitionEnd = '比赛结束时间必须晚于比赛开始时间'
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
+  async function handleAttachmentUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || !files.length || !editId) return
+    setUploadingAttachment(true)
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const result = await fileApi.upload(file)
+        const attachment = await competitionApi.addAttachment(editId, {
+          fileName: result.fileName,
+          fileUrl: result.url,
+          fileSize: result.fileSize,
+          fileType: result.fileType,
+        })
+        setAttachments((prev) => [...prev, attachment])
+      }
+      toast.success('附件上传成功')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '附件上传失败')
+    } finally {
+      setUploadingAttachment(false)
+      if (attachmentInputRef.current) attachmentInputRef.current.value = ''
+    }
+  }
+
+  async function handleDeleteAttachment(attachmentId: number) {
+    try {
+      await competitionApi.deleteAttachment(attachmentId)
+      setAttachments((prev) => prev.filter((a) => a.id !== attachmentId))
+      toast.success('附件已删除')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '删除失败')
+    }
+  }
+
   async function handleSaveDraft() {
     try {
-      await competitionApi.create({
+      const payload = {
+        ...(isEdit ? { id: editId } : {}),
         competitionName: form.name,
         organizer: form.organizer,
         coverImage: coverImage ?? undefined,
@@ -97,12 +197,18 @@ export default function TeacherCompetitionCreate() {
         registrationStart: form.registrationStart + ' 00:00:00',
         registrationEnd: form.registrationEnd + ' 23:59:59',
         competitionStart: form.competitionStart + ' 00:00:00',
-        competitionEnd: form.competitionEnd + ' 23:59:59',
+        competitionEnd: form.competitionEnd + ' 00:00:00',
         location: form.location,
         maxMembers: Number(form.maxMembers) || 1,
         maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
+        awards: awards.length > 0 ? JSON.stringify(awards) : undefined,
         status: 0,
-      })
+      }
+      if (isEdit) {
+        await competitionApi.update(payload)
+      } else {
+        await competitionApi.create(payload)
+      }
       navigate(-1)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '保存失败')
@@ -113,7 +219,8 @@ export default function TeacherCompetitionCreate() {
     if (!validate()) return
     setSubmitting(true)
     try {
-      await competitionApi.create({
+      const payload = {
+        ...(isEdit ? { id: editId } : {}),
         competitionName: form.name,
         organizer: form.organizer,
         coverImage: coverImage ?? undefined,
@@ -122,12 +229,50 @@ export default function TeacherCompetitionCreate() {
         registrationStart: form.registrationStart + ' 00:00:00',
         registrationEnd: form.registrationEnd + ' 23:59:59',
         competitionStart: form.competitionStart + ' 00:00:00',
-        competitionEnd: form.competitionEnd + ' 23:59:59',
+        competitionEnd: form.competitionEnd + ' 00:00:00',
         location: form.location,
         maxMembers: Number(form.maxMembers) || 1,
         maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
+        awards: awards.length > 0 ? JSON.stringify(awards) : undefined,
         status: 1,
-      })
+      }
+      if (isEdit) {
+        await competitionApi.update(payload)
+      } else {
+        await competitionApi.create(payload)
+      }
+      navigate(-1)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '保存失败')
+    }
+  }
+
+  async function handleSubmit() {
+    if (!validate()) return
+    setSubmitting(true)
+    try {
+      const payload = {
+        ...(isEdit ? { id: editId } : {}),
+        competitionName: form.name,
+        organizer: form.organizer,
+        coverImage: coverImage ?? undefined,
+        description: form.description,
+        rules: form.rules,
+        registrationStart: form.registrationStart + ' 00:00:00',
+        registrationEnd: form.registrationEnd + ' 23:59:59',
+        competitionStart: form.competitionStart + ' 00:00:00',
+        competitionEnd: form.competitionEnd + ' 00:00:00',
+        location: form.location,
+        maxMembers: Number(form.maxMembers) || 1,
+        maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
+        awards: awards.length > 0 ? JSON.stringify(awards) : undefined,
+        status: 1,
+      }
+      if (isEdit) {
+        await competitionApi.update(payload)
+      } else {
+        await competitionApi.create(payload)
+      }
       navigate(-1)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '提交失败')
@@ -161,10 +306,18 @@ export default function TeacherCompetitionCreate() {
           <ArrowLeft size={16} strokeWidth={1.5} />
         </button>
         <div>
-          <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>发布新竞赛</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px' }}>填写竞赛信息并提交审核</div>
+          <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+            {isEdit ? '编辑竞赛' : '发布新竞赛'}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+            {isEdit ? '修改竞赛信息并保存' : '填写竞赛信息并提交审核'}
+          </div>
         </div>
       </motion.div>
+
+      {loadingData ? (
+        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-tertiary)' }}>加载竞赛数据中...</div>
+      ) : (
 
       <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '28px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
         <motion.div variants={instant} initial="hidden" animate="visible">
@@ -250,6 +403,62 @@ export default function TeacherCompetitionCreate() {
             <textarea style={textareaStyle} placeholder="请输入竞赛规则" value={form.rules} onChange={(e) => updateField('rules', e.target.value)} />
           </div>
 
+          {/* 自定义奖项管理 */}
+          <div style={fieldGroupStyle}>
+            <label style={labelStyle}>竞赛奖项</label>
+            <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '10px' }}>
+              自定义该竞赛的奖项，学生录入成绩时可选择
+            </div>
+            {awards.map((award, index) => (
+              <div key={index} style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                marginBottom: '8px', padding: '10px 14px', borderRadius: '10px',
+                background: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.4)',
+              }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', minWidth: '40px' }}>
+                  等级{award.level}
+                </span>
+                <input
+                  className="glass-input"
+                  placeholder="奖项名称"
+                  value={award.name}
+                  onChange={(e) => {
+                    const newAwards = [...awards]
+                    newAwards[index] = { ...newAwards[index], name: e.target.value }
+                    setAwards(newAwards)
+                  }}
+                  style={{ flex: 1, height: '36px' }}
+                />
+                <button
+                  onClick={() => setAwards(awards.filter((_, i) => i !== index))}
+                  style={{
+                    width: '28px', height: '28px', borderRadius: '50%',
+                    border: 'none', cursor: 'pointer', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.08)', color: 'var(--text-secondary)',
+                  }}
+                >
+                  <X size={14} strokeWidth={2} />
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const nextLevel = awards.length > 0 ? Math.max(...awards.map(a => a.level)) + 1 : 1
+                setAwards([...awards, { name: '', level: nextLevel }])
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                padding: '10px', borderRadius: '10px', width: '100%',
+                border: '1px dashed var(--accent)', cursor: 'pointer',
+                background: 'rgba(99,102,241,0.04)', fontSize: '13px',
+                color: 'var(--accent)', fontWeight: '500',
+              }}
+            >
+              + 添加奖项
+            </button>
+          </div>
+
           <div style={{ marginBottom: '20px' }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '12px' }}>时间安排</div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
@@ -291,6 +500,81 @@ export default function TeacherCompetitionCreate() {
             </div>
           </div>
 
+          {/* 附件管理 - 仅编辑模式 */}
+          {isEdit && (
+            <div style={{ ...fieldGroupStyle, paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.3)' }}>
+              <label style={labelStyle}>竞赛附件</label>
+              <input
+                ref={attachmentInputRef}
+                type="file"
+                multiple
+                style={{ display: 'none' }}
+                onChange={handleAttachmentUpload}
+              />
+
+              {attachments.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                  {attachments.map((att) => (
+                    <div
+                      key={att.id}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 14px', borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.3)',
+                        border: '1px solid rgba(255,255,255,0.4)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                        <File size={16} strokeWidth={1.5} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                        <span style={{ fontSize: '13px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {att.fileName}
+                        </span>
+                        {att.fileSize > 0 && (
+                          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                            {(att.fileSize / 1024).toFixed(1)} KB
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteAttachment(att.id)}
+                        style={{
+                          width: '24px', height: '24px', borderRadius: '50%',
+                          border: 'none', cursor: 'pointer', flexShrink: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: 'rgba(0,0,0,0.08)', color: 'var(--text-secondary)',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <X size={12} strokeWidth={2} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div
+                onClick={() => !uploadingAttachment && attachmentInputRef.current?.click()}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: '8px', padding: '12px', borderRadius: '10px',
+                  border: '1px dashed var(--accent)',
+                  cursor: uploadingAttachment ? 'wait' : 'pointer',
+                  background: 'rgba(99,102,241,0.04)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {uploadingAttachment ? (
+                  <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>上传中...</span>
+                ) : (
+                  <>
+                    <Upload size={18} strokeWidth={1.5} style={{ color: 'var(--accent)', opacity: 0.6 }} />
+                    <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>点击上传附件</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
             <button className="btn ghost" onClick={handleSaveDraft} disabled={submitting}>
               保存草稿
@@ -301,7 +585,7 @@ export default function TeacherCompetitionCreate() {
           </div>
         </motion.div>
       </motion.div>
-
+      )}
     </>
   )
 }

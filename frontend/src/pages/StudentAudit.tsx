@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, startTransition } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ListSkeleton } from '../components/PageSkeleton'
@@ -20,7 +20,7 @@ export default function StudentAudit() {
 
   useEffect(() => {
     if (!compId || !user) return
-    setLoading(true)
+    startTransition(() => setLoading(true))
     Promise.all([
       competitionApi.getById(Number(compId)),
       registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: Number(compId), studentId: user.id }),

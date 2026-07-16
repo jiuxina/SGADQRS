@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { UserCheck, UserX, ImageIcon, ExternalLink } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
@@ -7,12 +8,13 @@ import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import GlassModal from '../components/GlassModal'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import type { CompetitionItem, RegistrationItem } from '../api/types'
+import type { CompetitionItem, CompetitionDTO, RegistrationItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
-import { toast } from '../components/Toast'
-import { confirmDialog } from '../components/ConfirmDialog'
-import { useIsMobile } from '../hooks/useIsMobile'
+import { toast } from '../components/toastUtils'
+import { confirmDialog } from '../components/confirmDialogUtils'
 import { resolveCoverUrl } from '../utils/format'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 const statusBadgeMap: Record<number, { cls: string; label: string }> = {
   0: { cls: 'pending', label: '草稿' },
@@ -31,27 +33,46 @@ const regStatusMap: Record<number, { cls: string; label: string }> = {
 
 export default function TeacherCompetitions() {
   const user = useAuthStore((s) => s.user)
+  const navigate = useNavigate()
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all')
+  const pagination = usePagination()
   const [managingComp, setManagingComp] = useState<CompetitionItem | null>(null)
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
   const [regLoading, setRegLoading] = useState(false)
-  const isMobile = useIsMobile()
+  const [rejectingRegId, setRejectingRegId] = useState<number | null>(null)
+  const [rejectRemark, setRejectRemark] = useState('')
+  const [selectedRegIds, setSelectedRegIds] = useState<number[]>([])
+  const fetchData = useCallback(async () => {
+    if (!user) return null
+    const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize, publisherId: user.id }
+    if (statusFilter !== 'all') params.status = statusFilter
+    return competitionApi.list(params as Parameters<typeof competitionApi.list>[0])
+  }, [user, statusFilter, pagination.current, pagination.pageSize])
 
   const loadData = useCallback(async () => {
-    if (!user) return
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE, publisherId: user.id }
-      if (statusFilter !== 'all') params.status = statusFilter
-      const result = await competitionApi.list(params as Parameters<typeof competitionApi.list>[0])
+      const result = await fetchData()
+      if (!result) return
       setCompetitions(result.records)
+      pagination.setTotal(result.total)
     } catch (err) { console.error('加载竞赛失败:', err) }
     finally { setLoading(false) }
-  }, [user, statusFilter])
+  }, [fetchData])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    fetchData().then(result => {
+      if (!result) return
+      setCompetitions(result.records)
+      pagination.setTotal(result.total)
+    }).catch(err => { console.error('加载竞赛失败:', err) })
+      .finally(() => setLoading(false))
+  }, [fetchData])
+
+  // 筛选条件变化时重置到第1页
+  useEffect(() => { pagination.resetPage() }, [statusFilter])
 
   const handleDelete = async (id: number) => {
     const confirmed = await confirmDialog({ message: '确定要删除此竞赛吗？', variant: 'danger', confirmText: '删除' })
@@ -60,8 +81,19 @@ export default function TeacherCompetitions() {
     catch (err) { toast.error(err instanceof Error ? err.message : '删除失败') }
   }
 
+  const handleSubmitReview = async (id: number) => {
+    try {
+      await competitionApi.update({ id, status: 1 } as CompetitionDTO)
+      loadData()
+      toast.success('已提交审核')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '提交失败')
+    }
+  }
+
   const openManage = async (comp: CompetitionItem) => {
     setManagingComp(comp)
+    setSelectedRegIds([])
     setRegLoading(true)
     try {
       const result = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: comp.id })
@@ -74,9 +106,11 @@ export default function TeacherCompetitions() {
     }
   }
 
-  const handleAuditReg = async (id: number, status: number) => {
+  const handleAuditReg = async (id: number, status: number, auditRemark?: string) => {
     try {
-      await registrationApi.audit(id, { status })
+      await registrationApi.audit(id, { status, auditRemark })
+      setRejectingRegId(null)
+      setRejectRemark('')
       if (managingComp) {
         const result = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: managingComp.id })
         setRegistrations(result.records)
@@ -84,6 +118,35 @@ export default function TeacherCompetitions() {
       loadData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '审核失败')
+    }
+  }
+
+  const toggleSelectAll = useCallback(() => {
+    const pendingIds = registrations.filter(r => r.status === 0).map(r => r.id)
+    if (selectedRegIds.length === pendingIds.length && pendingIds.length > 0) {
+      setSelectedRegIds([])
+    } else {
+      setSelectedRegIds(pendingIds)
+    }
+  }, [registrations, selectedRegIds])
+
+  const toggleSelectReg = (id: number) => {
+    setSelectedRegIds(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id])
+  }
+
+  const handleBatchAudit = async (status: number) => {
+    if (selectedRegIds.length === 0) return
+    try {
+      await registrationApi.batchAudit({ ids: selectedRegIds, status })
+      setSelectedRegIds([])
+      toast.success(status === 1 ? '批量审核通过' : '已批量拒绝')
+      if (managingComp) {
+        const result = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: managingComp.id })
+        setRegistrations(result.records)
+      }
+      loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '批量审核失败')
     }
   }
 
@@ -149,6 +212,15 @@ export default function TeacherCompetitions() {
                     <td>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button className="text-btn blue" style={{ fontSize: '12px' }} onClick={() => openManage(comp)}>管理</button>
+                        {(comp.status === 0 || comp.status === 5) && (
+                          <button className="text-btn" style={{ fontSize: '12px', color: 'var(--accent)' }} onClick={() => navigate(`/teacher/competitions/${comp.id}/edit`)}>编辑</button>
+                        )}
+                        {comp.status === 0 && (
+                          <button className="text-btn" style={{ fontSize: '12px', color: 'var(--success)' }} onClick={() => handleSubmitReview(comp.id)}>提交审核</button>
+                        )}
+                        {comp.status === 5 && (
+                          <button className="text-btn" style={{ fontSize: '12px', color: 'var(--success)' }} onClick={() => handleSubmitReview(comp.id)}>修改后重新提交</button>
+                        )}
                         <button className="text-btn" style={{ fontSize: '12px', color: 'var(--danger)' }} onClick={() => handleDelete(comp.id)}>删除</button>
                       </div>
                     </td>
@@ -156,12 +228,21 @@ export default function TeacherCompetitions() {
                 )
               })}
               {competitions.length === 0 && !loading && (
-                <tr><td colSpan={6}><EmptyState text="暂无竞赛" /></td></tr>
+                <tr><td colSpan={7}><EmptyState text="暂无竞赛" /></td></tr>
               )}
             </tbody>
           </table>
         </motion.div>
       </motion.div>
+
+      <Pagination
+        current={pagination.current}
+        totalPages={pagination.totalPages}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setCurrent}
+        onPageSizeChange={pagination.setPageSize}
+      />
 
       {/* Manage Modal */}
       <GlassModal open={!!managingComp} onClose={() => setManagingComp(null)} maxWidth="600px">
@@ -169,9 +250,34 @@ export default function TeacherCompetitions() {
               <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px', paddingRight: '24px' }}>
                 {managingComp?.competitionName}
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '20px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
                 报名管理 · 共 {registrations.length} 条报名记录
               </div>
+
+              {registrations.filter(r => r.status === 0).length > 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px',
+                  padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: '8px',
+                }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                    <input type="checkbox"
+                      checked={selectedRegIds.length > 0 && selectedRegIds.length === registrations.filter(r => r.status === 0).length}
+                      onChange={toggleSelectAll}
+                      style={{ accentColor: 'var(--accent)' }}
+                    />
+                    全选
+                  </label>
+                  <div style={{ flex: 1 }} />
+                  <button className="text-btn blue" style={{ fontSize: '12px', opacity: selectedRegIds.length === 0 ? 0.4 : 1 }}
+                    disabled={selectedRegIds.length === 0} onClick={() => handleBatchAudit(1)}>
+                    批量通过
+                  </button>
+                  <button className="text-btn danger" style={{ fontSize: '12px', opacity: selectedRegIds.length === 0 ? 0.4 : 1 }}
+                    disabled={selectedRegIds.length === 0} onClick={() => handleBatchAudit(2)}>
+                    批量拒绝
+                  </button>
+                </div>
+              )}
 
               {regLoading ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>加载中...</div>
@@ -181,6 +287,7 @@ export default function TeacherCompetitions() {
                 <table className="data-table">
                   <thead>
                     <tr>
+                      <th style={{ width: '36px' }}></th>
                       <th>学生姓名</th>
                       <th>队伍</th>
                       <th>联系电话</th>
@@ -195,6 +302,15 @@ export default function TeacherCompetitions() {
                       const badge = regStatusMap[reg.status] || regStatusMap[0]
                       return (
                         <tr key={reg.id}>
+                          <td style={{ textAlign: 'center' }}>
+                            {reg.status === 0 ? (
+                              <input type="checkbox"
+                                checked={selectedRegIds.includes(reg.id)}
+                                onChange={() => toggleSelectReg(reg.id)}
+                                style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
+                              />
+                            ) : null}
+                          </td>
                           <td style={{ fontWeight: '600' }}>{reg.studentName || '-'}</td>
                           <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
                             {reg.teamName || <span style={{ color: 'var(--text-tertiary)' }}>个人</span>}
@@ -218,16 +334,44 @@ export default function TeacherCompetitions() {
                           </td>
                           <td>
                             {reg.status === 0 ? (
-                              <div style={{ display: 'flex', gap: '6px' }}>
-                                <button className="text-btn blue" style={{ fontSize: '11px' }}
-                                  onClick={() => handleAuditReg(reg.id, 1)}>
-                                  通过
-                                </button>
-                                <button className="text-btn danger" style={{ fontSize: '11px' }}
-                                  onClick={() => handleAuditReg(reg.id, 2)}>
-                                  拒绝
-                                </button>
-                              </div>
+                              rejectingRegId === reg.id ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <input
+                                    type="text"
+                                    value={rejectRemark}
+                                    onChange={e => setRejectRemark(e.target.value)}
+                                    placeholder="审核备注（可选）"
+                                    style={{
+                                      padding: '4px 8px', fontSize: '11px', borderRadius: '6px',
+                                      border: '1px solid var(--border-color, #e0e0e0)',
+                                      background: 'var(--bg-secondary, #f5f5f5)',
+                                      color: 'var(--text-primary)', outline: 'none', width: '130px',
+                                      boxSizing: 'border-box',
+                                    }}
+                                  />
+                                  <div style={{ display: 'flex', gap: '4px' }}>
+                                    <button className="text-btn danger" style={{ fontSize: '11px' }}
+                                      onClick={() => handleAuditReg(reg.id, 2, rejectRemark || undefined)}>
+                                      确认拒绝
+                                    </button>
+                                    <button className="text-btn" style={{ fontSize: '11px' }}
+                                      onClick={() => { setRejectingRegId(null); setRejectRemark('') }}>
+                                      取消
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <button className="text-btn blue" style={{ fontSize: '11px' }}
+                                    onClick={() => handleAuditReg(reg.id, 1)}>
+                                    通过
+                                  </button>
+                                  <button className="text-btn danger" style={{ fontSize: '11px' }}
+                                    onClick={() => { setRejectingRegId(reg.id); setRejectRemark('') }}>
+                                    拒绝
+                                  </button>
+                                </div>
+                              )
                             ) : reg.status === 1 ? (
                               <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--success)' }}>
                                 <UserCheck size={12} /> 已通过

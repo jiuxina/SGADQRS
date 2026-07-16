@@ -1,16 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { motion } from 'motion/react'
-import { Search } from 'lucide-react'
+import { Search, Plus, Download } from 'lucide-react'
 import { TableSkeleton } from '../components/PageSkeleton'
 import DigitRoller from '../components/DigitRoller'
 import { fadeInList, fadeSlideUp } from '../motion/variants'
 import GlassModal from '../components/GlassModal'
-import { userApi, deptApi, fileApi } from '../api'
+import { userApi, deptApi, fileApi, exportApi } from '../api'
 import type { UserItem, DeptItem, MajorItem, ClassItem } from '../api/types'
-import { PAGE_SIZE } from '../config/constants'
-import { toast } from '../components/Toast'
+import { toast } from '../components/toastUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { formatDate } from '../utils/format'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 type FilterType = 'all' | 1 | 2 | 3
 
@@ -23,14 +24,37 @@ const filterOptions: { key: FilterType; label: string }[] = [
 
 const roleLabelMap: Record<number, string> = { 1: '学生', 2: '教师', 3: '管理员' }
 
+interface CreateForm {
+  username: string
+  password: string
+  realName: string
+  userType: number
+  deptId: string
+  majorId: string
+  classId: string
+  gender: string
+}
+
+const defaultCreateForm: CreateForm = {
+  username: '',
+  password: '',
+  realName: '',
+  userType: 1,
+  deptId: '',
+  majorId: '',
+  classId: '',
+  gender: '0',
+}
+
 export default function AdminUsers() {
   const [filter, setFilter] = useState<FilterType>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [users, setUsers] = useState<UserItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const pagination = usePagination()
   const [editingUser, setEditingUser] = useState<UserItem | null>(null)
-  const [editForm, setEditForm] = useState({ realName: '', deptId: '', gender: '0', majorId: '', classId: '', avatar: '' })
+  const [editForm, setEditForm] = useState({ realName: '', deptId: '', gender: '0', majorId: '', classId: '', avatar: '', userType: 1 })
   const [depts, setDepts] = useState<DeptItem[]>([])
   const [majors, setMajors] = useState<MajorItem[]>([])
   const [classes, setClasses] = useState<ClassItem[]>([])
@@ -38,43 +62,84 @@ export default function AdminUsers() {
   const [uploading, setUploading] = useState(false)
   const isMobile = useIsMobile()
 
+  // Create user modal
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm)
+  const [creating, setCreating] = useState(false)
+  const [createDepts, setCreateDepts] = useState<DeptItem[]>([])
+  const [createMajors, setCreateMajors] = useState<MajorItem[]>([])
+  const [createClasses, setCreateClasses] = useState<ClassItem[]>([])
+
+  const fetchData = useCallback(async () => {
+    const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
+    if (filter !== 'all') params.userType = filter
+    if (searchQuery) params.keyword = searchQuery
+    return userApi.list(params as Parameters<typeof userApi.list>[0])
+  }, [filter, searchQuery, pagination.current, pagination.pageSize])
+
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { current: 1, size: PAGE_SIZE.LARGE }
-      if (filter !== 'all') params.userType = filter
-      if (searchQuery) params.keyword = searchQuery
-      const result = await userApi.list(params as Parameters<typeof userApi.list>[0])
+      const result = await fetchData()
       setUsers(result.records)
       setTotal(result.total)
+      pagination.setTotal(result.total)
     } catch (err) {
       console.error('加载用户数据失败:', err)
     } finally {
       setLoading(false)
     }
-  }, [filter, searchQuery])
+  }, [fetchData])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    fetchData().then(result => {
+      setUsers(result.records)
+      setTotal(result.total)
+      pagination.setTotal(result.total)
+    }).catch(err => {
+      console.error('加载用户数据失败:', err)
+    }).finally(() => setLoading(false))
+  }, [fetchData])
+
+  // 筛选条件变化时重置到第1页
+  useEffect(() => { pagination.resetPage() }, [filter, searchQuery])
 
   useEffect(() => {
     deptApi.list().then(setDepts).catch(() => {})
+    deptApi.list().then(setCreateDepts).catch(() => {})
   }, [])
 
   useEffect(() => {
     if (editForm.deptId) {
-      deptApi.majors(Number(editForm.deptId)).then(setMajors).catch(() => setMajors([]))
+      deptApi.majors(Number(editForm.deptId)).then(setMajors).catch(() => startTransition(() => setMajors([])))
     } else {
-      setMajors([])
+      startTransition(() => setMajors([]))
     }
   }, [editForm.deptId])
 
   useEffect(() => {
     if (editForm.majorId) {
-      deptApi.classes(Number(editForm.majorId)).then(setClasses).catch(() => setClasses([]))
+      deptApi.classes(Number(editForm.majorId)).then(setClasses).catch(() => startTransition(() => setClasses([])))
     } else {
-      setClasses([])
+      startTransition(() => setClasses([]))
     }
   }, [editForm.majorId])
+
+  useEffect(() => {
+    if (createForm.deptId) {
+      deptApi.majors(Number(createForm.deptId)).then(setCreateMajors).catch(() => startTransition(() => setCreateMajors([])))
+    } else {
+      startTransition(() => setCreateMajors([]))
+    }
+  }, [createForm.deptId])
+
+  useEffect(() => {
+    if (createForm.majorId) {
+      deptApi.classes(Number(createForm.majorId)).then(setCreateClasses).catch(() => startTransition(() => setCreateClasses([])))
+    } else {
+      startTransition(() => setCreateClasses([]))
+    }
+  }, [createForm.majorId])
 
   const openEditModal = (user: UserItem) => {
     setEditingUser(user)
@@ -85,6 +150,7 @@ export default function AdminUsers() {
       majorId: user.majorId != null ? String(user.majorId) : '',
       classId: user.classId != null ? String(user.classId) : '',
       avatar: user.avatar || '',
+      userType: user.userType,
     })
   }
 
@@ -100,13 +166,85 @@ export default function AdminUsers() {
         majorId: editForm.majorId ? Number(editForm.majorId) : null,
         classId: editForm.classId ? Number(editForm.classId) : null,
         avatar: editForm.avatar || null,
+        userType: editForm.userType,
       })
       setEditingUser(null)
       loadData()
+      toast.success('保存成功')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '保存失败')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleCreate = async () => {
+    if (!createForm.username.trim()) {
+      toast.error('请输入用户名')
+      return
+    }
+    if (!createForm.password.trim()) {
+      toast.error('请输入密码')
+      return
+    }
+    if (!createForm.realName.trim()) {
+      toast.error('请输入真实姓名')
+      return
+    }
+    setCreating(true)
+    try {
+      await userApi.create({
+        username: createForm.username,
+        password: createForm.password,
+        realName: createForm.realName,
+        userType: createForm.userType,
+        gender: Number(createForm.gender),
+        deptId: createForm.deptId ? Number(createForm.deptId) : null,
+        majorId: createForm.majorId ? Number(createForm.majorId) : null,
+        classId: createForm.classId ? Number(createForm.classId) : null,
+      })
+      setShowCreateModal(false)
+      setCreateForm(defaultCreateForm)
+      loadData()
+      toast.success('创建成功')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '创建失败')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleDelete = async (user: UserItem) => {
+    if (!confirm(`确定要删除用户 "${user.realName}" 吗？此操作不可撤销。`)) return
+    try {
+      await userApi.delete(user.id)
+      loadData()
+      toast.success('删除成功')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '删除失败')
+    }
+  }
+
+  const handleToggleStatus = async (user: UserItem) => {
+    const newStatus = user.status === 1 ? 0 : 1
+    const action = newStatus === 1 ? '启用' : '禁用'
+    if (!confirm(`确定要${action}用户 "${user.realName}" 吗？`)) return
+    try {
+      await userApi.toggleStatus(user.id, newStatus)
+      loadData()
+      toast.success(`${action}成功`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : `${action}失败`)
+    }
+  }
+
+  const handleResetPassword = async (user: UserItem) => {
+    if (!confirm(`确定要重置用户 "${user.realName}" 的密码吗？重置后密码为 123456。`)) return
+    try {
+      await userApi.resetPassword(user.id)
+      toast.success('密码重置成功，新密码为 123456')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '重置失败')
     }
   }
 
@@ -126,6 +264,18 @@ export default function AdminUsers() {
 
   const studentCount = users.filter((u) => u.userType === 1).length
   const teacherCount = users.filter((u) => u.userType === 2).length
+
+  const handleExport = async () => {
+    try {
+      const params: { userType?: number; keyword?: string } = {}
+      if (filter !== 'all') params.userType = filter as number
+      if (searchQuery) params.keyword = searchQuery
+      await exportApi.users(params)
+      toast.success('导出成功')
+    } catch {
+      toast.error('导出失败')
+    }
+  }
 
   if (loading && users.length === 0) {
     return <TableSkeleton />
@@ -170,15 +320,33 @@ export default function AdminUsers() {
               {total}人
             </span>
           </span>
-          <div className="search-wrap" style={{ width: '220px' }}>
-            <Search strokeWidth={1.5} />
-            <input
-              className="glass-search"
-              placeholder="搜索姓名 / 用户名 / 院系..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ marginBottom: 0 }}
-            />
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div className="search-wrap" style={{ width: '220px' }}>
+              <Search strokeWidth={1.5} />
+              <input
+                className="glass-search"
+                placeholder="搜索姓名 / 用户名 / 院系..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ marginBottom: 0 }}
+              />
+            </div>
+            <button
+              className="btn ghost"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '8px 14px' }}
+              onClick={handleExport}
+            >
+              <Download size={14} strokeWidth={1.5} />
+              导出
+            </button>
+            <button
+              className="btn primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '8px 14px' }}
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus size={14} strokeWidth={2} />
+              新增用户
+            </button>
           </div>
         </div>
 
@@ -204,13 +372,14 @@ export default function AdminUsers() {
                   <th>性别</th>
                   <th>专业</th>
                   <th>班级</th>
+                  <th>状态</th>
                   <th>最后登录</th>
-                  <th style={{ width: '80px' }}>操作</th>
+                  <th style={{ width: '140px' }}>操作</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id}>
+                  <tr key={user.id} style={{ opacity: user.status === 0 ? 0.6 : 1 }}>
                     <td style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-secondary)' }}>
                       {user.username}
                     </td>
@@ -234,12 +403,31 @@ export default function AdminUsers() {
                     </td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{user.majorName || '-'}</td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{user.className || '-'}</td>
+                    <td>
+                      <span
+                        className={`glass-badge ${user.status === 1 ? 'pass' : 'reviewing'}`}
+                        style={{ fontSize: '11px', padding: '2px 8px' }}
+                      >
+                        {user.status === 1 ? '启用' : '禁用'}
+                      </span>
+                    </td>
                     <td style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>{formatDate((user as unknown as Record<string, unknown>).lastLoginTime as string ?? null)}</td>
                     <td>
-                      <div style={{ display: 'flex', gap: '4px' }}>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         <button className="text-btn blue" style={{ fontSize: '12px' }}
                           onClick={() => openEditModal(user)}>
                           编辑
+                        </button>
+                        <button
+                          className={`text-btn ${user.status === 1 ? 'orange' : 'green'}`}
+                          style={{ fontSize: '12px' }}
+                          onClick={() => handleToggleStatus(user)}
+                        >
+                          {user.status === 1 ? '禁用' : '启用'}
+                        </button>
+                        <button className="text-btn red" style={{ fontSize: '12px' }}
+                          onClick={() => handleDelete(user)}>
+                          删除
                         </button>
                       </div>
                     </td>
@@ -247,7 +435,7 @@ export default function AdminUsers() {
                 ))}
                 {users.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+                    <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
                       未找到匹配的用户
                     </td>
                   </tr>
@@ -257,6 +445,139 @@ export default function AdminUsers() {
           </div>
         </motion.div>
       </motion.div>
+
+      <Pagination
+        current={pagination.current}
+        totalPages={pagination.totalPages}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setCurrent}
+        onPageSizeChange={pagination.setPageSize}
+      />
+
+      {/* Create User Modal */}
+      <GlassModal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="新增用户">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+              用户名 <span style={{ color: 'var(--error)' }}>*</span>
+            </label>
+            <input
+              className="glass-input"
+              value={createForm.username}
+              onChange={(e) => setCreateForm((f) => ({ ...f, username: e.target.value }))}
+              placeholder="请输入用户名"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+              密码 <span style={{ color: 'var(--error)' }}>*</span>
+            </label>
+            <input
+              className="glass-input"
+              type="password"
+              value={createForm.password}
+              onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+              placeholder="请输入密码"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+              真实姓名 <span style={{ color: 'var(--error)' }}>*</span>
+            </label>
+            <input
+              className="glass-input"
+              value={createForm.realName}
+              onChange={(e) => setCreateForm((f) => ({ ...f, realName: e.target.value }))}
+              placeholder="请输入真实姓名"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>角色</label>
+            <select
+              className="glass-input"
+              value={createForm.userType}
+              onChange={(e) => setCreateForm((f) => ({ ...f, userType: Number(e.target.value) }))}
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value={1}>学生</option>
+              <option value={2}>教师</option>
+              <option value={3}>管理员</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>性别</label>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              {[{ value: '1', label: '男' }, { value: '2', label: '女' }, { value: '0', label: '未知' }].map((opt) => (
+                <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}>
+                  <input
+                    type="radio"
+                    name="createGender"
+                    value={opt.value}
+                    checked={createForm.gender === opt.value}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, gender: e.target.value }))}
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>所属院系</label>
+            <select
+              className="glass-input"
+              value={createForm.deptId}
+              onChange={(e) => setCreateForm((f) => ({ ...f, deptId: e.target.value, majorId: '', classId: '' }))}
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="">未分配</option>
+              {createDepts.map((d) => (
+                <option key={d.id} value={d.id}>{d.deptName}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>专业</label>
+            <select
+              className="glass-input"
+              value={createForm.majorId}
+              onChange={(e) => setCreateForm((f) => ({ ...f, majorId: e.target.value, classId: '' }))}
+              style={{ width: '100%', boxSizing: 'border-box' }}
+              disabled={!createForm.deptId}
+            >
+              <option value="">{createForm.deptId ? '未选择' : '请先选择院系'}</option>
+              {createMajors.map((m) => (
+                <option key={m.id} value={m.id}>{m.majorName}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>班级</label>
+            <select
+              className="glass-input"
+              value={createForm.classId}
+              onChange={(e) => setCreateForm((f) => ({ ...f, classId: e.target.value }))}
+              style={{ width: '100%', boxSizing: 'border-box' }}
+              disabled={!createForm.majorId}
+            >
+              <option value="">{createForm.majorId ? '未选择' : '请先选择专业'}</option>
+              {createClasses.map((c) => (
+                <option key={c.id} value={c.id}>{c.className}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+          <button className="btn ghost" onClick={() => setShowCreateModal(false)}>取消</button>
+          <button className="btn primary" onClick={handleCreate} disabled={creating}>
+            {creating ? '创建中...' : '创建'}
+          </button>
+        </div>
+      </GlassModal>
 
       {/* Edit Modal */}
       <GlassModal open={!!editingUser} onClose={() => setEditingUser(null)} title="编辑用户">
@@ -274,6 +595,19 @@ export default function AdminUsers() {
                     onChange={(e) => setEditForm((f) => ({ ...f, realName: e.target.value }))}
                     style={{ width: '100%', boxSizing: 'border-box' }}
                   />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>角色</label>
+                  <select
+                    className="glass-input"
+                    value={editForm.userType}
+                    onChange={(e) => setEditForm((f) => ({ ...f, userType: Number(e.target.value) }))}
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                  >
+                    <option value={1}>学生</option>
+                    <option value={2}>教师</option>
+                    <option value={3}>管理员</option>
+                  </select>
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>性别</label>
@@ -358,6 +692,20 @@ export default function AdminUsers() {
                     ))}
                   </select>
                 </div>
+                {editingUser && (
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
+                    <button
+                      className="btn ghost"
+                      style={{ fontSize: '12px', color: 'var(--warning)' }}
+                      onClick={() => handleResetPassword(editingUser)}
+                    >
+                      重置密码
+                    </button>
+                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
+                      重置后密码为 123456
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>

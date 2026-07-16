@@ -1,31 +1,48 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Bell, CheckCheck, ChevronRight } from 'lucide-react'
+import { Bell, CheckCheck, ChevronRight, PenSquare } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { ListSkeleton } from '../components/PageSkeleton'
 import { fadeSlideUp, expandCollapse } from '../motion/variants'
 import { messageApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { MessageItem } from '../api/types'
-import { PAGE_SIZE } from '../config/constants'
+import ComposeMessageModal from '../components/ComposeMessageModal'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 export default function TeacherMessages() {
   const user = useAuthStore((s) => s.user)
   const [messages, setMessages] = useState<MessageItem[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [composeOpen, setComposeOpen] = useState(false)
+  const pagination = usePagination()
+
+  const fetchData = useCallback(async () => {
+    if (!user) return null
+    return messageApi.list({ current: pagination.current, size: pagination.pageSize })
+  }, [user, pagination.current, pagination.pageSize])
 
   const loadData = useCallback(async () => {
-    if (!user) return
     setLoading(true)
     try {
-      const result = await messageApi.list({ current: 1, size: PAGE_SIZE.LARGE })
+      const result = await fetchData()
+      if (!result) return
       setMessages(result.records)
+      pagination.setTotal(result.total)
     } catch (err) { console.error('加载消息失败:', err) }
     finally { setLoading(false) }
-  }, [user])
+  }, [fetchData])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    fetchData().then(result => {
+      if (!result) return
+      setMessages(result.records)
+      pagination.setTotal(result.total)
+    }).catch(err => { console.error('加载消息失败:', err) })
+      .finally(() => setLoading(false))
+  }, [fetchData])
 
   const unreadCount = messages.filter((m) => m.isRead === 0).length
 
@@ -60,11 +77,21 @@ export default function TeacherMessages() {
           <span style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>消息通知</span>
           {unreadCount > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '20px', height: '20px', borderRadius: '10px', background: 'var(--danger)', color: '#fff', fontSize: '11px', fontWeight: '700', padding: '0 6px' }}>{unreadCount}</span>}
         </div>
-        {unreadCount > 0 && (
-          <button className="text-btn blue" style={{ fontSize: '13px' }} onClick={markAllAsRead}>
-            <CheckCheck size={14} strokeWidth={1.5} style={{ marginRight: '3px', verticalAlign: '-2px' }} />全部已读
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            className="text-btn blue"
+            style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '3px' }}
+            onClick={() => setComposeOpen(true)}
+          >
+            <PenSquare size={14} strokeWidth={1.5} />
+            写消息
           </button>
-        )}
+          {unreadCount > 0 && (
+            <button className="text-btn blue" style={{ fontSize: '13px' }} onClick={markAllAsRead}>
+              <CheckCheck size={14} strokeWidth={1.5} style={{ marginRight: '3px', verticalAlign: '-2px' }} />全部已读
+            </button>
+          )}
+        </div>
       </motion.div>
 
       <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0' }} variants={fadeSlideUp} initial="hidden" animate="visible">
@@ -106,6 +133,20 @@ export default function TeacherMessages() {
         )}
       </motion.div>
 
+      <Pagination
+        current={pagination.current}
+        totalPages={pagination.totalPages}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={pagination.setCurrent}
+        onPageSizeChange={pagination.setPageSize}
+      />
+
+      <ComposeMessageModal
+        open={composeOpen}
+        onClose={() => setComposeOpen(false)}
+        onSent={loadData}
+      />
     </>
   )
 }
