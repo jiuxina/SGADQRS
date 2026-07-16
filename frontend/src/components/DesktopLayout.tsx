@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, type ReactNode } from 'react'
+import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -20,10 +20,14 @@ import {
   Menu,
   X,
   Building2,
+  Award,
+  ClipboardList,
 } from 'lucide-react'
 import { useGlassShimmerContainer } from '../hooks/useAnimations'
 import { useAuthStore } from '../store/authStore'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useWebSocket } from '../hooks/useWebSocket'
+import { messageApi } from '../api'
 import PageTransition from './PageTransition'
 
 interface DesktopLayoutProps {
@@ -51,6 +55,8 @@ const navItemsByRole: Record<string, NavItem[]> = {
     { id: 'competitions', label: '竞赛审核', icon: ClipboardCheck, path: '/admin/competitions', badge: 3 },
     { id: 'users', label: '用户管理', icon: Users, path: '/admin/users' },
     { id: 'org-tree', label: '组织架构', icon: Building2, path: '/admin/org-tree' },
+    { id: 'registrations', label: '报名监管', icon: ClipboardList, path: '/admin/registrations' },
+    { id: 'grades', label: '成绩管理', icon: Award, path: '/admin/grades' },
     { id: 'stats', label: '数据统计', icon: BarChart3, path: '/admin/stats' },
     { id: 'notices', label: '公告管理', icon: Megaphone, path: '/admin/notices' },
     { id: 'logs', label: '系统日志', icon: ScrollText, path: '/admin/logs' },
@@ -62,14 +68,16 @@ const navItemsByRole: Record<string, NavItem[]> = {
     { id: 'create', label: '发布竞赛', icon: Plus, path: '/teacher/competitions/create' },
     { id: 'teams', label: '团队管理', icon: Users, path: '/teacher/teams' },
     { id: 'grades', label: '成绩录入', icon: FileText, path: '/teacher/grades' },
-    { id: 'messages', label: '消息通知', icon: Bell, path: '/teacher/messages', badge: 2 },
+    { id: 'messages', label: '消息通知', icon: Bell, path: '/teacher/messages' },
   ],
   student: [
     { id: 'dashboard', label: '竞赛总览', icon: Compass, path: '/student/dashboard' },
     { id: 'competitions', label: '竞赛浏览', icon: Trophy, path: '/student/competitions' },
     { id: 'registration', label: '我的报名', icon: FileText, path: '/student/registration' },
+    { id: 'teams', label: '我的团队', icon: Users, path: '/student/teams' },
     { id: 'grades', label: '成绩查询', icon: Medal, path: '/student/grades' },
-    { id: 'messages', label: '消息通知', icon: Bell, path: '/student/messages', badge: 3 },
+    { id: 'history', label: '参赛历史', icon: ScrollText, path: '/student/history' },
+    { id: 'messages', label: '消息通知', icon: Bell, path: '/student/messages' },
   ],
 }
 
@@ -78,6 +86,7 @@ const mobileTabItemsByRole: Record<string, NavItem[]> = {
   admin: [
     { id: 'dashboard', label: '总览', icon: LayoutDashboard, path: '/admin/dashboard' },
     { id: 'competitions', label: '审核', icon: ClipboardCheck, path: '/admin/competitions', badge: 3 },
+    { id: 'registrations', label: '报名', icon: ClipboardList, path: '/admin/registrations' },
     { id: 'users', label: '用户', icon: Users, path: '/admin/users' },
     { id: 'stats', label: '统计', icon: BarChart3, path: '/admin/stats' },
   ],
@@ -91,8 +100,9 @@ const mobileTabItemsByRole: Record<string, NavItem[]> = {
     { id: 'dashboard', label: '总览', icon: Compass, path: '/student/dashboard' },
     { id: 'competitions', label: '竞赛', icon: Trophy, path: '/student/competitions' },
     { id: 'registration', label: '报名', icon: FileText, path: '/student/registration' },
+    { id: 'teams', label: '团队', icon: Users, path: '/student/teams' },
     { id: 'grades', label: '成绩', icon: Medal, path: '/student/grades' },
-    { id: 'messages', label: '消息', icon: Bell, path: '/student/messages', badge: 3 },
+    { id: 'messages', label: '消息', icon: Bell, path: '/student/messages' },
   ],
 }
 
@@ -102,6 +112,8 @@ const titleMap: Record<string, string> = {
   '/admin/competitions': '竞赛审核',
   '/admin/users': '用户管理',
   '/admin/org-tree': '组织架构',
+  '/admin/registrations': '报名监管',
+  '/admin/grades': '成绩管理',
   '/admin/stats': '数据统计',
   '/admin/notices': '公告管理',
   '/admin/logs': '系统日志',
@@ -115,7 +127,9 @@ const titleMap: Record<string, string> = {
   '/student/dashboard': '竞赛总览',
   '/student/competitions': '竞赛浏览',
   '/student/registration': '我的报名',
+  '/student/teams': '我的团队',
   '/student/grades': '成绩查询',
+  '/student/history': '参赛历史',
   '/student/messages': '消息通知',
 }
 
@@ -145,12 +159,36 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
   const { user, logout } = useAuthStore()
   const isMobile = useIsMobile()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const role = getRoleFromPath(location.pathname)
   const navItems = navItemsByRole[role] || navItemsByRole.student
   const mobileTabs = mobileTabItemsByRole[role] || mobileTabItemsByRole.student
   const activeId = navItems.find((item) => location.pathname === item.path)?.id || 'dashboard'
   const pageTitle = title || titleMap[location.pathname] || '竞赛总览'
+
+  /* 消息未读数轮询（保留作为兜底） */
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const count = await messageApi.unreadCount()
+        setUnreadCount(count)
+      } catch {
+        // 静默失败
+      }
+    }
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  /* WebSocket 实时通知（增强：收到新消息时立即更新未读数） */
+  useWebSocket((notification) => {
+    if (notification.type === 'message') {
+      setUnreadCount((prev) => prev + 1)
+    }
+  })
 
   const handleLogout = () => {
     logout()
@@ -161,6 +199,15 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
     navigate(path)
     setDrawerOpen(false)
   }
+
+  const handleSearch = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return
+    const trimmed = searchQuery.trim()
+    if (!trimmed) return
+    const path = role === 'admin' ? '/admin/competitions' : role === 'teacher' ? '/teacher/competitions' : '/student/competitions'
+    navigate(`${path}?search=${encodeURIComponent(trimmed)}`)
+    setSearchQuery('')
+  }, [searchQuery, role, navigate])
 
   /* Swipe-to-switch-tab */
   const touchStart = useRef<{ x: number; y: number; t: number } | null>(null)
@@ -258,8 +305,8 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                   <Icon size={22} strokeWidth={active ? 2.2 : 1.5} />
                 </div>
                 <span>{tab.label}</span>
-                {tab.badge && (
-                  <div className="mobile-tab-badge">{tab.badge}</div>
+                {(tab.badge || (tab.id === 'messages' && unreadCount > 0)) && (
+                  <div className="mobile-tab-badge">{tab.id === 'messages' ? unreadCount : tab.badge}</div>
                 )}
               </button>
             )
@@ -317,8 +364,8 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                       >
                         <Icon size={20} strokeWidth={active ? 2 : 1.5} />
                         <span>{item.label}</span>
-                        {item.badge && (
-                          <div className="drawer-badge">{item.badge}</div>
+                        {(item.badge || (item.id === 'messages' && unreadCount > 0)) && (
+                          <div className="drawer-badge">{item.id === 'messages' ? unreadCount : item.badge}</div>
                         )}
                       </button>
                     )
@@ -373,8 +420,8 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                 )}
                 <Icon strokeWidth={active ? 2 : 1.5} />
                 <div className="sidebar-tooltip">{item.label}</div>
-                {item.badge && (
-                  <div className="sidebar-badge">{item.badge}</div>
+                {(item.badge || (item.id === 'messages' && unreadCount > 0)) && (
+                  <div className="sidebar-badge">{item.id === 'messages' ? unreadCount : item.badge}</div>
                 )}
               </motion.button>
             )
@@ -441,7 +488,14 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
           <div className="desktop-header-actions">
             <div className="search-wrap" style={{ width: '200px' }}>
               <Search strokeWidth={1.5} />
-              <input className="glass-search" placeholder="搜索..." style={{ marginBottom: 0 }} />
+              <input
+                className="glass-search"
+                placeholder="搜索竞赛..."
+                style={{ marginBottom: 0 }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearch}
+              />
             </div>
             <button className="header-action-btn" title="通知">
               <Bell strokeWidth={1.5} />

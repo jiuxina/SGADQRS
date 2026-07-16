@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
+import { PartyPopper } from 'lucide-react'
 
 interface ConfettiEffectProps {
   /** 是否显示 */
@@ -63,7 +64,9 @@ export default function ConfettiEffect({
     return particles
   }, [particleCount])
 
-  // 动画循环
+  // 动画循环（使用 ref 避免闭包中的 TDZ 问题）
+  const animateRef = useRef<(() => void) | null>(null)
+
   const animate = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -107,11 +110,15 @@ export default function ConfettiEffect({
     particlesRef.current = particlesRef.current.filter((p) => p.opacity > 0 && p.y < canvas.height + 50)
 
     if (particlesRef.current.length > 0) {
-      animationRef.current = requestAnimationFrame(animate)
+      animationRef.current = requestAnimationFrame(() => animateRef.current?.())
     } else {
       onComplete?.()
     }
   }, [onComplete])
+
+  useEffect(() => {
+    animateRef.current = animate
+  })
 
   useEffect(() => {
     if (!show) return
@@ -127,7 +134,7 @@ export default function ConfettiEffect({
     particlesRef.current = createParticles(canvas.width, canvas.height)
 
     // 开始动画
-    animationRef.current = requestAnimationFrame(animate)
+    animationRef.current = requestAnimationFrame(() => animateRef.current?.())
 
     // 超时清理
     const timeout = setTimeout(() => {
@@ -139,7 +146,7 @@ export default function ConfettiEffect({
       cancelAnimationFrame(animationRef.current)
       clearTimeout(timeout)
     }
-  }, [show, createParticles, animate, duration, onComplete])
+  }, [show, createParticles, duration, onComplete])
 
   return (
     <AnimatePresence>
@@ -191,7 +198,7 @@ export default function ConfettiEffect({
                 marginBottom: '16px',
               }}
             >
-              🎉
+              <PartyPopper size={64} />
             </motion.div>
             <motion.div
               initial={{ y: 20, opacity: 0 }}

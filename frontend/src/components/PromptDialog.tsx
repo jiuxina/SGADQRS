@@ -1,26 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { X, Edit3 } from 'lucide-react'
-
-interface PromptOptions {
-  title?: string
-  message: string
-  defaultValue?: string
-  placeholder?: string
-  confirmText?: string
-  cancelText?: string
-}
+import { setGlobalPrompt } from './promptDialogUtils'
+import type { PromptOptions } from './promptDialogUtils'
 
 interface PromptState extends PromptOptions {
   resolve: (value: string | null) => void
-}
-
-let globalPrompt: ((options: PromptOptions) => Promise<string | null>) | null = null
-
-/** 全局调用方法 — 替代 prompt() */
-export function promptDialog(options: PromptOptions): Promise<string | null> {
-  if (!globalPrompt) return Promise.resolve(null)
-  return globalPrompt(options)
 }
 
 /** Prompt 容器 — 需挂载在 App 根部 */
@@ -37,8 +22,8 @@ export function PromptContainer() {
   }, [])
 
   useEffect(() => {
-    globalPrompt = prompt
-    return () => { globalPrompt = null }
+    setGlobalPrompt(prompt)
+    return () => { setGlobalPrompt(null) }
   }, [prompt])
 
   useEffect(() => {

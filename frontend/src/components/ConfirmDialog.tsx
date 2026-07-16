@@ -1,25 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { AlertTriangle, HelpCircle, X } from 'lucide-react'
-
-interface ConfirmOptions {
-  title?: string
-  message: string
-  confirmText?: string
-  cancelText?: string
-  variant?: 'danger' | 'warning' | 'info'
-}
+import { setGlobalConfirm } from './confirmDialogUtils'
+import type { ConfirmOptions } from './confirmDialogUtils'
 
 interface ConfirmState extends ConfirmOptions {
   resolve: (value: boolean) => void
-}
-
-let globalConfirm: ((options: ConfirmOptions) => Promise<boolean>) | null = null
-
-/** 全局调用方法 — 替代 confirm() */
-export function confirmDialog(options: ConfirmOptions): Promise<boolean> {
-  if (!globalConfirm) return Promise.resolve(false)
-  return globalConfirm(options)
 }
 
 const variantStyles = {
@@ -57,8 +43,8 @@ export function ConfirmContainer() {
   }, [])
 
   useEffect(() => {
-    globalConfirm = confirm
-    return () => { globalConfirm = null }
+    setGlobalConfirm(confirm)
+    return () => { setGlobalConfirm(null) }
   }, [confirm])
 
   const handleConfirm = useCallback(() => {

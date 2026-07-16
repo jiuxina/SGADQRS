@@ -25,7 +25,7 @@ interface TimeLeft {
  * 当已过期时显示已截止
  */
 export default function CountdownTimer({ deadline, style }: CountdownTimerProps) {
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
 
   // 每秒更新
   useEffect(() => {

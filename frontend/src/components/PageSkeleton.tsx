@@ -2,7 +2,7 @@ import { motion } from 'motion/react'
 
 function shimmer() {
   return {
-    animate: { opacity: [0.4, 0.7, 0.4] } as const,
+    animate: { opacity: [0.4, 0.7, 0.4] },
     transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' as const },
   }
 }

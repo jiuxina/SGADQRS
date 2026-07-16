@@ -1,31 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { X, Award } from 'lucide-react'
-
-interface EditGradeOptions {
-  title?: string
-  studentName: string
-  defaultScore?: number | null
-  defaultRemark?: string | null
-  confirmText?: string
-  cancelText?: string
-}
-
-interface EditGradeResult {
-  score: number
-  remark: string
-}
+import { X, Award, Upload, File, Trash2 } from 'lucide-react'
+import { setGlobalEditGrade } from './editGradeDialogUtils'
+import type { EditGradeOptions, EditGradeResult } from './editGradeDialogUtils'
+import { fileApi } from '../api'
+import { toast } from './toastUtils'
 
 interface EditGradeState extends EditGradeOptions {
   resolve: (value: EditGradeResult | null) => void
-}
-
-let globalEditGrade: ((options: EditGradeOptions) => Promise<EditGradeResult | null>) | null = null
-
-/** 全局调用方法 */
-export function editGradeDialog(options: EditGradeOptions): Promise<EditGradeResult | null> {
-  if (!globalEditGrade) return Promise.resolve(null)
-  return globalEditGrade(options)
 }
 
 /** EditGrade 容器 — 需挂载在 App 根部 */
@@ -33,6 +15,10 @@ export function EditGradeContainer() {
   const [state, setState] = useState<EditGradeState | null>(null)
   const [score, setScore] = useState('')
   const [remark, setRemark] = useState('')
+  const [ranking, setRanking] = useState('')
+  const [awardLevel, setAwardLevel] = useState('')
+  const [certificateUrl, setCertificateUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const scoreRef = useRef<HTMLInputElement>(null)
 
   const editGrade = useCallback((options: EditGradeOptions): Promise<EditGradeResult | null> => {
@@ -40,12 +26,15 @@ export function EditGradeContainer() {
       setState({ ...options, resolve })
       setScore(options.defaultScore != null ? String(options.defaultScore) : '')
       setRemark(options.defaultRemark ?? '')
+      setRanking(options.defaultRanking != null ? String(options.defaultRanking) : '')
+      setAwardLevel(options.defaultAwardLevel != null ? String(options.defaultAwardLevel) : '')
+      setCertificateUrl(options.defaultCertificateUrl ?? null)
     })
   }, [])
 
   useEffect(() => {
-    globalEditGrade = editGrade
-    return () => { globalEditGrade = null }
+    setGlobalEditGrade(editGrade)
+    return () => { setGlobalEditGrade(null) }
   }, [editGrade])
 
   useEffect(() => {
@@ -60,9 +49,15 @@ export function EditGradeContainer() {
     if (score === '' || isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
       return
     }
-    state?.resolve({ score: scoreNum, remark })
+    state?.resolve({
+      score: scoreNum,
+      remark,
+      ranking: ranking !== '' ? Number(ranking) : null,
+      awardLevel: awardLevel !== '' ? Number(awardLevel) : null,
+      certificateUrl,
+    })
     setState(null)
-  }, [state, score, remark])
+  }, [state, score, remark, ranking, awardLevel])
 
   const handleCancel = useCallback(() => {
     state?.resolve(null)
@@ -175,8 +170,67 @@ export function EditGradeContainer() {
               />
             </div>
 
+            {/* Ranking Input */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}>
+                排名 <span style={{ color: 'var(--text-tertiary)', fontWeight: '400' }}>(可选)</span>
+              </label>
+              <input
+                className="glass-input"
+                type="number"
+                min="1"
+                step="1"
+                value={ranking}
+                onChange={(e) => setRanking(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="请输入排名"
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* Award Level Select */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}>
+                奖项等级 <span style={{ color: 'var(--text-tertiary)', fontWeight: '400' }}>(可选)</span>
+              </label>
+              <select
+                className="glass-input"
+                value={awardLevel}
+                onChange={(e) => setAwardLevel(e.target.value)}
+                onKeyDown={handleKeyDown}
+                style={{ width: '100%', boxSizing: 'border-box', height: '40px' }}
+              >
+                <option value="">请选择奖项</option>
+                {state.awards && state.awards.length > 0 ? (
+                  state.awards.map((award) => (
+                    <option key={award.level} value={award.level}>{award.name}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="1">特等奖</option>
+                    <option value="2">一等奖</option>
+                    <option value="3">二等奖</option>
+                    <option value="4">三等奖</option>
+                    <option value="5">优秀奖</option>
+                  </>
+                )}
+              </select>
+            </div>
+
             {/* Remark Input */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '13px',
@@ -201,6 +255,65 @@ export function EditGradeContainer() {
                   fontFamily: 'inherit',
                 }}
               />
+            </div>
+
+            {/* Certificate Upload */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}>
+                证书附件 <span style={{ color: 'var(--text-tertiary)', fontWeight: '400' }}>(可选，学生可下载)</span>
+              </label>
+              {certificateUrl ? (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 12px', borderRadius: '10px',
+                  background: 'rgba(0, 122, 255, 0.06)', border: '1px solid rgba(0, 122, 255, 0.15)',
+                }}>
+                  <File size={16} color="#007AFF" />
+                  <span style={{ flex: 1, fontSize: '13px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {certificateUrl.split('/').pop() || '已上传'}
+                  </span>
+                  <button
+                    onClick={() => setCertificateUrl(null)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#ef4444' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ) : (
+                <label style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '14px', borderRadius: '10px', cursor: 'pointer',
+                  background: 'var(--glass-bg, rgba(0,0,0,0.04))', border: '1px dashed var(--border, rgba(0,0,0,0.15))',
+                  fontSize: '13px', color: 'var(--text-secondary)',
+                  opacity: uploading ? 0.6 : 1, pointerEvents: uploading ? 'none' : 'auto',
+                }}>
+                  <Upload size={16} />
+                  {uploading ? '上传中...' : '点击上传证书文件'}
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      if (file.size > 10 * 1024 * 1024) { toast.error('文件大小不能超过10MB'); return }
+                      setUploading(true)
+                      try {
+                        const res = await fileApi.upload(file)
+                        setCertificateUrl(res.url)
+                        toast.success('上传成功')
+                      } catch { toast.error('上传失败') }
+                      finally { setUploading(false) }
+                    }}
+                  />
+                </label>
+              )}
             </div>
 
             {/* Buttons */}
