@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
 
 /**
  * 通用异步数据获取 Hook
@@ -10,11 +10,15 @@ export function useFetch<T>(fetchFn: () => Promise<T>, immediate = true) {
   const [loading, setLoading] = useState(immediate)
   const [error, setError] = useState<string | null>(null)
 
+  const execFetch = useCallback(async () => {
+    return fetchFn()
+  }, [fetchFn])
+
   const execute = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    startTransition(() => setLoading(true))
+    startTransition(() => setError(null))
     try {
-      const result = await fetchFn()
+      const result = await execFetch()
       setData(result)
       return result
     } catch (err) {
@@ -22,13 +26,16 @@ export function useFetch<T>(fetchFn: () => Promise<T>, immediate = true) {
       setError(msg)
       return null
     } finally {
-      setLoading(false)
+      startTransition(() => setLoading(false))
     }
-  }, [fetchFn])
+  }, [execFetch])
 
   useEffect(() => {
-    if (immediate) execute()
-  }, [immediate, execute])
+    if (immediate) {
+      startTransition(() => setLoading(true))
+      execFetch().then(r => setData(r)).catch(() => {}).finally(() => startTransition(() => setLoading(false)))
+    }
+  }, [immediate, execFetch])
 
   return { data, loading, error, execute, setData }
 }
