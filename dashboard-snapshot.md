@@ -1,0 +1,96 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - navigation [ref=e7]:
+      - button "系统总览" [ref=e8] [cursor=pointer]:
+        - img [ref=e10]
+        - generic: 系统总览
+      - button "竞赛审核 3" [ref=e15] [cursor=pointer]:
+        - img [ref=e16]
+        - generic: 竞赛审核
+        - generic [ref=e20]: "3"
+      - button "用户管理" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+        - generic: 用户管理
+      - button "组织架构" [ref=e27] [cursor=pointer]:
+        - img [ref=e28]
+        - generic: 组织架构
+      - button "报名监管" [ref=e32] [cursor=pointer]:
+        - img [ref=e33]
+        - generic: 报名监管
+      - button "成绩管理" [ref=e36] [cursor=pointer]:
+        - img [ref=e37]
+        - generic: 成绩管理
+      - button "数据统计" [ref=e40] [cursor=pointer]:
+        - img [ref=e41]
+        - generic: 数据统计
+      - button "公告管理" [ref=e43] [cursor=pointer]:
+        - img [ref=e44]
+        - generic: 公告管理
+      - button "系统日志" [ref=e47] [cursor=pointer]:
+        - img [ref=e48]
+        - generic: 系统日志
+      - button "系统设置" [ref=e51] [cursor=pointer]:
+        - img [ref=e52]
+        - generic: 系统设置
+    - generic [ref=e55]:
+      - button "avatar 个人中心" [ref=e56] [cursor=pointer]:
+        - img "avatar" [ref=e59]
+        - generic: 个人中心
+      - button "退出登录" [ref=e60] [cursor=pointer]:
+        - img [ref=e61]
+        - generic: 退出登录
+  - main [ref=e64]:
+    - generic [ref=e65]:
+      - generic [ref=e67]: 系统总览
+      - generic [ref=e68]:
+        - generic [ref=e69]:
+          - img
+          - textbox "搜索竞赛..." [ref=e70]
+        - button "通知" [ref=e71] [cursor=pointer]:
+          - img [ref=e72]
+    - generic [ref=e77]:
+      - generic [ref=e78]:
+        - generic [ref=e79]: 竞赛状态分布
+        - generic [ref=e80]: 共 0 项竞赛
+      - generic [ref=e83]: 最近操作
+      - generic [ref=e84]:
+        - generic [ref=e85]: 待审核
+        - generic [ref=e86]: "0"
+        - generic [ref=e87]: 暂无待审核竞赛
+      - generic [ref=e88]:
+        - generic [ref=e89]: 注册用户
+        - generic [ref=e90]: "0"
+        - generic [ref=e91]:
+          - generic [ref=e93]: 活跃 0
+          - generic [ref=e95]: 禁用 0
+      - generic [ref=e96]:
+        - generic [ref=e97]: 参赛队伍
+        - generic [ref=e98]: "0"
+        - generic [ref=e99]: 已报名参赛队伍
+      - generic [ref=e100]:
+        - generic [ref=e101]: 系统预警
+        - generic [ref=e102]:
+          - img [ref=e103]
+          - generic [ref=e105]: "0"
+        - generic [ref=e106]: 待审核项
+      - generic [ref=e107]:
+        - generic [ref=e108]: ⏰ 时间节点提醒
+        - generic [ref=e110]: 暂无近期重要节点
+      - generic [ref=e111]:
+        - generic [ref=e112]: 快捷入口
+        - generic [ref=e113] [cursor=pointer]:
+          - img [ref=e114]
+          - generic [ref=e118]: 审核竞赛
+          - img [ref=e119]
+        - generic [ref=e122] [cursor=pointer]:
+          - img [ref=e123]
+          - generic [ref=e128]: 用户管理
+          - img [ref=e129]
+        - generic [ref=e132] [cursor=pointer]:
+          - img [ref=e133]
+          - generic [ref=e135]: 数据统计
+          - img [ref=e136]
+        - generic [ref=e139] [cursor=pointer]:
+          - img [ref=e140]
+          - generic [ref=e143]: 系统设置
+          - img [ref=e144]
