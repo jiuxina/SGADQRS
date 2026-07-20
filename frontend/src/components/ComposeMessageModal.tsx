@@ -50,7 +50,7 @@ export default function ComposeMessageModal({ open, onClose, onSent }: ComposeMe
     try {
       const result = await userApi.list({ current: 1, size: 20, keyword: userKeyword })
       setUserList(result.records.filter((u) => u.id !== user?.id))
-    } catch { /* */ }
+    } catch (e) { console.error('发送消息失败:', e) }
     finally { setSearching(false) }
   }, [userKeyword, user?.id])
 
@@ -91,7 +91,8 @@ export default function ComposeMessageModal({ open, onClose, onSent }: ComposeMe
       setSelectedUsers([])
       onSent?.()
       onClose()
-    } catch {
+    } catch (e) {
+      console.error('发送消息失败:', e)
       toast.error('发送失败')
     } finally { setSending(false) }
   }

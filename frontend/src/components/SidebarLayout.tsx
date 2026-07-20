@@ -10,6 +10,7 @@ import {
   LogOut,
   Bell,
 } from 'lucide-react'
+import { useAuthStore } from '../store/authStore'
 
 interface SidebarLayoutProps {
   children: ReactNode
@@ -19,6 +20,7 @@ interface SidebarLayoutProps {
 export default function SidebarLayout({ children, variant = 'admin' }: SidebarLayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
+  const user = useAuthStore((s) => s.user)
 
   const adminNav = [
     { section: '概览', items: [
@@ -95,14 +97,18 @@ export default function SidebarLayout({ children, variant = 'admin' }: SidebarLa
         <div className="sidebar-footer">
           <div className="sidebar-user">
             <div className="sidebar-avatar">
-              {variant === 'admin' ? '管' : '师'}
+              {user?.avatar ? (
+                <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                user?.realName?.charAt(0) || (variant === 'admin' ? '管' : '师')
+              )}
             </div>
             <div>
               <div className="sidebar-user-name">
-                {variant === 'admin' ? '管理员' : '张老师'}
+                {user?.realName || (variant === 'admin' ? '管理员' : '教师')}
               </div>
               <div className="sidebar-user-role">
-                {variant === 'admin' ? '教务处' : '计算机学院'}
+                {user?.role || (variant === 'admin' ? '管理端' : '教师端')}
               </div>
             </div>
           </div>

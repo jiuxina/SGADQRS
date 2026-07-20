@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 
 interface SuccessCheckProps {
   size?: number
@@ -89,4 +89,4 @@ export function SuccessOverlay({ visible, onComplete }: { visible: boolean; onCo
   )
 }
 
-import { AnimatePresence } from 'motion/react'
+

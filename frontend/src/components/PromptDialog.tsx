@@ -88,10 +88,9 @@ export function PromptContainer() {
             {/* Close button */}
             <button
               onClick={handleCancel}
+              className="icon-btn"
               style={{
                 position: 'absolute', top: '14px', right: '14px',
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--text-tertiary)', padding: '4px',
               }}
             >
               <X size={16} strokeWidth={1.5} />

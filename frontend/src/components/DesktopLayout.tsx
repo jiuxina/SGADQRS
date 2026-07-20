@@ -6,7 +6,6 @@ import {
   Trophy,
   ClipboardCheck,
   BarChart3,
-  Settings,
   Bell,
   Search,
   LogOut,
@@ -60,7 +59,6 @@ const navItemsByRole: Record<string, NavItem[]> = {
     { id: 'stats', label: '数据统计', icon: BarChart3, path: '/admin/stats' },
     { id: 'notices', label: '公告管理', icon: Megaphone, path: '/admin/notices' },
     { id: 'logs', label: '系统日志', icon: ScrollText, path: '/admin/logs' },
-    { id: 'settings', label: '系统设置', icon: Settings, path: '/admin/settings' },
   ],
   teacher: [
     { id: 'dashboard', label: '赛事管理', icon: LayoutDashboard, path: '/teacher/dashboard' },
@@ -117,7 +115,6 @@ const titleMap: Record<string, string> = {
   '/admin/stats': '数据统计',
   '/admin/notices': '公告管理',
   '/admin/logs': '系统日志',
-  '/admin/settings': '系统设置',
   '/teacher/dashboard': '赛事管理',
   '/teacher/competitions': '竞赛管理',
   '/teacher/competitions/create': '发布竞赛',
@@ -174,7 +171,8 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
       try {
         const count = await messageApi.unreadCount()
         setUnreadCount(count)
-      } catch {
+      } catch (e) {
+        console.error('登出失败:', e)
         // 静默失败
       }
     }

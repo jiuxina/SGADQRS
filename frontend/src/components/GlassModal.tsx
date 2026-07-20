@@ -43,7 +43,7 @@ export default function GlassModal({ open, onClose, title, maxWidth = '520px', c
                 <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
                 <button
                   onClick={onClose}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}
+                  className="icon-btn"
                 >
                   <X size={16} strokeWidth={1.5} />
                 </button>
@@ -52,7 +52,8 @@ export default function GlassModal({ open, onClose, title, maxWidth = '520px', c
             {!title && (
               <button
                 onClick={onClose}
-                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}
+                className="icon-btn"
+                style={{ position: 'absolute', top: '16px', right: '16px' }}
               >
                 <X size={16} strokeWidth={1.5} />
               </button>
