@@ -243,38 +243,6 @@ export default function TeacherCompetitionCreate() {
       }
       navigate(-1)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '保存失败')
-    }
-  }
-
-  async function handleSubmit() {
-    if (!validate()) return
-    setSubmitting(true)
-    try {
-      const payload = {
-        ...(isEdit ? { id: editId } : {}),
-        competitionName: form.name,
-        organizer: form.organizer,
-        coverImage: coverImage ?? undefined,
-        description: form.description,
-        rules: form.rules,
-        registrationStart: form.registrationStart + ' 00:00:00',
-        registrationEnd: form.registrationEnd + ' 23:59:59',
-        competitionStart: form.competitionStart + ' 00:00:00',
-        competitionEnd: form.competitionEnd + ' 00:00:00',
-        location: form.location,
-        maxMembers: Number(form.maxMembers) || 1,
-        maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
-        awards: awards.length > 0 ? JSON.stringify(awards) : undefined,
-        status: 1,
-      }
-      if (isEdit) {
-        await competitionApi.update(payload)
-      } else {
-        await competitionApi.create(payload)
-      }
-      navigate(-1)
-    } catch (err) {
       toast.error(err instanceof Error ? err.message : '提交失败')
     } finally {
       setSubmitting(false)
@@ -291,14 +259,6 @@ export default function TeacherCompetitionCreate() {
     boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(255, 255, 255, 0.35)',
     fontSize: '14px', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit', transition: 'all 0.2s ease', resize: 'vertical',
   }
-  const selectStyle: React.CSSProperties = {
-    width: '100%', height: '42px', padding: '0 14px', borderRadius: '12px',
-    border: '1px solid rgba(255, 255, 255, 0.55)', background: 'rgba(255, 255, 255, 0.32)',
-    backdropFilter: 'blur(18px) saturate(1.5)', WebkitBackdropFilter: 'blur(18px) saturate(1.5)',
-    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(255, 255, 255, 0.35)',
-    fontSize: '14px', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none',
-  }
-
   return (
     <>
       <motion.div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }} variants={fadeSlideUp} initial="hidden" animate="visible">

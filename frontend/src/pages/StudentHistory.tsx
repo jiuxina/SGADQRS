@@ -23,6 +23,7 @@ import { formatDate } from '../utils/format'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { toast } from '../components/toastUtils'
 
 // ===== Types =====
 
@@ -288,6 +289,7 @@ export default function StudentHistory() {
       setRegistrations(data.registrations)
       setResults(data.results)
     }).catch(err => {
+      toast.error('加载历史数据失败')
       console.error('加载历史数据失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData])

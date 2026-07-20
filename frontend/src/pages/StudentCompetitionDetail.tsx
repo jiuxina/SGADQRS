@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from 'lucide-react'
 import { competitionApi, registrationApi, fileApi } from '../api'
+import EmptyState from '../components/EmptyState'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem, TeamItem } from '../api/types'
 import { fadeSlideUp } from '../motion/variants'
@@ -23,24 +24,8 @@ import ConfettiEffect from '../components/ConfettiEffect'
 import FailureEffect from '../components/FailureEffect'
 import { formatDate, resolveCoverUrl, formatFileSize } from '../utils/format'
 import { useIsMobile } from '../hooks/useIsMobile'
-
-const statusBadgeLabel: Record<number, string> = {
-  0: '草稿',
-  1: '审核中',
-  2: '报名中',
-  3: '进行中',
-  4: '已结束',
-  5: '已驳回',
-}
-
-const statusBadgeClass: Record<number, string> = {
-  0: 'pending',
-  1: 'reviewing',
-  2: 'pass',
-  3: 'reviewing',
-  4: 'pending',
-  5: 'fail',
-}
+import { toast } from '../components/toastUtils'
+import { getStatusBadge } from '../utils/statusBadge'
 
 export default function StudentCompetitionDetail() {
   const { id } = useParams<{ id: string }>()
@@ -95,6 +80,7 @@ export default function StudentCompetitionDetail() {
       const res = await registrationApi.teamList({ competitionId, current: 1, size: 50 })
       setTeamList(res.records)
     } catch (err) {
+      toast.error('加载团队列表失败')
       console.error('加载团队列表失败:', err)
     } finally {
       setTeamsLoading(false)
@@ -109,6 +95,7 @@ export default function StudentCompetitionDetail() {
       const res = await fileApi.upload(file)
       setAttachmentUrl(res.url)
     } catch (err) {
+      toast.error('上传附件失败')
       console.error('上传附件失败:', err)
     } finally {
       setUploading(false)
@@ -203,8 +190,8 @@ export default function StudentCompetitionDetail() {
             <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
               {comp.competitionName}
             </h1>
-            <span className={`glass-badge ${statusBadgeClass[comp.status] ?? 'pending'}`} style={{ fontSize: '12px', padding: '3px 10px' }}>
-              {statusBadgeLabel[comp.status] ?? '未知'}
+            <span className={`glass-badge ${getStatusBadge(comp.status, 'student-competition').cls}`} style={{ fontSize: '12px', padding: '3px 10px' }}>
+              {getStatusBadge(comp.status, 'student-competition').label}
             </span>
           </div>
           <div style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>
@@ -369,7 +356,7 @@ export default function StudentCompetitionDetail() {
             {teamsLoading ? (
               <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', padding: '8px 0' }}>加载中...</div>
             ) : teamList.length === 0 ? (
-              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', padding: '8px 0' }}>暂无可用团队，请先创建团队</div>
+              <EmptyState text="暂无可用团队，请先创建团队" />
             ) : (
               <select
                 value={selectedTeamId ?? ''}
@@ -456,10 +443,10 @@ function PageHeader({ onBack }: { onBack: () => void }) {
     <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" style={{ marginBottom: '20px' }}>
       <button
         onClick={onBack}
+        className="icon-btn"
         style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: 'var(--text-tertiary)', fontSize: '13px', padding: '4px 0',
+          display: 'flex', gap: '6px',
+          fontSize: '13px', padding: '4px 0',
         }}
       >
         <ArrowLeft size={16} strokeWidth={1.5} />

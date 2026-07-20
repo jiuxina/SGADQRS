@@ -5,34 +5,20 @@ import {
   Users,
   BarChart3,
   Settings,
-  AlertTriangle,
-  Clock,
 } from 'lucide-react'
 import { DashboardSkeleton } from '../components/PageSkeleton'
 import QuickActions from '../components/QuickActions'
+import UpcomingReminders from '../components/UpcomingReminders'
 import { staggerContainer, staggerItem } from '../motion/variants'
 import { competitionApi, statsApi, logApi } from '../api'
-import type { CompetitionItem, LogItem, UpcomingDeadline, UpcomingStart } from '../api/types'
+import type { CompetitionItem, LogItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
-
-function countdownText(dateStr: string): string {
-  const now = new Date()
-  const target = new Date(dateStr)
-  const diffMs = target.getTime() - now.getTime()
-  if (diffMs <= 0) return '已截止'
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  if (days > 0) return `剩余 ${days} 天`
-  if (hours > 0) return `剩余 ${hours} 小时`
-  return '即将截止'
-}
+import { toast } from '../components/toastUtils'
 
 export default function AdminDashboard() {
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [logs, setLogs] = useState<LogItem[]>([])
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
-  const [upcomingDeadlines, setUpcomingDeadlines] = useState<UpcomingDeadline[]>([])
-  const [upcomingStarts, setUpcomingStarts] = useState<UpcomingStart[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -40,15 +26,11 @@ export default function AdminDashboard() {
       competitionApi.list({ current: 1, size: PAGE_SIZE.LARGE }),
       logApi.list({ current: 1, size: PAGE_SIZE.DASHBOARD_PREVIEW }),
       statsApi.admin(),
-      statsApi.upcoming(),
-    ]).then(([compResult, logResult, statsResult, upcomingResult]) => {
+    ]).then(([compResult, logResult, statsResult]) => {
       setCompetitions(compResult.records)
       setLogs(logResult.records)
       setStats(statsResult as Record<string, unknown>)
-      const upcoming = upcomingResult as { upcomingDeadlines: UpcomingDeadline[]; upcomingStarts: UpcomingStart[] }
-      setUpcomingDeadlines(upcoming.upcomingDeadlines)
-      setUpcomingStarts(upcoming.upcomingStarts)
-    }).catch(console.error).finally(() => setLoading(false))
+    }).catch((e) => { toast.error('加载仪表盘数据失败'); console.error(e) }).finally(() => setLoading(false))
   }, [])
 
   const total = competitions.length
@@ -159,50 +141,8 @@ export default function AdminDashboard() {
           <div className="bento-sub">已报名参赛队伍</div>
         </motion.div>
 
-        {/* 系统预警 */}
-        <motion.div className="bento-card" variants={staggerItem}>
-          <div className="bento-label">系统预警</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-            <AlertTriangle size={18} color="var(--danger)" strokeWidth={1.5} />
-            <span style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-1px' }}>{pendingList.length}</span>
-          </div>
-          <div className="bento-sub">待审核项</div>
-        </motion.div>
-
         {/* 关键时间节点提醒 */}
-        <motion.div className="bento-card bento-wide" variants={staggerItem} style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="bento-label"><Clock size={18} strokeWidth={1.5} /> 时间节点提醒</div>
-          <div style={{ marginTop: '10px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'auto' }}>
-            {upcomingDeadlines.length === 0 && upcomingStarts.length === 0 ? (
-              <div className="bento-sub">暂无近期重要节点</div>
-            ) : (
-              <>
-                {upcomingDeadlines.slice(0, 4).map((item) => (
-                  <div key={`dl-${item.id}-${item.deadlineType}`} className="bento-timeline-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
-                      <span style={{ fontSize: '13px', color: 'var(--text-primary)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.competitionName}</span>
-                      <span style={{ fontSize: '11px', color: 'var(--danger)' }}>{item.deadlineType} · {countdownText(item.deadlineTime)}</span>
-                    </div>
-                    <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--danger)', flexShrink: 0 }}>
-                      {new Date(item.deadlineTime).toLocaleDateString('zh-CN')}
-                    </span>
-                  </div>
-                ))}
-                {upcomingStarts.slice(0, 3).map((item) => (
-                  <div key={`st-${item.id}`} className="bento-timeline-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
-                      <span style={{ fontSize: '13px', color: 'var(--text-primary)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.competitionName}</span>
-                      <span style={{ fontSize: '11px', color: 'var(--success)' }}>即将开始 · {countdownText(item.startTime)}</span>
-                    </div>
-                    <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--success)', flexShrink: 0 }}>
-                      {new Date(item.startTime).toLocaleDateString('zh-CN')}
-                    </span>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        </motion.div>
+        <UpcomingReminders />
 
         {/* 快捷入口 */}
         <motion.div className="bento-card" variants={staggerItem} style={{ display: 'flex', flexDirection: 'column' }}>

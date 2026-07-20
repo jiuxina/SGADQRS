@@ -69,7 +69,7 @@ export default function ProfilePage() {
         })
       })
       // 获取完整的用户信息（包含院系、专业、班级名称）
-      userApi.getById(user.id).then(setProfile).catch(console.error)
+      userApi.getById(user.id).then(setProfile).catch((e) => { toast.error('加载用户信息失败'); console.error(e) })
     }
   }, [user])
 

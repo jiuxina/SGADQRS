@@ -55,7 +55,7 @@ export default function TeacherTeams() {
       if (!result) return
       setTeams(result.records)
       pagination.setTotal(result.total)
-    } catch (err) { console.error('加载团队数据失败:', err) }
+    } catch (err) { toast.error('加载团队数据失败'); console.error('加载团队数据失败:', err) }
     finally { setLoading(false) }
   }, [fetchData])
 
@@ -64,7 +64,7 @@ export default function TeacherTeams() {
       if (!result) return
       setTeams(result.records)
       pagination.setTotal(result.total)
-    }).catch(err => { console.error('加载团队数据失败:', err) })
+    }).catch(err => { toast.error('加载团队数据失败'); console.error('加载团队数据失败:', err) })
       .finally(() => setLoading(false))
   }, [fetchData, selectedCompId])
 
@@ -86,7 +86,8 @@ export default function TeacherTeams() {
       if (selectedCompId) params.competitionId = selectedCompId
       await exportApi.teams(params)
       toast.success('导出成功')
-    } catch {
+    } catch (e) {
+      console.error('加载团队数据失败:', e)
       toast.error('导出失败')
     }
   }
@@ -145,7 +146,7 @@ export default function TeacherTeams() {
                   <td style={{ textAlign: 'center' }}>
                     <button
                       onClick={() => toggleExpand(team.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px', display: 'flex', alignItems: 'center' }}
+                      className="icon-btn"
                       title={isExpanded ? '收起成员' : '展开成员'}
                     >
                       {isExpanded ? <ChevronDown size={14} strokeWidth={1.5} /> : <ChevronRight size={14} strokeWidth={1.5} />}

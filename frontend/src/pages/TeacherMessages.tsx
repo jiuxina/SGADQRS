@@ -10,6 +10,7 @@ import type { MessageItem } from '../api/types'
 import ComposeMessageModal from '../components/ComposeMessageModal'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { toast } from '../components/toastUtils'
 
 export default function TeacherMessages() {
   const user = useAuthStore((s) => s.user)
@@ -31,7 +32,7 @@ export default function TeacherMessages() {
       if (!result) return
       setMessages(result.records)
       pagination.setTotal(result.total)
-    } catch (err) { console.error('加载消息失败:', err) }
+    } catch (err) { toast.error('加载消息失败'); console.error('加载消息失败:', err) }
     finally { setLoading(false) }
   }, [fetchData])
 
@@ -40,7 +41,7 @@ export default function TeacherMessages() {
       if (!result) return
       setMessages(result.records)
       pagination.setTotal(result.total)
-    }).catch(err => { console.error('加载消息失败:', err) })
+    }).catch(err => { toast.error('加载消息失败'); console.error('加载消息失败:', err) })
       .finally(() => setLoading(false))
   }, [fetchData])
 
@@ -48,14 +49,14 @@ export default function TeacherMessages() {
 
   const markAllAsRead = async () => {
     try { await messageApi.markAllRead(); setMessages((prev) => prev.map((m) => ({ ...m, isRead: 1 }))) }
-    catch (err) { console.error('标记全部已读失败:', err) }
+    catch (err) { toast.error('标记已读失败'); console.error('标记全部已读失败:', err) }
   }
 
   const handleToggleExpand = async (id: number) => {
     setExpandedId((prev) => (prev === id ? null : id))
     const msg = messages.find((m) => m.id === id)
     if (msg && msg.isRead === 0) {
-      try { await messageApi.markRead(id); setMessages((prev) => prev.map((m) => m.id === id ? { ...m, isRead: 1 } : m)) } catch { /* */ }
+      try { await messageApi.markRead(id); setMessages((prev) => prev.map((m) => m.id === id ? { ...m, isRead: 1 } : m)) } catch (e) { toast.error('标记已读失败'); console.error('标记消息已读失败:', e) }
     }
   }
 

@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { ListSkeleton } from '../components/PageSkeleton'
 import { instant, fadeSlideUp } from '../motion/variants'
+import EmptyState from '../components/EmptyState'
 import { statsApi } from '../api'
 import { useIsMobile } from '../hooks/useIsMobile'
 import type { EnrollmentTrend, CollegeStat, CompetitionRanking } from '../api/types'
+import { toast } from '../components/toastUtils'
 
 const PIE_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
 
@@ -14,7 +16,7 @@ export default function AdminStats() {
   const isMobile = useIsMobile()
 
   useEffect(() => {
-    statsApi.admin().then((data) => setStats(data as Record<string, unknown>)).catch(console.error).finally(() => setLoading(false))
+    statsApi.admin().then((data) => setStats(data as Record<string, unknown>)).catch((e) => { toast.error('加载统计数据失败'); console.error(e) }).finally(() => setLoading(false))
   }, [])
 
   if (loading) return <ListSkeleton />
@@ -128,7 +130,7 @@ export default function AdminStats() {
               </div>
             </div>
           ) : (
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center', padding: '40px 0' }}>暂无数据</div>
+            <EmptyState text="暂无数据" />
           )}
         </motion.div>
       </div>
@@ -155,7 +157,7 @@ export default function AdminStats() {
               </div>
             ))
           ) : (
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center', padding: '40px 0' }}>暂无数据</div>
+            <EmptyState text="暂无数据" />
           )}
         </motion.div>
 

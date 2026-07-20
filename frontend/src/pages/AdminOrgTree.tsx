@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { ChevronRight, Building2, BookOpen, Users, Plus, Pencil, Trash2 } from 'lucide-react'
 import ListMeta from '../components/ListMeta'
+import EmptyState from '../components/EmptyState'
 import GlassModal from '../components/GlassModal'
 import { ListSkeleton } from '../components/PageSkeleton'
 import { instant, fadeSlideUp } from '../motion/variants'
@@ -86,6 +87,7 @@ export default function AdminOrgTree() {
       setMajorCache({})
       setClassCache({})
     } catch (err) {
+      toast.error('重新加载数据失败')
       console.error('Failed to reload:', err)
     }
   }, [buildDeptTree])
@@ -98,7 +100,7 @@ export default function AdminOrgTree() {
         setDepartments(data)
         setDeptTree(buildDeptTree(data))
       })
-      .catch(console.error)
+      .catch((e) => { toast.error('加载院系数据失败'); console.error(e) })
       .finally(() => setLoading(false))
   }, [buildDeptTree])
 
@@ -113,6 +115,7 @@ export default function AdminOrgTree() {
         const majors = await deptApi.majors(deptId)
         setMajorCache((prev) => ({ ...prev, [deptId]: majors }))
       } catch (err) {
+        toast.error('加载专业列表失败')
         console.error('Failed to load majors:', err)
       }
     }
@@ -129,6 +132,7 @@ export default function AdminOrgTree() {
         const classes = await deptApi.classes(majorId)
         setClassCache((prev) => ({ ...prev, [majorId]: classes }))
       } catch (err) {
+        toast.error('加载班级列表失败')
         console.error('Failed to load classes:', err)
       }
     }
@@ -469,11 +473,10 @@ export default function AdminOrgTree() {
                   <button
                     onClick={(e) => { e.stopPropagation(); openCreateModal('major', dept.id) }}
                     title="新增专业"
+                    className="icon-btn"
                     style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: '28px', height: '28px', borderRadius: '8px',
-                      background: 'transparent', border: 'none', cursor: 'pointer',
-                      color: 'var(--text-tertiary)', transition: 'background 0.15s',
+                      transition: 'background 0.15s',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -483,11 +486,10 @@ export default function AdminOrgTree() {
                   <button
                     onClick={(e) => { e.stopPropagation(); openEditModal('dept', dept) }}
                     title="编辑院系"
+                    className="icon-btn"
                     style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: '28px', height: '28px', borderRadius: '8px',
-                      background: 'transparent', border: 'none', cursor: 'pointer',
-                      color: 'var(--text-tertiary)', transition: 'background 0.15s',
+                      transition: 'background 0.15s',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -497,10 +499,9 @@ export default function AdminOrgTree() {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete('dept', dept.id, dept.deptName) }}
                     title="删除院系"
+                    className="icon-btn"
                     style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: '28px', height: '28px', borderRadius: '8px',
-                      background: 'transparent', border: 'none', cursor: 'pointer',
                       color: '#FF3B30', transition: 'background 0.15s',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,59,48,0.08)')}
@@ -578,11 +579,10 @@ export default function AdminOrgTree() {
                                 <button
                                   onClick={(e) => { e.stopPropagation(); openCreateModal('class', major.id) }}
                                   title="新增班级"
+                                  className="icon-btn"
                                   style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     width: '26px', height: '26px', borderRadius: '7px',
-                                    background: 'transparent', border: 'none', cursor: 'pointer',
-                                    color: 'var(--text-tertiary)', transition: 'background 0.15s',
+                                    transition: 'background 0.15s',
                                   }}
                                   onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
                                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -592,11 +592,10 @@ export default function AdminOrgTree() {
                                 <button
                                   onClick={(e) => { e.stopPropagation(); openEditModal('major', major) }}
                                   title="编辑专业"
+                                  className="icon-btn"
                                   style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     width: '26px', height: '26px', borderRadius: '7px',
-                                    background: 'transparent', border: 'none', cursor: 'pointer',
-                                    color: 'var(--text-tertiary)', transition: 'background 0.15s',
+                                    transition: 'background 0.15s',
                                   }}
                                   onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
                                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -606,10 +605,9 @@ export default function AdminOrgTree() {
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleDelete('major', major.id, major.majorName) }}
                                   title="删除专业"
+                                  className="icon-btn"
                                   style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     width: '26px', height: '26px', borderRadius: '7px',
-                                    background: 'transparent', border: 'none', cursor: 'pointer',
                                     color: '#FF3B30', transition: 'background 0.15s',
                                   }}
                                   onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,59,48,0.08)')}
@@ -667,11 +665,10 @@ export default function AdminOrgTree() {
                                             <button
                                               onClick={(e) => { e.stopPropagation(); openEditModal('class', cls) }}
                                               title="编辑班级"
+                                              className="icon-btn"
                                               style={{
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 width: '24px', height: '24px', borderRadius: '6px',
-                                                background: 'transparent', border: 'none', cursor: 'pointer',
-                                                color: 'var(--text-tertiary)', transition: 'background 0.15s',
+                                                transition: 'background 0.15s',
                                               }}
                                               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
                                               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -681,10 +678,9 @@ export default function AdminOrgTree() {
                                             <button
                                               onClick={(e) => { e.stopPropagation(); handleDelete('class', cls.id, cls.className) }}
                                               title="删除班级"
+                                              className="icon-btn"
                                               style={{
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 width: '24px', height: '24px', borderRadius: '6px',
-                                                background: 'transparent', border: 'none', cursor: 'pointer',
                                                 color: '#FF3B30', transition: 'background 0.15s',
                                               }}
                                               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,59,48,0.08)')}
@@ -696,15 +692,7 @@ export default function AdminOrgTree() {
                                         </div>
                                       ))
                                     ) : (
-                                      <div
-                                        style={{
-                                          padding: '10px 16px 10px 80px',
-                                          fontSize: '12px',
-                                          color: 'var(--text-tertiary)',
-                                        }}
-                                      >
-                                        暂无班级
-                                      </div>
+                                      <EmptyState text="暂无班级" />
                                     )
                                   ) : (
                                     <div
@@ -723,15 +711,7 @@ export default function AdminOrgTree() {
                           </div>
                         ))
                       ) : (
-                        <div
-                          style={{
-                            padding: '12px 16px 12px 48px',
-                            fontSize: '12px',
-                            color: 'var(--text-tertiary)',
-                          }}
-                        >
-                          暂无专业
-                        </div>
+                        <EmptyState text="暂无专业" />
                       )
                     ) : (
                       <div

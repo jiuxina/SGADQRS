@@ -85,6 +85,7 @@ export default function AdminUsers() {
       setTotal(result.total)
       pagination.setTotal(result.total)
     } catch (err) {
+      toast.error('加载用户数据失败')
       console.error('加载用户数据失败:', err)
     } finally {
       setLoading(false)
@@ -97,6 +98,7 @@ export default function AdminUsers() {
       setTotal(result.total)
       pagination.setTotal(result.total)
     }).catch(err => {
+      toast.error('加载用户数据失败')
       console.error('加载用户数据失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData])
@@ -239,10 +241,10 @@ export default function AdminUsers() {
   }
 
   const handleResetPassword = async (user: UserItem) => {
-    if (!confirm(`确定要重置用户 "${user.realName}" 的密码吗？重置后密码为 123456。`)) return
+    if (!confirm(`确定要重置用户 "${user.realName}" 的密码吗？`)) return
     try {
       await userApi.resetPassword(user.id)
-      toast.success('密码重置成功，新密码为 123456')
+      toast.success('密码重置成功')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '重置失败')
     }
@@ -255,7 +257,8 @@ export default function AdminUsers() {
     try {
       const result = await fileApi.upload(file)
       setEditForm((f) => ({ ...f, avatar: result.url }))
-    } catch {
+    } catch (e) {
+      console.error('更新用户状态失败:', e)
       toast.error('头像上传失败')
     } finally {
       setUploading(false)
@@ -272,7 +275,8 @@ export default function AdminUsers() {
       if (searchQuery) params.keyword = searchQuery
       await exportApi.users(params)
       toast.success('导出成功')
-    } catch {
+    } catch (e) {
+      console.error('删除用户失败:', e)
       toast.error('导出失败')
     }
   }
@@ -702,7 +706,7 @@ export default function AdminUsers() {
                       重置密码
                     </button>
                     <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
-                      重置后密码为 123456
+                      密码将被重置为默认密码
                     </span>
                   </div>
                 )}

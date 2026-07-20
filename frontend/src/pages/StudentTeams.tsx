@@ -72,6 +72,7 @@ export default function StudentTeams() {
       setTotal(result.total)
       pagination.setTotal(result.total)
     } catch (err) {
+      toast.error('加载团队数据失败')
       console.error('加载团队数据失败:', err)
     } finally {
       setLoading(false)
@@ -84,6 +85,7 @@ export default function StudentTeams() {
       setTotal(result.total)
       pagination.setTotal(result.total)
     }).catch(err => {
+      toast.error('加载团队数据失败')
       console.error('加载团队数据失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData])

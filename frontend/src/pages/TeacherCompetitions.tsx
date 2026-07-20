@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { UserCheck, UserX, ImageIcon, ExternalLink } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
+import ListMeta from '../components/ListMeta'
 import { ListSkeleton } from '../components/PageSkeleton'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import GlassModal from '../components/GlassModal'
@@ -15,21 +16,7 @@ import { confirmDialog } from '../components/confirmDialogUtils'
 import { resolveCoverUrl } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
-
-const statusBadgeMap: Record<number, { cls: string; label: string }> = {
-  0: { cls: 'pending', label: '草稿' },
-  1: { cls: 'pending', label: '待审核' },
-  2: { cls: 'pass', label: '已发布' },
-  3: { cls: 'reviewing', label: '进行中' },
-  4: { cls: 'fail', label: '已结束' },
-  5: { cls: 'fail', label: '已驳回' },
-}
-
-const regStatusMap: Record<number, { cls: string; label: string }> = {
-  0: { cls: 'pending', label: '待审核' },
-  1: { cls: 'pass', label: '已通过' },
-  2: { cls: 'fail', label: '已拒绝' },
-}
+import { getStatusBadge } from '../utils/statusBadge'
 
 export default function TeacherCompetitions() {
   const user = useAuthStore((s) => s.user)
@@ -58,7 +45,7 @@ export default function TeacherCompetitions() {
       if (!result) return
       setCompetitions(result.records)
       pagination.setTotal(result.total)
-    } catch (err) { console.error('加载竞赛失败:', err) }
+    } catch (err) { toast.error('加载竞赛列表失败'); console.error('加载竞赛失败:', err) }
     finally { setLoading(false) }
   }, [fetchData])
 
@@ -67,7 +54,7 @@ export default function TeacherCompetitions() {
       if (!result) return
       setCompetitions(result.records)
       pagination.setTotal(result.total)
-    }).catch(err => { console.error('加载竞赛失败:', err) })
+    }).catch(err => { toast.error('加载竞赛列表失败'); console.error('加载竞赛失败:', err) })
       .finally(() => setLoading(false))
   }, [fetchData])
 
@@ -99,6 +86,7 @@ export default function TeacherCompetitions() {
       const result = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: comp.id })
       setRegistrations(result.records)
     } catch (err) {
+      toast.error('加载报名列表失败')
       console.error('加载报名列表失败:', err)
       setRegistrations([])
     } finally {
@@ -178,7 +166,7 @@ export default function TeacherCompetitions() {
             </thead>
             <tbody>
               {competitions.map((comp) => {
-                const badge = statusBadgeMap[comp.status] || statusBadgeMap[0]
+                const badge = getStatusBadge(comp.status)
                 return (
                   <tr key={comp.id}>
                     <td>
@@ -250,9 +238,7 @@ export default function TeacherCompetitions() {
               <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px', paddingRight: '24px' }}>
                 {managingComp?.competitionName}
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
-                报名管理 · 共 {registrations.length} 条报名记录
-              </div>
+              <ListMeta count={registrations.length} unit="条报名记录" />
 
               {registrations.filter(r => r.status === 0).length > 0 && (
                 <div style={{
@@ -280,7 +266,7 @@ export default function TeacherCompetitions() {
               )}
 
               {regLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>加载中...</div>
+                <ListSkeleton />
               ) : registrations.length === 0 ? (
                 <EmptyState text="暂无报名记录" />
               ) : (
@@ -299,7 +285,7 @@ export default function TeacherCompetitions() {
                   </thead>
                   <tbody>
                     {registrations.map((reg) => {
-                      const badge = regStatusMap[reg.status] || regStatusMap[0]
+                      const badge = getStatusBadge(reg.status, 'registration')
                       return (
                         <tr key={reg.id}>
                           <td style={{ textAlign: 'center' }}>

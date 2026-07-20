@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type ReactElement } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -49,7 +49,7 @@ function RichTextEditor({ content, onChange }: { content: string; onChange: (htm
 
   if (!editor) return null
 
-  const btn = (label: string | JSX.Element, active: boolean, onClick: () => void) => (
+  const btn = (label: string | ReactElement, active: boolean, onClick: () => void) => (
     <button
       type="button"
       onMouseDown={(e) => { e.preventDefault(); onClick() }}
@@ -119,7 +119,7 @@ export default function AdminNotices() {
       setNotices(result.records)
       setTotal(result.total)
       pagination.setTotal(result.total)
-    } catch (err) { console.error('加载公告失败:', err) }
+    } catch (err) { toast.error('加载公告失败'); console.error('加载公告失败:', err) }
     finally { setLoading(false) }
   }, [fetchData])
 
@@ -128,7 +128,7 @@ export default function AdminNotices() {
       setNotices(result.records)
       setTotal(result.total)
       pagination.setTotal(result.total)
-    }).catch(err => { console.error('加载公告失败:', err) }).finally(() => setLoading(false))
+    }).catch(err => { toast.error('加载公告失败'); console.error('加载公告失败:', err) }).finally(() => setLoading(false))
   }, [fetchData])
 
   // 筛选条件变化时重置到第1页

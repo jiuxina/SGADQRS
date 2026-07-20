@@ -2,21 +2,18 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Search, X, Eye, Calendar, MapPin, Users, Clock, Download } from 'lucide-react'
 
-/** 拼接后端图片完整 URL */
-function resolveCoverUrl(url: string | null | undefined): string | null {
-  if (!url) return null
-  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-  return url
-}
 import { staggerContainer, staggerItem, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { competitionApi, exportApi } from '../api'
 import type { CompetitionItem } from '../api/types'
 import { toast } from '../components/toastUtils'
+import { formatDate, resolveCoverUrl, formatFileSize } from '../utils/format'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useNavigate } from 'react-router-dom'
 import { confirmDialog } from '../components/confirmDialogUtils'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { ListSkeleton } from '../components/PageSkeleton'
+import { getStatusBadge } from '../utils/statusBadge'
 
 type FilterStatus = 'all' | 1 | 2 | 3 | 4 | 0 | 5
 
@@ -29,22 +26,6 @@ const filterOptions: { key: FilterStatus; label: string }[] = [
   { key: 0, label: '草稿' },
   { key: 5, label: '已驳回' },
 ]
-
-const statusBadgeMap: Record<number, { cls: string; label: string }> = {
-  1: { cls: 'pending', label: '待审核' },
-  2: { cls: 'pass', label: '已发布' },
-  3: { cls: 'reviewing', label: '进行中' },
-  4: { cls: 'fail', label: '已结束' },
-  0: { cls: 'pending', label: '草稿' },
-  5: { cls: 'fail', label: '已驳回' },
-}
-
-function formatFileSize(bytes?: number | null): string {
-  if (bytes == null || bytes <= 0) return '-'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 export default function AdminCompetitions() {
   const [filter, setFilter] = useState<FilterStatus>('all')
@@ -90,6 +71,7 @@ export default function AdminCompetitions() {
       setTotal(result.total)
       pagination.setTotal(result.total)
     } catch (err) {
+      toast.error('加载竞赛数据失败')
       console.error('加载竞赛数据失败:', err)
     } finally {
       setLoading(false)
@@ -136,7 +118,8 @@ export default function AdminCompetitions() {
       if (searchQuery) params.keyword = searchQuery
       await exportApi.competitions(params)
       toast.success('导出成功')
-    } catch {
+    } catch (e) {
+      console.error('加载竞赛列表失败:', e)
       toast.error('导出失败')
     }
   }
@@ -146,14 +129,8 @@ export default function AdminCompetitions() {
     return dateStr.slice(5, 10)
   }
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-'
-    const d = new Date(dateStr)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }
-
   if (loading && competitions.length === 0) {
-    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+    return <ListSkeleton />
   }
 
   return (
@@ -235,7 +212,7 @@ export default function AdminCompetitions() {
             </thead>
             <tbody>
               {competitions.map((comp) => {
-                const badge = statusBadgeMap[comp.status] ?? { cls: 'pending', label: '未知' }
+                const badge = getStatusBadge(comp.status)
                 return (
                   <tr key={comp.id}>
                     <td style={{ fontWeight: '600', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -333,7 +310,8 @@ export default function AdminCompetitions() {
             >
               <button
                 onClick={() => setSelectedComp(null)}
-                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}
+                className="icon-btn"
+                style={{ position: 'absolute', top: '16px', right: '16px' }}
               >
                 <X size={16} strokeWidth={1.5} />
               </button>
@@ -356,8 +334,8 @@ export default function AdminCompetitions() {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                <span className={`glass-badge ${statusBadgeMap[selectedComp.status]?.cls}`} style={{ fontSize: '11px', padding: '3px 10px' }}>
-                  {statusBadgeMap[selectedComp.status]?.label}
+                <span className={`glass-badge ${getStatusBadge(selectedComp.status).cls}`} style={{ fontSize: '11px', padding: '3px 10px' }}>
+                  {getStatusBadge(selectedComp.status).label}
                 </span>
               </div>
 
@@ -509,7 +487,6 @@ export default function AdminCompetitions() {
         )}
       </AnimatePresence>
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

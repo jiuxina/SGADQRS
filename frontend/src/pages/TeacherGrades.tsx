@@ -101,7 +101,7 @@ export default function TeacherGrades() {
     if (!user) return
     competitionApi.list({ current: 1, size: PAGE_SIZE.LARGE, publisherId: user.id })
       .then((res) => { setCompetitions(res.records); if (res.records.length > 0) setSelectedComp(res.records[0].id) })
-      .catch(console.error).finally(() => setLoading(false))
+      .catch((e) => { toast.error('加载竞赛列表失败'); console.error(e) }).finally(() => setLoading(false))
   }, [user])
 
   const fetchResults = useCallback(async () => {
@@ -115,7 +115,7 @@ export default function TeacherGrades() {
       if (!res) return
       setResults(res.records)
       pagination.setTotal(res.total)
-    } catch (err) { console.error('加载成绩失败:', err) }
+    } catch (err) { toast.error('加载成绩失败'); console.error('加载成绩失败:', err) }
   }, [fetchResults])
 
   useEffect(() => {
@@ -123,7 +123,7 @@ export default function TeacherGrades() {
       if (!res) return
       setResults(res.records)
       pagination.setTotal(res.total)
-    }).catch(err => { console.error('加载成绩失败:', err) })
+    }).catch(err => { toast.error('加载成绩失败'); console.error('加载成绩失败:', err) })
   }, [fetchResults])
 
   // 竞赛切换时重置到第1页

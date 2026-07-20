@@ -15,6 +15,7 @@ import type { MessageItem } from '../api/types'
 import ComposeMessageModal from '../components/ComposeMessageModal'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { toast } from '../components/toastUtils'
 
 export default function StudentMessages() {
   const user = useAuthStore((s) => s.user)
@@ -37,6 +38,7 @@ export default function StudentMessages() {
       setMessages(result.records)
       pagination.setTotal(result.total)
     } catch (err) {
+      toast.error('加载消息失败')
       console.error('加载消息失败:', err)
     } finally {
       setLoading(false)
@@ -49,6 +51,7 @@ export default function StudentMessages() {
       setMessages(result.records)
       pagination.setTotal(result.total)
     }).catch(err => {
+      toast.error('加载消息失败')
       console.error('加载消息失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData])
@@ -60,6 +63,7 @@ export default function StudentMessages() {
       await messageApi.markAllRead()
       setMessages((prev) => prev.map((m) => ({ ...m, isRead: 1 })))
     } catch (err) {
+      toast.error('标记已读失败')
       console.error('标记全部已读失败:', err)
     }
   }
@@ -71,7 +75,7 @@ export default function StudentMessages() {
       try {
         await messageApi.markRead(id)
         setMessages((prev) => prev.map((m) => m.id === id ? { ...m, isRead: 1 } : m))
-      } catch { /* ignore */ }
+      } catch (e) { toast.error('标记已读失败'); console.error('标记消息已读失败:', e) }
     }
   }
 

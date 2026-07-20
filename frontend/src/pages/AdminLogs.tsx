@@ -9,6 +9,7 @@ import type { LogItem } from '../api/types'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { toast } from '../components/toastUtils'
 
 type FilterStatus = 'all' | 1 | 0
 
@@ -62,6 +63,7 @@ export default function AdminLogs() {
       setTotal(result.total)
       pagination.setTotal(result.total)
     }).catch(err => {
+      toast.error('加载日志失败')
       console.error('加载日志失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData])

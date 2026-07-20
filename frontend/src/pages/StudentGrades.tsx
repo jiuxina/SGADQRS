@@ -36,6 +36,7 @@ export default function StudentGrades() {
       setResults(result.records)
       pagination.setTotal(result.total)
     }).catch(err => {
+      toast.error('加载成绩数据失败')
       console.error('加载成绩数据失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData])
@@ -44,7 +45,8 @@ export default function StudentGrades() {
     try {
       await exportApi.studentTranscript()
       toast.success('成绩单导出成功')
-    } catch {
+    } catch (e) {
+      console.error('加载成绩失败:', e)
       toast.error('导出失败')
     }
   }

@@ -6,8 +6,12 @@ import { registrationApi, competitionApi, exportApi } from '../api'
 import type { RegistrationItem, CompetitionItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/toastUtils'
+import { formatDate } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
+import ListMeta from '../components/ListMeta'
 import Pagination from '../components/Pagination'
+import { ListSkeleton } from '../components/PageSkeleton'
+import { getStatusBadge } from '../utils/statusBadge'
 
 type FilterStatus = 'all' | 0 | 1 | 2
 
@@ -17,12 +21,6 @@ const filterOptions: { key: FilterStatus; label: string }[] = [
   { key: 1, label: '已通过' },
   { key: 2, label: '已拒绝' },
 ]
-
-const statusBadgeMap: Record<number, { cls: string; label: string }> = {
-  0: { cls: 'pending', label: '待审核' },
-  1: { cls: 'pass', label: '已通过' },
-  2: { cls: 'fail', label: '已拒绝' },
-}
 
 export default function AdminRegistrations() {
   const [filter, setFilter] = useState<FilterStatus>('all')
@@ -75,6 +73,7 @@ export default function AdminRegistrations() {
       setTotal(result.total)
       pagination.setTotal(result.total)
     } catch (err) {
+      toast.error('加载报名数据失败')
       console.error('加载报名数据失败:', err)
     } finally {
       setLoading(false)
@@ -87,6 +86,7 @@ export default function AdminRegistrations() {
       setTotal(result.total)
       pagination.setTotal(result.total)
     }).catch(err => {
+      toast.error('加载报名数据失败')
       console.error('加载报名数据失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData])
@@ -114,19 +114,14 @@ export default function AdminRegistrations() {
       if (filter !== 'all') params.status = filter as number
       await exportApi.registrations(params)
       toast.success('导出成功')
-    } catch {
+    } catch (e) {
+      console.error('加载报名数据失败:', e)
       toast.error('导出失败')
     }
   }
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-'
-    const d = new Date(dateStr)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-  }
-
   if (loading && registrations.length === 0) {
-    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+    return <ListSkeleton />
   }
 
   return (
@@ -139,14 +134,12 @@ export default function AdminRegistrations() {
         animate="visible"
       >
         <div>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            共 {total} 条报名记录
-            {pendingCount > 0 && (
-              <span style={{ color: 'var(--warning)', fontWeight: '600', marginLeft: '12px' }}>
-                {pendingCount} 条待审核
-              </span>
-            )}
-          </span>
+          <ListMeta count={total} unit="条报名记录" />
+          {pendingCount > 0 && (
+            <span style={{ color: 'var(--warning)', fontWeight: '600', marginLeft: '12px' }}>
+              {pendingCount} 条待审核
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
@@ -225,7 +218,7 @@ export default function AdminRegistrations() {
             </thead>
             <tbody>
               {registrations.map((reg) => {
-                const badge = statusBadgeMap[reg.status] ?? { cls: 'pending', label: '未知' }
+                const badge = getStatusBadge(reg.status, 'registration')
                 return (
                   <tr key={reg.id}>
                     <td style={{ fontWeight: '600', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -294,7 +287,6 @@ export default function AdminRegistrations() {
         onPageSizeChange={pagination.setPageSize}
       />
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

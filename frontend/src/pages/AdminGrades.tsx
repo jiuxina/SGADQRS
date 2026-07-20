@@ -6,8 +6,11 @@ import { resultApi, competitionApi, exportApi } from '../api'
 import type { ResultItem, CompetitionItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/toastUtils'
+import { formatDate } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
+import ListMeta from '../components/ListMeta'
 import Pagination from '../components/Pagination'
+import { TableSkeleton } from '../components/PageSkeleton'
 
 export default function AdminGrades() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -51,6 +54,7 @@ export default function AdminGrades() {
       setTotal(res.total)
       pagination.setTotal(res.total)
     } catch (err) {
+      toast.error('加载成绩数据失败')
       console.error('加载成绩数据失败:', err)
     } finally {
       setLoading(false)
@@ -73,6 +77,7 @@ export default function AdminGrades() {
       setTotal(res.total)
       pagination.setTotal(res.total)
     }).catch(err => {
+      toast.error('加载成绩数据失败')
       console.error('加载成绩数据失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData, searchQuery])
@@ -100,19 +105,14 @@ export default function AdminGrades() {
       if (selectedCompId) params.competitionId = selectedCompId
       await exportApi.results(params)
       toast.success('导出成功')
-    } catch {
+    } catch (e) {
+      console.error('加载成绩数据失败:', e)
       toast.error('导出失败')
     }
   }
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-'
-    const d = new Date(dateStr)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }
-
   if (loading && results.length === 0) {
-    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-tertiary)' }}>加载中...</div>
+    return <TableSkeleton />
   }
 
   return (
@@ -125,19 +125,17 @@ export default function AdminGrades() {
         animate="visible"
       >
         <div>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            共 {total} 条成绩
-            {publishedCount > 0 && (
-              <span style={{ color: 'var(--success)', fontWeight: '600', marginLeft: '12px' }}>
-                {publishedCount} 条已发布
-              </span>
-            )}
-            {unpublishedCount > 0 && (
-              <span style={{ color: 'var(--text-tertiary)', fontWeight: '600', marginLeft: '12px' }}>
-                {unpublishedCount} 条未发布
-              </span>
-            )}
-          </span>
+          <ListMeta count={total} unit="条成绩" />
+          {publishedCount > 0 && (
+            <span style={{ color: 'var(--success)', fontWeight: '600', marginLeft: '12px' }}>
+              {publishedCount} 条已发布
+            </span>
+          )}
+          {unpublishedCount > 0 && (
+            <span style={{ color: 'var(--text-tertiary)', fontWeight: '600', marginLeft: '12px' }}>
+              {unpublishedCount} 条未发布
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
@@ -271,7 +269,6 @@ export default function AdminGrades() {
         onPageSizeChange={pagination.setPageSize}
       />
 
-      <div style={{ paddingBottom: '40px' }} />
     </>
   )
 }

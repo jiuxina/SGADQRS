@@ -25,6 +25,8 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { formatDate, resolveCoverUrl } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { toast } from '../components/toastUtils'
+import { getStatusBadge } from '../utils/statusBadge'
 
 type StatusFilter = 'all' | 2 | 3 | 4
 
@@ -33,15 +35,6 @@ const statusFilterLabels: Record<string, string> = {
   2: '报名中',
   3: '进行中',
   4: '已结束',
-}
-
-const statusBadgeLabel: Record<number, string> = {
-  0: '草稿',
-  1: '审核中',
-  2: '报名中',
-  3: '进行中',
-  4: '已结束',
-  5: '已驳回',
 }
 
 export default function StudentCompetitions() {
@@ -85,6 +78,7 @@ export default function StudentCompetitions() {
       setTotal(compResult.total)
       pagination.setTotal(compResult.total)
     } catch (err) {
+      toast.error('加载竞赛数据失败')
       console.error('加载竞赛数据失败:', err)
     } finally {
       setLoading(false)
@@ -97,6 +91,7 @@ export default function StudentCompetitions() {
       setTotal(compResult.total)
       pagination.setTotal(compResult.total)
     }).catch(err => {
+      toast.error('加载竞赛数据失败')
       console.error('加载竞赛数据失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData])
@@ -138,6 +133,7 @@ export default function StudentCompetitions() {
       const res = await registrationApi.teamList({ competitionId, current: 1, size: 50 })
       setTeamList(res.records)
     } catch (err) {
+      toast.error('加载团队列表失败')
       console.error('加载团队列表失败:', err)
     } finally {
       setTeamsLoading(false)
@@ -155,6 +151,7 @@ export default function StudentCompetitions() {
       const res = await fileApi.upload(file)
       setAttachmentUrl(res.url)
     } catch (err) {
+      toast.error('上传附件失败')
       console.error('上传附件失败:', err)
     } finally {
       setUploading(false)
@@ -256,7 +253,7 @@ export default function StudentCompetitions() {
                       className={`glass-badge ${comp.status === 2 ? 'pass' : comp.status === 3 ? 'reviewing' : 'pending'}`}
                       style={{ fontSize: '11px', padding: '2px 8px' }}
                     >
-                      {statusBadgeLabel[comp.status] ?? '未知'}
+                      {getStatusBadge(comp.status, 'student-competition').label}
                     </span>
                   </div>
                 </div>
@@ -398,7 +395,7 @@ export default function StudentCompetitions() {
                   {teamsLoading ? (
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', padding: '8px 0' }}>加载中...</div>
                   ) : teamList.length === 0 ? (
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', padding: '8px 0' }}>暂无可用团队，请先创建团队</div>
+                    <EmptyState text="暂无可用团队，请先创建团队" />
                   ) : (
                     <select
                       value={selectedTeamId ?? ''}

@@ -71,6 +71,7 @@ export default function StudentRegistration() {
       setRegistrations(result.records)
       pagination.setTotal(result.total)
     } catch (err) {
+      toast.error('加载报名数据失败')
       console.error('加载报名数据失败:', err)
     } finally {
       setLoading(false)
@@ -83,6 +84,7 @@ export default function StudentRegistration() {
       setRegistrations(result.records)
       pagination.setTotal(result.total)
     }).catch(err => {
+      toast.error('加载报名数据失败')
       console.error('加载报名数据失败:', err)
     }).finally(() => setLoading(false))
   }, [fetchData])

@@ -154,10 +154,9 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  className="icon-btn"
                   style={{
                     position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
-                    color: 'var(--text-tertiary)',
                   }}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -170,7 +169,7 @@ export default function LoginPage() {
                 <input type="checkbox" defaultChecked style={{ accentColor: 'var(--accent)' }} />
                 记住账号
               </label>
-              <button type="button" onClick={() => toast.info('请联系管理员重置密码')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px' }}>
+              <button type="button" onClick={() => toast.info('请联系管理员重置密码')} className="icon-btn" style={{ color: 'var(--accent)', fontFamily: 'inherit', fontSize: '13px' }}>
                 忘记密码？
               </button>
             </div>
@@ -200,7 +199,7 @@ export default function LoginPage() {
           </AnimatePresence>
           {env.isDev && (
             <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-tertiary)', margin: '8px 0 0' }}>
-              开发环境默认账号：admin / 123456 | T2024001 / 123456 | S20210001 / 123456
+              开发环境：请查阅 README 获取测试账号
             </p>
           )}
         </form>
