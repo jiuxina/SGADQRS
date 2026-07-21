@@ -97,8 +97,8 @@ export function useWebSocket(onNotification?: NotificationCallback) {
             const notification: WebSocketNotification = JSON.parse(message.body)
             showToast(notification)
             onNotificationRef.current?.(notification)
-          } catch {
-            // 解析失败静默忽略
+          } catch (e) {
+            console.error('WebSocket断开连接:', e)
           }
         })
       },

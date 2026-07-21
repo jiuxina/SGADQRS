@@ -6,7 +6,6 @@ import AdminUsers from './pages/AdminUsers'
 import AdminStats from './pages/AdminStats'
 import AdminNotices from './pages/AdminNotices'
 import AdminLogs from './pages/AdminLogs'
-import AdminSettings from './pages/AdminSettings'
 import AdminOrgTree from './pages/AdminOrgTree'
 import AdminGrades from './pages/AdminGrades'
 import AdminRegistrations from './pages/AdminRegistrations'
@@ -23,7 +22,6 @@ import StudentRegistration from './pages/StudentRegistration'
 import StudentGrades from './pages/StudentGrades'
 import StudentMessages from './pages/StudentMessages'
 import StudentTeams from './pages/StudentTeams'
-import StudentAudit from './pages/StudentAudit'
 import StudentHistory from './pages/StudentHistory'
 import ProfilePage from './pages/ProfilePage'
 import DesktopLayout from './components/DesktopLayout'
@@ -57,7 +55,6 @@ function App() {
           <Route path="/admin/stats" element={<AuthGuard allowedRoles={['admin']}><AdminStats /></AuthGuard>} />
           <Route path="/admin/notices" element={<AuthGuard allowedRoles={['admin']}><AdminNotices /></AuthGuard>} />
           <Route path="/admin/logs" element={<AuthGuard allowedRoles={['admin']}><AdminLogs /></AuthGuard>} />
-          <Route path="/admin/settings" element={<AuthGuard allowedRoles={['admin']}><AdminSettings /></AuthGuard>} />
           <Route path="/admin/org-tree" element={<AuthGuard allowedRoles={['admin']}><AdminOrgTree /></AuthGuard>} />
           <Route path="/admin/grades" element={<AuthGuard allowedRoles={['admin']}><AdminGrades /></AuthGuard>} />
           <Route path="/admin/registrations" element={<AuthGuard allowedRoles={['admin']}><AdminRegistrations /></AuthGuard>} />
@@ -79,7 +76,6 @@ function App() {
           <Route path="/student/grades" element={<AuthGuard allowedRoles={['student']}><StudentGrades /></AuthGuard>} />
           <Route path="/student/messages" element={<AuthGuard allowedRoles={['student']}><StudentMessages /></AuthGuard>} />
           <Route path="/student/teams" element={<AuthGuard allowedRoles={['student']}><StudentTeams /></AuthGuard>} />
-          <Route path="/student/audit" element={<AuthGuard allowedRoles={['student']}><StudentAudit /></AuthGuard>} />
           <Route path="/student/history" element={<AuthGuard allowedRoles={['student']}><StudentHistory /></AuthGuard>} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />

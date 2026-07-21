@@ -2585,3 +2585,15 @@ input[type="date"].glass-input::-webkit-datetime-edit-year-field[aria-valuetext]
 .text-label  { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .text-value  { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .text-mono   { font-family: monospace; }
+
+/* Icon button — transparent background, no border */
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

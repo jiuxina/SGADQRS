@@ -16,9 +16,6 @@ export const env = {
   /** 应用版本 */
   appVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
 
-  /** 是否使用 Mock 数据 */
-  useMock: import.meta.env.VITE_USE_MOCK === 'true',
-
   /** 是否开发环境 */
   isDev: import.meta.env.DEV,
 

@@ -45,7 +45,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const userInfo = await authApi.getUserInfo()
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userInfo))
       set({ user: userInfo })
-    } catch {
+    } catch (e) {
+      console.error('登录请求失败:', e)
       get().logout()
     }
   },
