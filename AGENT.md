@@ -27,16 +27,22 @@ SGADQRS/
 ├── frontend/                # 前端项目
 │   ├── src/
 │   │   ├── api/             # API 请求模块
-│   │   │   ├── modules/     # 按功能分组 (auth, competition, result...)
-│   │   │   ├── request.ts   # Axios 实例 + 拦截器
+│   │   │   ├── modules/     # 按功能分组 (auth, competition, registration, result, export, system, user)
+│   │   │   ├── request.ts   # Axios 实例 + JWT 拦截器
 │   │   │   └── types.ts     # 接口类型定义
-│   │   ├── components/      # 通用组件
-│   │   ├── config/          # 配置常量
+│   │   ├── components/      # 通用组件 (32 个, 含 GlassModal, EmptyState, PageSkeleton, ListMeta 等)
+│   │   ├── config/          # 环境变量封装
+│   │   │   └── env.ts       # VITE_* 环境变量读取 (无 useMock)
+│   │   ├── data/            # (空目录 — 不使用模拟数据)
 │   │   ├── hooks/           # 自定义 Hooks
 │   │   ├── motion/          # 动画配置
-│   │   ├── pages/           # 页面组件
+│   │   ├── pages/           # 页面组件 (按 admin/teacher/student 分组)
 │   │   ├── store/           # Zustand 状态
+│   │   │   └── authStore.ts
+│   │   ├── types/           # 类型声明
 │   │   └── utils/           # 工具函数
+│   │       ├── format.ts        # formatDate, resolveCoverUrl, formatFileSize
+│   │       └── statusBadge.ts   # getStatusBadge (竞赛/报名状态映射)
 │   ├── vite.config.ts       # Vite 配置 + 代理
 │   └── package.json
 ├── backend/                 # 后端项目
@@ -164,6 +170,11 @@ SGADQRS/
 - 类型定义: `frontend/src/api/types.ts`
 - 样式: Tailwind CSS + CSS 变量
 - 动画: Motion (Framer Motion)
+- **无模拟数据**: `src/data/` 目录为空, 不使用 `useMock` 开关, 所有数据来自真实 API
+- **共享工具函数**: 日期格式化 (`formatDate`)、封面 URL 解析 (`resolveCoverUrl`)、文件大小格式化 (`formatFileSize`) 统一在 `src/utils/format.ts` 中定义; 状态徽章映射 (`getStatusBadge`) 在 `src/utils/statusBadge.ts` 中定义。页面中不要重复定义这些函数
+- **错误处理**: 所有 catch 块必须同时包含 `toast.error(...)` (用户提示) 和 `console.error(...)` (调试日志), 不能有空 catch 块
+- **加载与空状态**: 加载中统一使用 `<PageSkeleton />`, 空数据统一使用 `<EmptyState />`, 列表计数统一使用 `<ListMeta />`
+- **图标按钮**: 使用 `.icon-btn` CSS 类 (透明背景、无边框、仅图标), 不要手写内联样式
 
 ### 后端
 - 控制器: `@RestController` + `@RequestMapping`
