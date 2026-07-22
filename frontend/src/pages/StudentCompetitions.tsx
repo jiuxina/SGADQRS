@@ -208,7 +208,7 @@ export default function StudentCompetitions() {
           exit={{ opacity: 0, transition: { duration: 0.15 } }}
           style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
             gap: '16px',
           }}
         >
@@ -226,14 +226,14 @@ export default function StudentCompetitions() {
                   alt={comp.competitionName}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
                   style={{
-                    width: '100%', height: '140px', objectFit: 'cover',
+                    width: '100%', aspectRatio: '16/9', objectFit: 'cover',
                     borderRadius: '12px', marginBottom: '12px',
                   }}
                 />
               ) : (
                 <div
                   style={{
-                    width: '100%', height: '100px', borderRadius: '12px', marginBottom: '12px',
+                    width: '100%', aspectRatio: '16/9', borderRadius: '12px', marginBottom: '12px',
                     background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.10) 50%, rgba(236,72,153,0.08) 100%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}

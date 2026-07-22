@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Component, type ReactNode, type ErrorInfo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
@@ -27,7 +27,46 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { toast } from '../components/toastUtils'
 import { getStatusBadge } from '../utils/statusBadge'
 
-export default function StudentCompetitionDetail() {
+// Error Boundary to catch rendering errors
+interface ErrorBoundaryState {
+  hasError: boolean
+  error: Error | null
+}
+
+class CompetitionDetailErrorBoundary extends Component<
+  { children: ReactNode; onBack: () => void },
+  ErrorBoundaryState
+> {
+  constructor(props: { children: ReactNode; onBack: () => void }) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('竞赛详情页面错误:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)' }}>
+          <p style={{ fontSize: '14px', marginBottom: '12px' }}>页面加载出错</p>
+          <p style={{ fontSize: '12px', marginBottom: '16px', color: 'var(--text-tertiary)' }}>
+            {this.state.error?.message || '未知错误'}
+          </p>
+          <button className="btn ghost" onClick={this.props.onBack}>返回列表</button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+function StudentCompetitionDetailInner() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
@@ -57,13 +96,28 @@ export default function StudentCompetitionDetail() {
   const phoneError = contactPhone.length > 0 && !phoneRegex.test(contactPhone) ? '请输入正确的手机号' : ''
 
   const loadCompetition = useCallback(async () => {
-    if (!id) return
+    if (!id) {
+      setLoading(false)
+      setError('无效的竞赛ID')
+      return
+    }
+    const numId = Number(id)
+    if (isNaN(numId) || numId <= 0) {
+      setLoading(false)
+      setError('无效的竞赛ID')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      const data = await competitionApi.getById(Number(id))
-      setComp(data)
+      const data = await competitionApi.getById(numId)
+      if (!data) {
+        setError('竞赛不存在')
+      } else {
+        setComp(data)
+      }
     } catch (err) {
+      console.error('加载竞赛详情失败:', err)
       setError(err instanceof Error ? err.message : '加载失败')
     } finally {
       setLoading(false)
@@ -168,7 +222,7 @@ export default function StudentCompetitionDetail() {
         {/* Cover Image */}
         {resolveCoverUrl(comp.coverImage) && (
           <div style={{
-            width: '100%', height: isMobile ? '180px' : '280px', borderRadius: '16px',
+            width: '100%', aspectRatio: '16/9', borderRadius: '16px',
             overflow: 'hidden', marginBottom: '24px', position: 'relative',
           }}>
             <img
@@ -487,5 +541,14 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
       </div>
       {children}
     </motion.div>
+  )
+}
+
+export default function StudentCompetitionDetail() {
+  const navigate = useNavigate()
+  return (
+    <CompetitionDetailErrorBoundary onBack={() => navigate('/student/competitions')}>
+      <StudentCompetitionDetailInner />
+    </CompetitionDetailErrorBoundary>
   )
 }

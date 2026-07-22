@@ -416,7 +416,11 @@ export default function StudentHistory() {
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
-        style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
+          gap: '12px',
+        }}
       >
         {paginatedEntries.map((entry) => (
           <TimelineCard key={entry.competitionId} entry={entry} />

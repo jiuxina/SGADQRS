@@ -189,7 +189,7 @@ export default function StudentTeams() {
           exit={{ opacity: 0, transition: { duration: 0.15 } }}
           style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
             gap: '16px',
           }}
         >
