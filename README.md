@@ -54,6 +54,9 @@ SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、
 - **认证**: JWT (jjwt 0.12.5)
 - **安全**: Spring Security
 - **WebSocket**: Spring WebSocket + STOMP
+- **API 文档**: SpringDoc OpenAPI 2.5.0
+- **Excel 导出**: EasyExcel 3.3.4
+- **工具包**: Hutool 5.8.27
 
 ## 快速开始
 
@@ -124,23 +127,33 @@ SGADQRS/
 ├── frontend/                # 前端项目
 │   ├── src/
 │   │   ├── api/             # API 请求
-│   │   ├── components/      # 通用组件
-│   │   ├── config/          # 配置
+│   │   │   └── modules/     # 按功能分组 (auth, competition, registration, result, export, system, user)
+│   │   ├── components/      # 通用组件 (32 个)
+│   │   ├── config/          # 环境变量和常量
 │   │   ├── hooks/           # 自定义 Hooks
-│   │   ├── pages/           # 页面组件
-│   │   ├── store/           # 状态管理
+│   │   ├── motion/          # 动画配置
+│   │   ├── pages/           # 页面组件 (按 admin/teacher/student 分组)
+│   │   ├── store/           # Zustand 状态管理
+│   │   ├── types/           # 类型声明
 │   │   └── utils/           # 工具函数
 │   └── package.json
 ├── backend/                 # 后端项目
 │   ├── src/main/java/com/scms/
-│   │   ├── controller/      # REST 控制器
-│   │   ├── service/         # 业务逻辑
+│   │   ├── annotation/      # 自定义注解 (@LogOperation)
+│   │   ├── aspect/          # AOP 切面 (操作日志)
+│   │   ├── common/          # 通用类 (Result, GlobalExceptionHandler)
+│   │   ├── config/          # 配置 (WebSocket, MyBatis, WebMvc)
+│   │   ├── controller/      # REST 控制器 (12 个)
+│   │   ├── dto/             # 数据传输对象
 │   │   ├── entity/          # 数据库实体
+│   │   ├── export/          # Excel 导出模型
 │   │   ├── mapper/          # MyBatis Mapper
-│   │   ├── security/        # 安全认证
-│   │   └── config/          # 配置类
+│   │   ├── security/        # JWT + Spring Security
+│   │   ├── service/         # 业务逻辑
+│   │   └── util/            # 工具类 (ExcelUtil)
+│   ├── sql/                 # 数据库脚本
 │   └── pom.xml
-├── docs/                    # 文档
+├── docs/                    # 文档 (ER 图)
 ├── AGENT.md                 # AI 代理指南
 └── README.md                # 本文件
 ```
@@ -173,6 +186,10 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
+      '/api/ws': {
+        target: 'http://localhost:8080',
+        ws: true,
+      },
       '/api': {
         target: 'http://localhost:8080',
       },
@@ -182,6 +199,8 @@ export default defineConfig({
 ```
 
 ## API 接口
+
+> 完整接口文档：启动后端后访问 `http://localhost:8080/api/swagger-ui.html`
 
 ### 认证
 
@@ -195,10 +214,29 @@ export default defineConfig({
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | /api/competition/list | 竞赛列表 |
+| GET | /api/competition/list | 竞赛列表（分页、筛选） |
+| GET | /api/competition/{id} | 竞赛详情 |
 | POST | /api/competition | 创建竞赛 |
 | PUT | /api/competition | 更新竞赛 |
+| PUT | /api/competition/{id}/audit | 审核竞赛 |
 | DELETE | /api/competition/{id} | 删除竞赛 |
+| POST | /api/competition/{id}/attachment | 添加竞赛附件 |
+| DELETE | /api/competition/attachment/{id} | 删除竞赛附件 |
+| GET | /api/competition/dashboard | 仪表盘统计 |
+
+### 报名管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/registration/list | 报名列表 |
+| POST | /api/registration | 学生报名 |
+| PUT | /api/registration/{id}/audit | 审核报名 |
+| PUT | /api/registration/batch-audit | 批量审核报名 |
+| DELETE | /api/registration/{id} | 取消报名 |
+| GET | /api/registration/teams | 团队列表 |
+| POST | /api/registration/team | 创建团队 |
+| POST | /api/registration/team/{id}/join | 加入团队 |
+| PUT | /api/registration/team/{id}/audit | 审核团队 |
 
 ### 成绩管理
 
@@ -207,13 +245,84 @@ export default defineConfig({
 | GET | /api/result/list | 成绩列表 |
 | POST | /api/result | 录入成绩 |
 | PUT | /api/result | 更新成绩 |
-| POST | /api/result/publish/{id} | 发布成绩 |
+| POST | /api/result/publish/{competitionId} | 发布成绩 |
+| GET | /api/result/student/stats | 学生成绩统计 |
+
+### 用户管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/user/list | 用户列表 |
+| GET | /api/user/{id} | 用户详情 |
+| POST | /api/user | 创建用户 |
+| PUT | /api/user | 更新用户 |
+| DELETE | /api/user/{id} | 删除用户 |
+| PUT | /api/user/disable/{id} | 启用/禁用用户 |
+| PUT | /api/user/reset-password/{id} | 重置密码 |
+
+### 公告管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/notice/list | 公告列表 |
+| POST | /api/notice | 发布公告 |
+| PUT | /api/notice | 更新公告 |
+| DELETE | /api/notice/{id} | 删除公告 |
+| PUT | /api/notice/{id}/top | 置顶/取消置顶 |
+
+### 消息管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/message/list | 消息列表 |
+| POST | /api/message/send | 发送消息 |
+| PUT | /api/message/{id}/read | 标记已读 |
+| PUT | /api/message/readAll | 全部标记已读 |
+| GET | /api/message/unread | 未读消息数 |
+
+### 组织架构
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/dept/list | 学院列表 |
+| POST/PUT/DELETE | /api/dept/{id} | 学院 CRUD |
+| GET | /api/dept/major/list | 专业列表 |
+| POST/PUT/DELETE | /api/dept/major/{id} | 专业 CRUD |
+| GET | /api/dept/class/list | 班级列表 |
+| POST/PUT/DELETE | /api/dept/class/{id} | 班级 CRUD |
+
+### 数据统计
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/stats/admin | 管理员统计数据 |
+| GET | /api/stats/enrollment-trends | 报名趋势 |
+| GET | /api/stats/college-stats | 院系统计 |
+| GET | /api/stats/competition-rankings | 竞赛热度排行 |
+| GET | /api/stats/upcoming | 即将开始/截止的竞赛 |
+
+### 系统日志
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/log/list | 操作日志列表 |
 
 ### 文件上传
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | /api/file/upload | 上传文件 |
+
+### 数据导出
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/export/competitions | 导出竞赛 |
+| GET | /api/export/registrations | 导出报名 |
+| GET | /api/export/teams | 导出团队 |
+| GET | /api/export/results | 导出成绩 |
+| GET | /api/export/users | 导出用户 |
+| GET | /api/export/student-transcript | 学生成绩单 |
 
 ## 部署
 
@@ -304,6 +413,15 @@ taskkill /PID <进程ID> /F
 
 - 确认 WebSocket URL 为 `/api/ws`（不是 `/ws`）
 - 检查 Vite proxy 配置中 `ws: true`
+
+## 更新日志
+
+### 2024-12-15 UI 优化
+
+1. **卡片布局优化**：学生端各页面（竞赛浏览、成绩查询、团队管理、报名管理、参赛历史）的卡片布局从 2 列调整为 4 列，提升信息密度
+2. **竞赛详情页错误处理**：添加错误边界（Error Boundary），防止页面白屏，并提供友好的错误提示
+3. **悬停效果修正**：修复卡片悬停时变得更透明的问题，现在悬停时卡片会变得更不透明，符合直觉交互
+4. **封面图比例统一**：赛事封面图统一为 16:9 比例显示
 
 ## 许可证
 

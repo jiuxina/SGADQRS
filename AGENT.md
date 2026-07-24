@@ -32,9 +32,9 @@ SGADQRS/
 │   │   │   └── types.ts     # 接口类型定义
 │   │   ├── components/      # 通用组件 (32 个, 含 GlassModal, EmptyState, PageSkeleton, ListMeta 等)
 │   │   ├── config/          # 环境变量封装
-│   │   │   └── env.ts       # VITE_* 环境变量读取 (无 useMock)
-│   │   ├── data/            # (空目录 — 不使用模拟数据)
-│   │   ├── hooks/           # 自定义 Hooks
+│   │   │   ├── env.ts       # VITE_* 环境变量读取
+│   │   │   └── constants.ts # 常量定义
+│   │   ├── hooks/           # 自定义 Hooks (useFetch, usePagination, useWebSocket 等)
 │   │   ├── motion/          # 动画配置
 │   │   ├── pages/           # 页面组件 (按 admin/teacher/student 分组)
 │   │   ├── store/           # Zustand 状态
@@ -42,23 +42,29 @@ SGADQRS/
 │   │   ├── types/           # 类型声明
 │   │   └── utils/           # 工具函数
 │   │       ├── format.ts        # formatDate, resolveCoverUrl, formatFileSize
-│   │       └── statusBadge.ts   # getStatusBadge (竞赛/报名状态映射)
+│   │       ├── statusBadge.ts   # getStatusBadge (竞赛/报名状态映射)
+│   │       └── export.ts        # 文件下载工具
 │   ├── vite.config.ts       # Vite 配置 + 代理
 │   └── package.json
 ├── backend/                 # 后端项目
 │   ├── src/main/java/com/scms/
-│   │   ├── common/          # 通用类 (Result, GlobalExceptionHandler)
+│   │   ├── annotation/      # 自定义注解 (@LogOperation)
+│   │   ├── aspect/          # AOP 切面 (操作日志自动记录)
+│   │   ├── common/          # 通用类 (Result, PageResult, GlobalExceptionHandler)
 │   │   ├── config/          # 配置 (WebSocket, MyBatis, WebMvc)
-│   │   ├── controller/      # REST 控制器
+│   │   ├── controller/      # REST 控制器 (12 个)
 │   │   ├── dto/             # 数据传输对象
 │   │   ├── entity/          # 数据库实体
+│   │   ├── export/          # Excel 导出模型 (EasyExcel)
 │   │   ├── mapper/          # MyBatis Mapper 接口
 │   │   ├── security/        # JWT + Spring Security
-│   │   └── service/         # 业务逻辑
+│   │   ├── service/         # 业务逻辑
+│   │   └── util/            # 工具类 (ExcelUtil)
 │   ├── src/main/resources/
 │   │   └── application.yml  # 应用配置
+│   ├── sql/                 # 数据库脚本 (init.sql, 迁移脚本)
 │   └── pom.xml
-├── docs/                    # 文档
+├── docs/                    # 文档 (ER 图)
 └── AGENT.md                 # 本文件
 ```
 
@@ -86,7 +92,6 @@ SGADQRS/
 | `/admin/stats` | AdminStats | 数据统计 |
 | `/admin/notices` | AdminNotices | 公告管理 |
 | `/admin/logs` | AdminLogs | 系统日志 |
-| `/admin/settings` | AdminSettings | 系统设置 |
 
 ### 教师 (teacher)
 | 路由 | 页面 | 说明 |
@@ -94,6 +99,7 @@ SGADQRS/
 | `/teacher/dashboard` | TeacherDashboard | 仪表盘 |
 | `/teacher/competitions` | TeacherCompetitions | 我的竞赛 |
 | `/teacher/competitions/create` | TeacherCompetitionCreate | 创建竞赛 |
+| `/teacher/competitions/:id/edit` | TeacherCompetitionCreate | 编辑竞赛 |
 | `/teacher/teams` | TeacherTeams | 团队管理 |
 | `/teacher/grades` | TeacherGrades | 成绩管理 |
 | `/teacher/messages` | TeacherMessages | 消息中心 |
@@ -103,11 +109,11 @@ SGADQRS/
 |------|------|------|
 | `/student/dashboard` | StudentDashboard | 仪表盘 |
 | `/student/competitions` | StudentCompetitions | 竞赛列表 |
+| `/student/competitions/:id` | StudentCompetitionDetail | 竞赛详情 |
 | `/student/registration` | StudentRegistration | 我的报名 |
 | `/student/grades` | StudentGrades | 我的成绩 |
 | `/student/messages` | StudentMessages | 消息中心 |
 | `/student/teams` | StudentTeams | 我的团队 |
-| `/student/audit` | StudentAudit | 审核状态 |
 | `/student/history` | StudentHistory | 参赛历史 |
 
 ### 通用
@@ -160,7 +166,7 @@ SGADQRS/
 - 端点: `/api/ws` (SockJS + STOMP)
 - 订阅: `/user/queue/notifications` (用户私有通知)
 - 认证: STOMP CONNECT 帧携带 JWT Token
-- Vite 代理: `/api/ws` → `http://localhost:8080` (ws: true)
+- Vite 代理: `/api/ws` → `http://localhost:8080` (ws: true), `/api` → `http://localhost:8080`
 
 ## 编码约定
 
@@ -170,7 +176,6 @@ SGADQRS/
 - 类型定义: `frontend/src/api/types.ts`
 - 样式: Tailwind CSS + CSS 变量
 - 动画: Motion (Framer Motion)
-- **无模拟数据**: `src/data/` 目录为空, 不使用 `useMock` 开关, 所有数据来自真实 API
 - **共享工具函数**: 日期格式化 (`formatDate`)、封面 URL 解析 (`resolveCoverUrl`)、文件大小格式化 (`formatFileSize`) 统一在 `src/utils/format.ts` 中定义; 状态徽章映射 (`getStatusBadge`) 在 `src/utils/statusBadge.ts` 中定义。页面中不要重复定义这些函数
 - **错误处理**: 所有 catch 块必须同时包含 `toast.error(...)` (用户提示) 和 `console.error(...)` (调试日志), 不能有空 catch 块
 - **加载与空状态**: 加载中统一使用 `<PageSkeleton />`, 空数据统一使用 `<EmptyState />`, 列表计数统一使用 `<ListMeta />`
@@ -180,7 +185,8 @@ SGADQRS/
 - 控制器: `@RestController` + `@RequestMapping`
 - 服务层: `@Service` + 构造器注入
 - 实体: `@Data` + `@TableName`
-- 安全: `@PreAuthorize("hasRole('ADMIN')")` 
+- 安全: `@PreAuthorize("hasRole('ADMIN')")`
+- 操作日志: `@LogOperation` 注解自动记录，AOP 切面实现
 
 ## 常见操作
 
@@ -222,6 +228,30 @@ source backend/sql/init.sql
 3. **文件上传**: 最大 10MB，存储路径 `./uploads/`
 4. **JWT 过期**: 24 小时，过期后自动跳转登录页
 5. **WebSocket**: 开发环境通过 Vite proxy 转发，注意 URL 为 `/api/ws` 而非 `/ws`
+
+## UI 设计规范
+
+### 卡片布局
+- 学生端页面卡片在桌面端使用 4 列布局 (`repeat(4, 1fr)`)
+- 移动端使用单列布局 (`1fr`)
+
+### 悬停效果
+- 卡片悬停时应变得更不透明（alpha 值增加），而非更透明
+- `.glass-card:hover` 背景色: `rgba(255, 255, 255, 0.92)`
+- `.glass-card-static:hover` 背景色: `rgba(255, 255, 255, 0.92)`
+
+### 错误处理
+- 关键页面（如竞赛详情页）应使用 Error Boundary 捕获渲染错误
+- API 调用失败时应提供友好的错误提示，而非白屏
+
+## 更新日志
+
+### 2024-12-15 UI 优化
+
+1. **卡片布局优化**：学生端各页面卡片从 2 列调整为 4 列
+2. **竞赛详情页错误处理**：添加 Error Boundary 防止白屏
+3. **悬停效果修正**：卡片悬停时变得更不透明
+4. **封面图比例统一**：赛事封面图统一为 16:9 比例显示
 
 ## 数据库清理规则
 
