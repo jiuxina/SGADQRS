@@ -2,9 +2,19 @@ package com.scms.service;
 
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.scms.entity.*;
+import com.scms.entity.Competition;
+import com.scms.entity.CompetitionRegistration;
+import com.scms.entity.CompetitionResult;
+import com.scms.entity.CompetitionTeam;
+import com.scms.entity.CompetitionTeamMember;
+import com.scms.entity.User;
 import com.scms.export.*;
-import com.scms.mapper.*;
+import com.scms.mapper.CompetitionMapper;
+import com.scms.mapper.CompetitionRegistrationMapper;
+import com.scms.mapper.CompetitionResultMapper;
+import com.scms.mapper.CompetitionTeamMapper;
+import com.scms.mapper.CompetitionTeamMemberMapper;
+import com.scms.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,9 +39,6 @@ public class ExportService {
     private final CompetitionTeamMemberMapper teamMemberMapper;
     private final CompetitionResultMapper resultMapper;
     private final UserMapper userMapper;
-    private final DeptMapper deptMapper;
-    private final MajorMapper majorMapper;
-    private final ClazzMapper clazzMapper;
 
     // ===== 竞赛导出 =====
     public void exportCompetitions(HttpServletResponse response, Integer status, String keyword) throws IOException {
@@ -171,9 +178,9 @@ public class ExportService {
             e.setRealName(u.getRealName());
             e.setUserTypeText(userTypeText(u.getUserType()));
             e.setGenderText(genderText(u.getGender()));
-            e.setDeptName(u.getDeptId() != null ? getDeptName(u.getDeptId()) : "");
-            e.setMajorName(u.getMajorId() != null ? getMajorName(u.getMajorId()) : "");
-            e.setClassName(u.getClassId() != null ? getClassName(u.getClassId()) : "");
+            e.setDeptName(u.getDeptName() != null ? u.getDeptName() : "");
+            e.setMajorName(u.getMajorName() != null ? u.getMajorName() : "");
+            e.setClassName(u.getClassName() != null ? u.getClassName() : "");
             e.setStatusText(u.getStatus() != null && u.getStatus() == 1 ? "启用" : "禁用");
             e.setCreateTime(fmtDt(u.getCreateTime()));
             excelList.add(e);
@@ -243,21 +250,6 @@ public class ExportService {
         if (teamId == null) return "";
         CompetitionTeam t = teamMapper.selectById(teamId);
         return t != null ? t.getTeamName() : "";
-    }
-
-    private String getDeptName(Long deptId) {
-        var dept = deptMapper.selectById(deptId);
-        return dept != null ? dept.getDeptName() : "";
-    }
-
-    private String getMajorName(Long majorId) {
-        var major = majorMapper.selectById(majorId);
-        return major != null ? major.getMajorName() : "";
-    }
-
-    private String getClassName(Long classId) {
-        var clazz = clazzMapper.selectById(classId);
-        return clazz != null ? clazz.getClassName() : "";
     }
 
     private String competitionStatusText(Integer status) {

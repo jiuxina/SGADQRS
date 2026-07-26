@@ -19,7 +19,7 @@ public class UserDTO {
     private String avatar;
     private Integer gender;
     private Integer userType;
-    private Long deptId;
-    private Long majorId;
-    private Long classId;
+    private String deptName;
+    private String majorName;
+    private String className;
 }

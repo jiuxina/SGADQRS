@@ -34,5 +34,6 @@ public class CompetitionDTO {
     private Integer maxMembers = 1;
     private Integer maxTeams;
     private String awards;
+    private String attachments;
     private Integer status = 0;
 }

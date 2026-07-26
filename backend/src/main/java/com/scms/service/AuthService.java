@@ -4,10 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scms.common.Result;
 import com.scms.dto.LoginDTO;
 import com.scms.entity.User;
-import com.scms.entity.UserRole;
-import com.scms.mapper.RoleMapper;
 import com.scms.mapper.UserMapper;
-import com.scms.mapper.UserRoleMapper;
 import com.scms.security.JwtTokenUtil;
 import com.scms.security.LoginUser;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +20,6 @@ import java.util.Map;
 public class AuthService {
 
     private final UserMapper userMapper;
-    private final UserRoleMapper userRoleMapper;
-    private final RoleMapper roleMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
 
@@ -36,17 +31,6 @@ public class AuthService {
             return Result.error("用户不存在");
         }
 
-        // 验证角色
-        UserRole userRole = userRoleMapper.selectOne(
-                new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, user.getId())
-        );
-        if (userRole != null) {
-            var role = roleMapper.selectById(userRole.getRoleId());
-            if (role != null && dto.getRole() != null && !role.getRoleCode().equals(dto.getRole())) {
-                return Result.error("角色不匹配，请选择正确的登录身份");
-            }
-        }
-
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             return Result.error("密码错误");
         }
@@ -55,12 +39,12 @@ public class AuthService {
         user.setLastLoginTime(LocalDateTime.now());
         userMapper.updateById(user);
 
-        // 获取角色编码
-        String roleCode = "student";
-        if (userRole != null) {
-            var role = roleMapper.selectById(userRole.getRoleId());
-            if (role != null) roleCode = role.getRoleCode();
-        }
+        // 根据 userType 映射角色
+        String roleCode = switch (user.getUserType()) {
+            case 3 -> "admin";
+            case 2 -> "teacher";
+            default -> "student";
+        };
 
         String token = jwtTokenUtil.generateToken(user.getId(), user.getUsername(), roleCode);
 
@@ -85,20 +69,9 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setRealName(dto.getUsername());
         user.setUserType("teacher".equals(dto.getRole()) ? 2 : 1);
+        user.setRole(dto.getRole() != null ? dto.getRole() : "student");
 
         userMapper.insert(user);
-
-        // 分配角色
-        String roleCode = dto.getRole() != null ? dto.getRole() : "student";
-        var role = roleMapper.selectOne(
-                new LambdaQueryWrapper<com.scms.entity.Role>().eq(com.scms.entity.Role::getRoleCode, roleCode)
-        );
-        if (role != null) {
-            UserRole userRole = new UserRole();
-            userRole.setUserId(user.getId());
-            userRole.setRoleId(role.getId());
-            userRoleMapper.insert(userRole);
-        }
 
         return Result.success("注册成功", null);
     }
@@ -107,14 +80,11 @@ public class AuthService {
         User user = userMapper.selectById(userId);
         if (user == null) return Result.error("用户不存在");
 
-        UserRole userRole = userRoleMapper.selectOne(
-                new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId)
-        );
-        String roleCode = "student";
-        if (userRole != null) {
-            var role = roleMapper.selectById(userRole.getRoleId());
-            if (role != null) roleCode = role.getRoleCode();
-        }
+        String roleCode = switch (user.getUserType()) {
+            case 3 -> "admin";
+            case 2 -> "teacher";
+            default -> "student";
+        };
         return Result.success(getUserInfo(user, roleCode));
     }
 
@@ -127,9 +97,9 @@ public class AuthService {
         info.put("role", roleCode);
         info.put("userType", user.getUserType());
         info.put("gender", user.getGender());
-        info.put("deptId", user.getDeptId());
-        info.put("majorId", user.getMajorId());
-        info.put("classId", user.getClassId());
+        info.put("deptName", user.getDeptName());
+        info.put("majorName", user.getMajorName());
+        info.put("className", user.getClassName());
         return info;
     }
 }

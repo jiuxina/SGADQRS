@@ -2,8 +2,14 @@ package com.scms.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scms.common.Result;
-import com.scms.entity.*;
-import com.scms.mapper.*;
+import com.scms.entity.Competition;
+import com.scms.entity.CompetitionRegistration;
+import com.scms.entity.CompetitionResult;
+import com.scms.entity.User;
+import com.scms.mapper.CompetitionMapper;
+import com.scms.mapper.CompetitionRegistrationMapper;
+import com.scms.mapper.CompetitionResultMapper;
+import com.scms.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +27,6 @@ public class StatsService {
     private final CompetitionRegistrationMapper registrationMapper;
     private final CompetitionResultMapper resultMapper;
     private final UserMapper userMapper;
-    private final DeptMapper deptMapper;
 
     public Result<?> getAdminStats() {
         Map<String, Object> stats = new HashMap<>();
@@ -57,10 +62,7 @@ public class StatsService {
         // 报名趋势（近6个月）
         stats.put("enrollmentTrends", getEnrollmentTrends());
 
-        // 院系统计
-        stats.put("collegeStats", getCollegeStats());
-
-            // 竞赛热度排行
+        // 竞赛热度排行
         stats.put("competitionRankings", getCompetitionRankings());
 
         // 即将截止 / 即将开始提醒
@@ -165,50 +167,6 @@ public class StatsService {
             trends.add(item);
         }
         return trends;
-    }
-
-    /**
-     * 获取各院系的报名统计
-     */
-    public List<Map<String, Object>> getCollegeStats() {
-        // 获取所有报名记录
-        List<CompetitionRegistration> registrations = registrationMapper.selectList(null);
-        if (registrations.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 获取所有学生用户（userType=1）
-        List<User> students = userMapper.selectList(
-                new LambdaQueryWrapper<User>().eq(User::getUserType, 1)
-        );
-        Map<Long, User> studentMap = students.stream()
-                .collect(Collectors.toMap(User::getId, u -> u));
-
-        // 获取所有部门
-        List<Dept> depts = deptMapper.selectList(null);
-        Map<Long, String> deptMap = depts.stream()
-                .collect(Collectors.toMap(Dept::getId, Dept::getDeptName));
-
-        // 统计各院系报名人数
-        Map<String, Long> collegeCountMap = new LinkedHashMap<>();
-        for (CompetitionRegistration reg : registrations) {
-            User student = studentMap.get(reg.getStudentId());
-            if (student != null && student.getDeptId() != null) {
-                String deptName = deptMap.getOrDefault(student.getDeptId(), "未知院系");
-                collegeCountMap.merge(deptName, 1L, Long::sum);
-            }
-        }
-
-        // 转换为列表并按报名数排序
-        return collegeCountMap.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .map(entry -> {
-                    Map<String, Object> item = new LinkedHashMap<>();
-                    item.put("name", entry.getKey());
-                    item.put("count", entry.getValue());
-                    return item;
-                })
-                .collect(Collectors.toList());
     }
 
     /**

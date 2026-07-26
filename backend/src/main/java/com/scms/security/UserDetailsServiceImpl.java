@@ -2,10 +2,7 @@ package com.scms.security;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scms.entity.User;
-import com.scms.entity.UserRole;
-import com.scms.mapper.RoleMapper;
 import com.scms.mapper.UserMapper;
-import com.scms.mapper.UserRoleMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,8 +14,6 @@ import org.springframework.stereotype.Service;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserMapper userMapper;
-    private final UserRoleMapper userRoleMapper;
-    private final RoleMapper roleMapper;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -29,17 +24,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("用户不存在: " + username);
         }
 
-        // 查询用户角色
-        UserRole userRole = userRoleMapper.selectOne(
-                new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, user.getId())
-        );
-        String roleCode = "student";
-        if (userRole != null) {
-            var role = roleMapper.selectById(userRole.getRoleId());
-            if (role != null) {
-                roleCode = role.getRoleCode();
-            }
-        }
+        // 根据 userType 映射角色
+        String roleCode = switch (user.getUserType()) {
+            case 3 -> "admin";
+            case 2 -> "teacher";
+            default -> "student";
+        };
 
         return new LoginUser(
                 user.getId(),

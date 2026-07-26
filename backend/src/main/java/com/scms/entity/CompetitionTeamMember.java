@@ -27,8 +27,4 @@ public class CompetitionTeamMember {
     /** 学号（非数据库字段） */
     @TableField(exist = false)
     private String studentUsername;
-
-    /** 专业名称（非数据库字段） */
-    @TableField(exist = false)
-    private String majorName;
 }

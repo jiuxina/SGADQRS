@@ -32,13 +32,6 @@ public class StatsController {
         return Result.success(statsService.getEnrollmentTrends());
     }
 
-    @Operation(summary = "院系统计")
-    @GetMapping("/college-stats")
-    @PreAuthorize("hasRole('ADMIN')")
-    public Result<?> collegeStats() {
-        return Result.success(statsService.getCollegeStats());
-    }
-
     @Operation(summary = "竞赛热度排行")
     @GetMapping("/competition-rankings")
     @PreAuthorize("hasRole('ADMIN')")

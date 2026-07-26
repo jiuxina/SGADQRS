@@ -6,10 +6,8 @@ import com.scms.common.PageResult;
 import com.scms.common.Result;
 import com.scms.dto.CompetitionDTO;
 import com.scms.entity.Competition;
-import com.scms.entity.CompetitionAttachment;
 import com.scms.entity.CompetitionRegistration;
 import com.scms.entity.User;
-import com.scms.mapper.CompetitionAttachmentMapper;
 import com.scms.mapper.CompetitionMapper;
 import com.scms.mapper.CompetitionRegistrationMapper;
 import com.scms.mapper.UserMapper;
@@ -27,7 +25,6 @@ import java.util.List;
 public class CompetitionService {
 
     private final CompetitionMapper competitionMapper;
-    private final CompetitionAttachmentMapper attachmentMapper;
     private final CompetitionRegistrationMapper registrationMapper;
     private final UserMapper userMapper;
 
@@ -54,12 +51,6 @@ public class CompetitionService {
 
         fillCompetitionInfo(comp, currentUserId);
 
-        // 加载附件
-        List<CompetitionAttachment> attachments = attachmentMapper.selectList(
-                new LambdaQueryWrapper<CompetitionAttachment>().eq(CompetitionAttachment::getCompetitionId, id)
-        );
-        comp.setAttachments(attachments);
-
         return Result.success(comp);
     }
 
@@ -80,6 +71,7 @@ public class CompetitionService {
         comp.setMaxMembers(dto.getMaxMembers());
         comp.setMaxTeams(dto.getMaxTeams());
         comp.setAwards(dto.getAwards());
+        comp.setAttachments(dto.getAttachments());
         comp.setStatus(dto.getStatus());
         competitionMapper.insert(comp);
         return Result.success("创建成功", comp);
@@ -103,6 +95,7 @@ public class CompetitionService {
         if (dto.getMaxMembers() != null) comp.setMaxMembers(dto.getMaxMembers());
         if (dto.getMaxTeams() != null) comp.setMaxTeams(dto.getMaxTeams());
         if (dto.getAwards() != null) comp.setAwards(dto.getAwards());
+        if (dto.getAttachments() != null) comp.setAttachments(dto.getAttachments());
         if (dto.getStatus() != null) comp.setStatus(dto.getStatus());
 
         competitionMapper.updateById(comp);
@@ -121,29 +114,8 @@ public class CompetitionService {
     @Transactional
     public Result<?> deleteCompetition(Long id) {
         competitionMapper.deleteById(id);
-        attachmentMapper.delete(new LambdaQueryWrapper<CompetitionAttachment>().eq(CompetitionAttachment::getCompetitionId, id));
         registrationMapper.delete(new LambdaQueryWrapper<CompetitionRegistration>().eq(CompetitionRegistration::getCompetitionId, id));
         return Result.success("删除成功", null);
-    }
-
-    @Transactional
-    public Result<?> addAttachment(Long competitionId, String fileName, String fileUrl, Long fileSize, String fileType) {
-        Competition comp = competitionMapper.selectById(competitionId);
-        if (comp == null) return Result.error("竞赛不存在");
-        CompetitionAttachment attachment = new CompetitionAttachment();
-        attachment.setCompetitionId(competitionId);
-        attachment.setFileName(fileName);
-        attachment.setFileUrl(fileUrl);
-        attachment.setFileSize(fileSize);
-        attachment.setFileType(fileType);
-        attachmentMapper.insert(attachment);
-        return Result.success("附件添加成功", attachment);
-    }
-
-    @Transactional
-    public Result<?> deleteAttachment(Long attachmentId) {
-        attachmentMapper.deleteById(attachmentId);
-        return Result.success("附件删除成功", null);
     }
 
     public Result<?> getDashboardStats(Long userId, String role) {

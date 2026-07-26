@@ -24,9 +24,6 @@ public class CompetitionResult {
     private String awardName;
     private String remark;
 
-    /** 证书附件URL（老师上传） */
-    private String certificateUrl;
-
     /** 是否发布：0-否 1-是 */
     private Integer isPublished;
     private LocalDateTime publishTime;
