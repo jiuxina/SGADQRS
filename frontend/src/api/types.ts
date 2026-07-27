@@ -24,9 +24,9 @@ export interface UserInfo {
   role: string
   userType: number
   gender: number | null
-  deptId: number | null
-  majorId: number | null
-  classId: number | null
+  deptName: string | null
+  majorName: string | null
+  className: string | null
 }
 
 export interface LoginParams {
@@ -48,9 +48,6 @@ export interface UserItem {
   gender: number
   userType: number
   status: number
-  deptId: number | null
-  majorId: number | null
-  classId: number | null
   deptName: string | null
   majorName: string | null
   className: string | null
@@ -84,7 +81,6 @@ export interface CompetitionItem {
 }
 
 export interface CompetitionAttachment {
-  id: number
   fileName: string
   fileUrl: string
   fileSize: number
@@ -106,6 +102,7 @@ export interface CompetitionDTO {
   maxMembers?: number
   maxTeams?: number
   awards?: string
+  attachments?: string
   status?: number
 }
 
@@ -157,7 +154,6 @@ export interface TeamMember {
   studentId: number
   studentName: string | null
   studentUsername: string | null
-  majorName: string | null
   status: number
   joinTime: string
 }
@@ -178,7 +174,6 @@ export interface ResultItem {
   awardLevel: number | null
   awardName: string | null
   remark: string | null
-  certificateUrl: string | null
   isPublished: number
   publishTime: string | null
   createTime: string
@@ -197,57 +192,6 @@ export interface NoticeItem {
   createTime: string
 }
 
-// ===== 消息相关 =====
-
-export interface MessageItem {
-  id: number
-  userId: number
-  messageTitle: string
-  messageContent: string
-  isRead: number
-  createTime: string
-}
-
-// ===== 日志相关 =====
-
-export interface LogItem {
-  id: number
-  userId: number | null
-  username: string | null
-  operation: string
-  method: string | null
-  requestUrl: string | null
-  requestParams: string | null
-  ipAddress: string | null
-  spendTime: number | null
-  status: number
-  errorMsg: string | null
-  createTime: string
-}
-
-// ===== 组织架构 =====
-
-export interface DeptItem {
-  id: number
-  parentId: number
-  deptName: string
-  deptCode: string | null
-}
-
-export interface MajorItem {
-  id: number
-  deptId: number
-  majorName: string
-  majorCode: string | null
-}
-
-export interface ClassItem {
-  id: number
-  majorId: number
-  className: string
-  grade: string
-}
-
 // ===== 统计相关 =====
 
 export interface DashboardStats {
@@ -256,11 +200,6 @@ export interface DashboardStats {
 
 export interface EnrollmentTrend {
   month: string
-  count: number
-}
-
-export interface CollegeStat {
-  name: string
   count: number
 }
 
