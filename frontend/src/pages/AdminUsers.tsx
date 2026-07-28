@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback, startTransition } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { Search, Plus, Download } from 'lucide-react'
 import { TableSkeleton } from '../components/PageSkeleton'
 import DigitRoller from '../components/DigitRoller'
 import { fadeInList, fadeSlideUp } from '../motion/variants'
 import GlassModal from '../components/GlassModal'
-import { userApi, deptApi, fileApi, exportApi } from '../api'
-import type { UserItem, DeptItem, MajorItem, ClassItem } from '../api/types'
+import { userApi, fileApi, exportApi } from '../api'
+import type { UserItem } from '../api/types'
 import { toast } from '../components/toastUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { formatDate } from '../utils/format'
@@ -29,9 +29,9 @@ interface CreateForm {
   password: string
   realName: string
   userType: number
-  deptId: string
-  majorId: string
-  classId: string
+  deptName: string
+  majorName: string
+  className: string
   gender: string
 }
 
@@ -40,9 +40,9 @@ const defaultCreateForm: CreateForm = {
   password: '',
   realName: '',
   userType: 1,
-  deptId: '',
-  majorId: '',
-  classId: '',
+  deptName: '',
+  majorName: '',
+  className: '',
   gender: '0',
 }
 
@@ -54,10 +54,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true)
   const pagination = usePagination()
   const [editingUser, setEditingUser] = useState<UserItem | null>(null)
-  const [editForm, setEditForm] = useState({ realName: '', deptId: '', gender: '0', majorId: '', classId: '', avatar: '', userType: 1 })
-  const [depts, setDepts] = useState<DeptItem[]>([])
-  const [majors, setMajors] = useState<MajorItem[]>([])
-  const [classes, setClasses] = useState<ClassItem[]>([])
+  const [editForm, setEditForm] = useState({ realName: '', deptName: '', gender: '0', majorName: '', className: '', avatar: '', userType: 1 })
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const isMobile = useIsMobile()
@@ -66,9 +63,6 @@ export default function AdminUsers() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm)
   const [creating, setCreating] = useState(false)
-  const [createDepts, setCreateDepts] = useState<DeptItem[]>([])
-  const [createMajors, setCreateMajors] = useState<MajorItem[]>([])
-  const [createClasses, setCreateClasses] = useState<ClassItem[]>([])
 
   const fetchData = useCallback(async () => {
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
@@ -106,51 +100,14 @@ export default function AdminUsers() {
   // 筛选条件变化时重置到第1页
   useEffect(() => { pagination.resetPage() }, [filter, searchQuery])
 
-  useEffect(() => {
-    deptApi.list().then(setDepts).catch(() => {})
-    deptApi.list().then(setCreateDepts).catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    if (editForm.deptId) {
-      deptApi.majors(Number(editForm.deptId)).then(setMajors).catch(() => startTransition(() => setMajors([])))
-    } else {
-      startTransition(() => setMajors([]))
-    }
-  }, [editForm.deptId])
-
-  useEffect(() => {
-    if (editForm.majorId) {
-      deptApi.classes(Number(editForm.majorId)).then(setClasses).catch(() => startTransition(() => setClasses([])))
-    } else {
-      startTransition(() => setClasses([]))
-    }
-  }, [editForm.majorId])
-
-  useEffect(() => {
-    if (createForm.deptId) {
-      deptApi.majors(Number(createForm.deptId)).then(setCreateMajors).catch(() => startTransition(() => setCreateMajors([])))
-    } else {
-      startTransition(() => setCreateMajors([]))
-    }
-  }, [createForm.deptId])
-
-  useEffect(() => {
-    if (createForm.majorId) {
-      deptApi.classes(Number(createForm.majorId)).then(setCreateClasses).catch(() => startTransition(() => setCreateClasses([])))
-    } else {
-      startTransition(() => setCreateClasses([]))
-    }
-  }, [createForm.majorId])
-
   const openEditModal = (user: UserItem) => {
     setEditingUser(user)
     setEditForm({
       realName: user.realName || '',
-      deptId: user.deptId != null ? String(user.deptId) : '',
+      deptName: user.deptName || '',
       gender: String(user.gender ?? 0),
-      majorId: user.majorId != null ? String(user.majorId) : '',
-      classId: user.classId != null ? String(user.classId) : '',
+      majorName: user.majorName || '',
+      className: user.className || '',
       avatar: user.avatar || '',
       userType: user.userType,
     })
@@ -163,10 +120,10 @@ export default function AdminUsers() {
       await userApi.update({
         id: editingUser.id,
         realName: editForm.realName,
-        deptId: editForm.deptId ? Number(editForm.deptId) : null,
+        deptName: editForm.deptName,
         gender: Number(editForm.gender),
-        majorId: editForm.majorId ? Number(editForm.majorId) : null,
-        classId: editForm.classId ? Number(editForm.classId) : null,
+        majorName: editForm.majorName,
+        className: editForm.className,
         avatar: editForm.avatar || null,
         userType: editForm.userType,
       })
@@ -201,9 +158,9 @@ export default function AdminUsers() {
         realName: createForm.realName,
         userType: createForm.userType,
         gender: Number(createForm.gender),
-        deptId: createForm.deptId ? Number(createForm.deptId) : null,
-        majorId: createForm.majorId ? Number(createForm.majorId) : null,
-        classId: createForm.classId ? Number(createForm.classId) : null,
+        deptName: createForm.deptName,
+        majorName: createForm.majorName,
+        className: createForm.className,
       })
       setShowCreateModal(false)
       setCreateForm(defaultCreateForm)
@@ -531,47 +488,36 @@ export default function AdminUsers() {
           </div>
           <div>
             <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>所属院系</label>
-            <select
+            <input
               className="glass-input"
-              value={createForm.deptId}
-              onChange={(e) => setCreateForm((f) => ({ ...f, deptId: e.target.value, majorId: '', classId: '' }))}
+              type="text"
+              value={createForm.deptName}
+              onChange={(e) => setCreateForm((f) => ({ ...f, deptName: e.target.value }))}
+              placeholder="请输入院系名称"
               style={{ width: '100%', boxSizing: 'border-box' }}
-            >
-              <option value="">未分配</option>
-              {createDepts.map((d) => (
-                <option key={d.id} value={d.id}>{d.deptName}</option>
-              ))}
-            </select>
+            />
           </div>
           <div>
             <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>专业</label>
-            <select
+            <input
               className="glass-input"
-              value={createForm.majorId}
-              onChange={(e) => setCreateForm((f) => ({ ...f, majorId: e.target.value, classId: '' }))}
+              type="text"
+              value={createForm.majorName}
+              onChange={(e) => setCreateForm((f) => ({ ...f, majorName: e.target.value }))}
+              placeholder="请输入专业名称"
               style={{ width: '100%', boxSizing: 'border-box' }}
-              disabled={!createForm.deptId}
-            >
-              <option value="">{createForm.deptId ? '未选择' : '请先选择院系'}</option>
-              {createMajors.map((m) => (
-                <option key={m.id} value={m.id}>{m.majorName}</option>
-              ))}
-            </select>
+            />
           </div>
           <div>
             <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>班级</label>
-            <select
+            <input
               className="glass-input"
-              value={createForm.classId}
-              onChange={(e) => setCreateForm((f) => ({ ...f, classId: e.target.value }))}
+              type="text"
+              value={createForm.className}
+              onChange={(e) => setCreateForm((f) => ({ ...f, className: e.target.value }))}
+              placeholder="请输入班级名称"
               style={{ width: '100%', boxSizing: 'border-box' }}
-              disabled={!createForm.majorId}
-            >
-              <option value="">{createForm.majorId ? '未选择' : '请先选择专业'}</option>
-              {createClasses.map((c) => (
-                <option key={c.id} value={c.id}>{c.className}</option>
-              ))}
-            </select>
+            />
           </div>
         </div>
 
@@ -654,47 +600,36 @@ export default function AdminUsers() {
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>所属院系</label>
-                  <select
+                  <input
                     className="glass-input"
-                    value={editForm.deptId}
-                    onChange={(e) => setEditForm((f) => ({ ...f, deptId: e.target.value, majorId: '', classId: '' }))}
+                    type="text"
+                    value={editForm.deptName}
+                    onChange={(e) => setEditForm((f) => ({ ...f, deptName: e.target.value }))}
+                    placeholder="请输入院系名称"
                     style={{ width: '100%', boxSizing: 'border-box' }}
-                  >
-                    <option value="">未分配</option>
-                    {depts.map((d) => (
-                      <option key={d.id} value={d.id}>{d.deptName}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>专业</label>
-                  <select
+                  <input
                     className="glass-input"
-                    value={editForm.majorId}
-                    onChange={(e) => setEditForm((f) => ({ ...f, majorId: e.target.value, classId: '' }))}
+                    type="text"
+                    value={editForm.majorName}
+                    onChange={(e) => setEditForm((f) => ({ ...f, majorName: e.target.value }))}
+                    placeholder="请输入专业名称"
                     style={{ width: '100%', boxSizing: 'border-box' }}
-                    disabled={!editForm.deptId}
-                  >
-                    <option value="">{editForm.deptId ? '未选择' : '请先选择院系'}</option>
-                    {majors.map((m) => (
-                      <option key={m.id} value={m.id}>{m.majorName}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>班级</label>
-                  <select
+                  <input
                     className="glass-input"
-                    value={editForm.classId}
-                    onChange={(e) => setEditForm((f) => ({ ...f, classId: e.target.value }))}
+                    type="text"
+                    value={editForm.className}
+                    onChange={(e) => setEditForm((f) => ({ ...f, className: e.target.value }))}
+                    placeholder="请输入班级名称"
                     style={{ width: '100%', boxSizing: 'border-box' }}
-                    disabled={!editForm.majorId}
-                  >
-                    <option value="">{editForm.majorId ? '未选择' : '请先选择专业'}</option>
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.id}>{c.className}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 {editingUser && (
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px' }}>

@@ -325,7 +325,7 @@ function StudentCompetitionDetailInner() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {comp.attachments.map((att) => (
                 <a
-                  key={att.id}
+                  key={att.fileUrl}
                   href={att.fileUrl}
                   target="_blank"
                   rel="noopener noreferrer"

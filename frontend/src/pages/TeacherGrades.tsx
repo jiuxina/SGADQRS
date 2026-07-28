@@ -219,12 +219,11 @@ export default function TeacherGrades() {
                         defaultRanking: r.ranking,
                         defaultAwardLevel: r.awardLevel,
                         defaultRemark: r.remark,
-                        defaultCertificateUrl: r.certificateUrl,
                         awards: selectedCompData?.awards || undefined,
                       })
                       if (result !== null) {
                         try {
-                          await resultApi.update({ id: r.id, score: result.score, remark: result.remark, ranking: result.ranking, awardLevel: result.awardLevel, certificateUrl: result.certificateUrl })
+                          await resultApi.update({ id: r.id, score: result.score, remark: result.remark, ranking: result.ranking, awardLevel: result.awardLevel })
                           loadResults()
                           toast.success('更新成功')
                         } catch { toast.error('更新失败') }

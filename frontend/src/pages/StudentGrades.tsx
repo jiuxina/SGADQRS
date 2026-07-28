@@ -178,28 +178,17 @@ export default function StudentGrades() {
                 )}
               </div>
 
-              {/* Action buttons */}
-              {result.isPublished === 1 && result.certificateUrl ? (
-                <a
-                  href={result.certificateUrl.startsWith('http') ? result.certificateUrl : `http://localhost:8080${result.certificateUrl}`}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn ghost"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', height: '32px', fontSize: '12px', marginTop: 'auto', textDecoration: 'none' }}
-                >
-                  <Download size={14} strokeWidth={1.5} />
-                  下载证书
-                </a>
-              ) : result.isPublished === 1 ? (
+              {/* Status indicator */}
+              {result.isPublished === 1 ? (
                 <div style={{
                   textAlign: 'center',
                   fontSize: '12px',
-                  color: 'var(--text-tertiary)',
+                  color: 'var(--success, #10b981)',
                   padding: '6px 0',
                   marginTop: 'auto',
+                  fontWeight: '500',
                 }}>
-                  暂无证书附件
+                  已发布
                 </div>
               ) : (
                 <div style={{

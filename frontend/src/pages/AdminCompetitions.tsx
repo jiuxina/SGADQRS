@@ -392,7 +392,7 @@ export default function AdminCompetitions() {
                 <div>
                   <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>附件</div>
                   {selectedComp.attachments.map((att) => (
-                    <a key={att.id} href={att.fileUrl} target="_blank" rel="noopener noreferrer"
+                    <a key={att.fileUrl} href={att.fileUrl} target="_blank" rel="noopener noreferrer"
                       style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', padding: '4px 0' }}>
                       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.fileName}</span>
                       {att.fileType && <span style={{ color: 'var(--text-tertiary)', fontSize: '11px', flexShrink: 0 }}>{att.fileType}</span>}

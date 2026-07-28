@@ -5,10 +5,8 @@ import { instant, fadeSlideUp } from '../motion/variants'
 import EmptyState from '../components/EmptyState'
 import { statsApi } from '../api'
 import { useIsMobile } from '../hooks/useIsMobile'
-import type { EnrollmentTrend, CollegeStat, CompetitionRanking } from '../api/types'
+import type { EnrollmentTrend, CompetitionRanking } from '../api/types'
 import { toast } from '../components/toastUtils'
-
-const PIE_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
 
 export default function AdminStats() {
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
@@ -23,11 +21,9 @@ export default function AdminStats() {
 
   const awardDistribution = (stats?.awardDistribution as Record<string, number>) || {}
   const enrollmentTrends = (stats?.enrollmentTrends as EnrollmentTrend[]) || []
-  const collegeStats = (stats?.collegeStats as CollegeStat[]) || []
   const competitionRankings = (stats?.competitionRankings as CompetitionRanking[]) || []
 
   const maxTrendCount = Math.max(...enrollmentTrends.map(t => t.count), 1)
-  const totalCollegeCount = collegeStats.reduce((sum, c) => sum + c.count, 0)
   const maxRankingCount = Math.max(...competitionRankings.map(r => r.count), 1)
 
   return (
@@ -52,7 +48,7 @@ export default function AdminStats() {
         ))}
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '16px' }}>
         {/* 报名趋势折线图 */}
         <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '20px' }}
           variants={fadeSlideUp} initial="hidden" animate="visible">
@@ -97,41 +93,6 @@ export default function AdminStats() {
               ))}
             </div>
           </div>
-        </motion.div>
-
-        {/* 院系统计饼图 */}
-        <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '20px' }}
-          variants={fadeSlideUp} initial="hidden" animate="visible">
-          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>院系报名分布</div>
-          {collegeStats.length > 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
-              {/* 饼图 */}
-              <div style={{
-                width: '160px', height: '160px', borderRadius: '50%', flexShrink: 0,
-                background: `conic-gradient(${collegeStats.map((_, i) => {
-                  const startPct = collegeStats.slice(0, i).reduce((s, c) => s + (c.count / totalCollegeCount) * 100, 0)
-                  const endPct = startPct + (collegeStats[i].count / totalCollegeCount) * 100
-                  return `${PIE_COLORS[i % PIE_COLORS.length]} ${startPct}% ${endPct}%`
-                }).join(', ')})`,
-                boxShadow: 'inset 0 0 0 30px white'
-              }} />
-              {/* 图例 */}
-              <div style={{ flex: 1, minWidth: '120px' }}>
-                {collegeStats.slice(0, 6).map((college, i) => (
-                  <div key={college.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
-                    <span style={{ fontSize: '12px', color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{college.name}</span>
-                    <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>{college.count}</span>
-                  </div>
-                ))}
-                {collegeStats.length > 6 && (
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>+{collegeStats.length - 6}个院系</div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <EmptyState text="暂无数据" />
-          )}
         </motion.div>
       </div>
 

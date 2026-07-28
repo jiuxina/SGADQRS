@@ -152,19 +152,18 @@ export default function TeacherCompetitionCreate() {
 
   async function handleAttachmentUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
-    if (!files || !files.length || !editId) return
+    if (!files || !files.length) return
     setUploadingAttachment(true)
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
         const result = await fileApi.upload(file)
-        const attachment = await competitionApi.addAttachment(editId, {
+        setAttachments((prev) => [...prev, {
           fileName: result.fileName,
           fileUrl: result.url,
           fileSize: result.fileSize,
           fileType: result.fileType,
-        })
-        setAttachments((prev) => [...prev, attachment])
+        }])
       }
       toast.success('附件上传成功')
     } catch (err) {
@@ -175,14 +174,8 @@ export default function TeacherCompetitionCreate() {
     }
   }
 
-  async function handleDeleteAttachment(attachmentId: number) {
-    try {
-      await competitionApi.deleteAttachment(attachmentId)
-      setAttachments((prev) => prev.filter((a) => a.id !== attachmentId))
-      toast.success('附件已删除')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '删除失败')
-    }
+  function handleDeleteAttachment(index: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== index))
   }
 
   async function handleSaveDraft() {
@@ -202,6 +195,7 @@ export default function TeacherCompetitionCreate() {
         maxMembers: Number(form.maxMembers) || 1,
         maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
         awards: awards.length > 0 ? JSON.stringify(awards) : undefined,
+        attachments: attachments.length > 0 ? JSON.stringify(attachments) : undefined,
         status: 0,
       }
       if (isEdit) {
@@ -234,6 +228,7 @@ export default function TeacherCompetitionCreate() {
         maxMembers: Number(form.maxMembers) || 1,
         maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
         awards: awards.length > 0 ? JSON.stringify(awards) : undefined,
+        attachments: attachments.length > 0 ? JSON.stringify(attachments) : undefined,
         status: 1,
       }
       if (isEdit) {
@@ -474,9 +469,9 @@ export default function TeacherCompetitionCreate() {
 
               {attachments.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-                  {attachments.map((att) => (
+                  {attachments.map((att, index) => (
                     <div
-                      key={att.id}
+                      key={index}
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         padding: '10px 14px', borderRadius: '10px',
@@ -496,7 +491,7 @@ export default function TeacherCompetitionCreate() {
                         )}
                       </div>
                       <button
-                        onClick={() => handleDeleteAttachment(att.id)}
+                        onClick={() => handleDeleteAttachment(index)}
                         style={{
                           width: '24px', height: '24px', borderRadius: '50%',
                           border: 'none', cursor: 'pointer', flexShrink: 0,

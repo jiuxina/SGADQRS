@@ -217,7 +217,6 @@ export default function TeacherTeams() {
                       <tr>
                         <th>姓名</th>
                         <th>学号</th>
-                        <th>专业</th>
                         <th>状态</th>
                         <th>加入时间</th>
                       </tr>
@@ -234,7 +233,6 @@ export default function TeacherTeams() {
                           <tr key={m.id}>
                             <td style={{ fontWeight: '600' }}>{m.studentName ?? m.studentUsername ?? `用户#${m.studentId}`}</td>
                             <td style={{ color: 'var(--text-secondary)' }}>{m.studentUsername ?? '-'}</td>
-                            <td style={{ color: 'var(--text-secondary)' }}>{m.majorName ?? '-'}</td>
                             <td>
                               <span className={`glass-badge ${ms.cls}`} style={{ fontSize: '10px', padding: '1px 6px' }}>{ms.label}</span>
                             </td>

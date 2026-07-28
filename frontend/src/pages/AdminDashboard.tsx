@@ -10,25 +10,22 @@ import { DashboardSkeleton } from '../components/PageSkeleton'
 import QuickActions from '../components/QuickActions'
 import UpcomingReminders from '../components/UpcomingReminders'
 import { staggerContainer, staggerItem } from '../motion/variants'
-import { competitionApi, statsApi, logApi } from '../api'
-import type { CompetitionItem, LogItem } from '../api/types'
+import { competitionApi, statsApi } from '../api'
+import type { CompetitionItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/toastUtils'
 
 export default function AdminDashboard() {
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
-  const [logs, setLogs] = useState<LogItem[]>([])
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       competitionApi.list({ current: 1, size: PAGE_SIZE.LARGE }),
-      logApi.list({ current: 1, size: PAGE_SIZE.DASHBOARD_PREVIEW }),
       statsApi.admin(),
-    ]).then(([compResult, logResult, statsResult]) => {
+    ]).then(([compResult, statsResult]) => {
       setCompetitions(compResult.records)
-      setLogs(logResult.records)
       setStats(statsResult as Record<string, unknown>)
     }).catch((e) => { toast.error('加载仪表盘数据失败'); console.error(e) }).finally(() => setLoading(false))
   }, [])
@@ -43,7 +40,6 @@ export default function AdminDashboard() {
   ].filter((g) => g.count > 0)
   const maxCount = Math.max(...statusGroups.map((g) => g.count), 1)
 
-  const recentLogs = logs.slice(0, 5)
   const pendingList = competitions.filter((c) => c.status === 1)
   const totalUsers = (stats?.totalUsers as number) || 0
   const activeUsers = (stats?.totalStudents as number) || 0
@@ -72,29 +68,6 @@ export default function AdminDashboard() {
                 <div className="bento-bar" style={{ width: '100%', maxWidth: '44px', height: `${Math.max((g.count / maxCount) * 100, 8)}%`, background: g.color, borderRadius: '6px 6px 2px 2px' }} />
                 <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>{g.label}</span>
                 <span style={{ fontSize: '9px', color: 'var(--text-tertiary)' }}>{total > 0 ? Math.round((g.count / total) * 100) : 0}%</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* 最近操作 */}
-        <motion.div className="bento-card bento-wide" variants={staggerItem}>
-          <div className="bento-label">最近操作</div>
-          <div className="bento-timeline" style={{ marginTop: '10px' }}>
-            {recentLogs.map((log) => (
-              <div key={log.id} className="bento-timeline-item">
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
-                    <strong>{log.username || '-'}</strong>{' '}
-                    <span style={{ color: 'var(--text-secondary)' }}>{log.operation}</span>
-                  </span>
-                  <span style={{ fontSize: '11px', fontWeight: '500', color: log.status === 1 ? 'var(--success)' : 'var(--danger)' }}>
-                    {log.status === 1 ? '成功' : '失败'}
-                  </span>
-                </div>
-                <div className="bento-sub" style={{ marginTop: '2px' }}>
-                  {log.createTime} · {log.method || '-'} · {log.spendTime || 0}ms
-                </div>
               </div>
             ))}
           </div>

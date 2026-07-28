@@ -271,9 +271,6 @@ export default function StudentTeams() {
                             <Crown size={11} strokeWidth={1.5} style={{ color: '#f59e0b' }} />
                           )}
                           <span>{m.studentName ?? m.studentUsername ?? `用户#${m.studentId}`}</span>
-                          {m.majorName && (
-                            <span style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>({m.majorName})</span>
-                          )}
                         </div>
                         <span style={{ fontSize: '11px', color: m.status === 1 ? 'var(--accent)' : 'var(--text-tertiary)' }}>
                           {memberStatusLabel[m.status] ?? ''}

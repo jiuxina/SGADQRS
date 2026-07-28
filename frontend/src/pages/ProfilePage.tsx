@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, startTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { User, Lock, Save, Camera, Building2, BookOpen, Users } from 'lucide-react'
+import { User, Lock, Save, Camera } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { userApi, fileApi } from '../api'
 import { toast } from '../components/toastUtils'
 import { fadeSlideUp } from '../motion/variants'
-import type { UserItem } from '../api/types'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -14,7 +13,6 @@ export default function ProfilePage() {
   const setUser = useAuthStore((s) => s.setUser)
   const logout = useAuthStore((s) => s.logout)
 
-  const [profile, setProfile] = useState<UserItem | null>(null)
   const [formData, setFormData] = useState({
     realName: '',
     gender: 0,
@@ -68,8 +66,6 @@ export default function ProfilePage() {
           phone: (user as unknown as Record<string, unknown>).phone as string || '',
         })
       })
-      // 获取完整的用户信息（包含院系、专业、班级名称）
-      userApi.getById(user.id).then(setProfile).catch((e) => { toast.error('加载用户信息失败'); console.error(e) })
     }
   }, [user])
 
@@ -229,26 +225,6 @@ export default function ProfilePage() {
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '0 0 8px 0' }}>
             {user.role === 'admin' ? '管理员' : user.role === 'teacher' ? '教师' : '学生'} · {user.username}
           </p>
-          <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-tertiary)' }}>
-            {profile?.deptName && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Building2 size={14} />
-                {profile.deptName}
-              </span>
-            )}
-            {profile?.majorName && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <BookOpen size={14} />
-                {profile.majorName}
-              </span>
-            )}
-            {profile?.className && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Users size={14} />
-                {profile.className}
-              </span>
-            )}
-          </div>
         </div>
       </div>
 
