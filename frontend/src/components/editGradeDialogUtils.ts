@@ -5,7 +5,6 @@ export interface EditGradeOptions {
   defaultRanking?: number | null
   defaultAwardLevel?: number | null
   defaultRemark?: string | null
-  defaultCertificateUrl?: string | null
   confirmText?: string
   cancelText?: string
   awards?: Array<{ name: string; level: number }>
@@ -16,7 +15,6 @@ export interface EditGradeResult {
   remark: string
   ranking: number | null
   awardLevel: number | null
-  certificateUrl: string | null
 }
 
 let globalEditGrade: ((options: EditGradeOptions) => Promise<EditGradeResult | null>) | null = null

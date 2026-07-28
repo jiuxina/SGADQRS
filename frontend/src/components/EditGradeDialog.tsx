@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { X, Award, Upload, File, Trash2 } from 'lucide-react'
+import { X, Award } from 'lucide-react'
 import { setGlobalEditGrade } from './editGradeDialogUtils'
 import type { EditGradeOptions, EditGradeResult } from './editGradeDialogUtils'
-import { fileApi } from '../api'
-import { toast } from './toastUtils'
 
 interface EditGradeState extends EditGradeOptions {
   resolve: (value: EditGradeResult | null) => void
@@ -17,8 +15,6 @@ export function EditGradeContainer() {
   const [remark, setRemark] = useState('')
   const [ranking, setRanking] = useState('')
   const [awardLevel, setAwardLevel] = useState('')
-  const [certificateUrl, setCertificateUrl] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
   const scoreRef = useRef<HTMLInputElement>(null)
 
   const editGrade = useCallback((options: EditGradeOptions): Promise<EditGradeResult | null> => {
@@ -28,7 +24,6 @@ export function EditGradeContainer() {
       setRemark(options.defaultRemark ?? '')
       setRanking(options.defaultRanking != null ? String(options.defaultRanking) : '')
       setAwardLevel(options.defaultAwardLevel != null ? String(options.defaultAwardLevel) : '')
-      setCertificateUrl(options.defaultCertificateUrl ?? null)
     })
   }, [])
 
@@ -54,7 +49,6 @@ export function EditGradeContainer() {
       remark,
       ranking: ranking !== '' ? Number(ranking) : null,
       awardLevel: awardLevel !== '' ? Number(awardLevel) : null,
-      certificateUrl,
     })
     setState(null)
   }, [state, score, remark, ranking, awardLevel])
@@ -254,66 +248,6 @@ export function EditGradeContainer() {
                   fontFamily: 'inherit',
                 }}
               />
-            </div>
-
-            {/* Certificate Upload */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '13px',
-                fontWeight: '600',
-                color: 'var(--text-secondary)',
-                marginBottom: '6px',
-              }}>
-                证书附件 <span style={{ color: 'var(--text-tertiary)', fontWeight: '400' }}>(可选，学生可下载)</span>
-              </label>
-              {certificateUrl ? (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '10px 12px', borderRadius: '10px',
-                  background: 'rgba(0, 122, 255, 0.06)', border: '1px solid rgba(0, 122, 255, 0.15)',
-                }}>
-                  <File size={16} color="#007AFF" />
-                  <span style={{ flex: 1, fontSize: '13px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {certificateUrl.split('/').pop() || '已上传'}
-                  </span>
-                  <button
-                    onClick={() => setCertificateUrl(null)}
-                    className="icon-btn"
-                    style={{ color: '#ef4444' }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ) : (
-                <label style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  padding: '14px', borderRadius: '10px', cursor: 'pointer',
-                  background: 'var(--glass-bg, rgba(0,0,0,0.04))', border: '1px dashed var(--border, rgba(0,0,0,0.15))',
-                  fontSize: '13px', color: 'var(--text-secondary)',
-                  opacity: uploading ? 0.6 : 1, pointerEvents: uploading ? 'none' : 'auto',
-                }}>
-                  <Upload size={16} />
-                  {uploading ? '上传中...' : '点击上传证书文件'}
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    style={{ display: 'none' }}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
-                      if (file.size > 10 * 1024 * 1024) { toast.error('文件大小不能超过10MB'); return }
-                      setUploading(true)
-                      try {
-                        const res = await fileApi.upload(file)
-                        setCertificateUrl(res.url)
-                        toast.success('上传成功')
-                      } catch { toast.error('上传失败') }
-                      finally { setUploading(false) }
-                    }}
-                  />
-                </label>
-              )}
             </div>
 
             {/* Buttons */}
