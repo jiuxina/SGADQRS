@@ -5,8 +5,6 @@ import AdminCompetitions from './pages/AdminCompetitions'
 import AdminUsers from './pages/AdminUsers'
 import AdminStats from './pages/AdminStats'
 import AdminNotices from './pages/AdminNotices'
-import AdminLogs from './pages/AdminLogs'
-import AdminOrgTree from './pages/AdminOrgTree'
 import AdminGrades from './pages/AdminGrades'
 import AdminRegistrations from './pages/AdminRegistrations'
 import TeacherDashboard from './pages/TeacherDashboard'
@@ -14,13 +12,11 @@ import TeacherCompetitions from './pages/TeacherCompetitions'
 import TeacherCompetitionCreate from './pages/TeacherCompetitionCreate'
 import TeacherTeams from './pages/TeacherTeams'
 import TeacherGrades from './pages/TeacherGrades'
-import TeacherMessages from './pages/TeacherMessages'
 import StudentDashboard from './pages/StudentDashboard'
 import StudentCompetitions from './pages/StudentCompetitions'
 import StudentCompetitionDetail from './pages/StudentCompetitionDetail'
 import StudentRegistration from './pages/StudentRegistration'
 import StudentGrades from './pages/StudentGrades'
-import StudentMessages from './pages/StudentMessages'
 import StudentTeams from './pages/StudentTeams'
 import StudentHistory from './pages/StudentHistory'
 import ProfilePage from './pages/ProfilePage'
@@ -54,8 +50,6 @@ function App() {
           <Route path="/admin/users" element={<AuthGuard allowedRoles={['admin']}><AdminUsers /></AuthGuard>} />
           <Route path="/admin/stats" element={<AuthGuard allowedRoles={['admin']}><AdminStats /></AuthGuard>} />
           <Route path="/admin/notices" element={<AuthGuard allowedRoles={['admin']}><AdminNotices /></AuthGuard>} />
-          <Route path="/admin/logs" element={<AuthGuard allowedRoles={['admin']}><AdminLogs /></AuthGuard>} />
-          <Route path="/admin/org-tree" element={<AuthGuard allowedRoles={['admin']}><AdminOrgTree /></AuthGuard>} />
           <Route path="/admin/grades" element={<AuthGuard allowedRoles={['admin']}><AdminGrades /></AuthGuard>} />
           <Route path="/admin/registrations" element={<AuthGuard allowedRoles={['admin']}><AdminRegistrations /></AuthGuard>} />
 
@@ -66,7 +60,6 @@ function App() {
           <Route path="/teacher/competitions/:id/edit" element={<AuthGuard allowedRoles={['teacher']}><TeacherCompetitionCreate /></AuthGuard>} />
           <Route path="/teacher/teams" element={<AuthGuard allowedRoles={['teacher']}><TeacherTeams /></AuthGuard>} />
           <Route path="/teacher/grades" element={<AuthGuard allowedRoles={['teacher']}><TeacherGrades /></AuthGuard>} />
-          <Route path="/teacher/messages" element={<AuthGuard allowedRoles={['teacher']}><TeacherMessages /></AuthGuard>} />
 
           {/* Student routes */}
           <Route path="/student/dashboard" element={<AuthGuard allowedRoles={['student']}><StudentDashboard /></AuthGuard>} />
@@ -74,7 +67,6 @@ function App() {
           <Route path="/student/competitions" element={<AuthGuard allowedRoles={['student']}><StudentCompetitions /></AuthGuard>} />
           <Route path="/student/registration" element={<AuthGuard allowedRoles={['student']}><StudentRegistration /></AuthGuard>} />
           <Route path="/student/grades" element={<AuthGuard allowedRoles={['student']}><StudentGrades /></AuthGuard>} />
-          <Route path="/student/messages" element={<AuthGuard allowedRoles={['student']}><StudentMessages /></AuthGuard>} />
           <Route path="/student/teams" element={<AuthGuard allowedRoles={['student']}><StudentTeams /></AuthGuard>} />
           <Route path="/student/history" element={<AuthGuard allowedRoles={['student']}><StudentHistory /></AuthGuard>} />
         </Route>

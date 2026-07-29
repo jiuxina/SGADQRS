@@ -102,22 +102,6 @@ export const USER_STATUS_LABEL: Record<UserStatus, string> = {
   [UserStatus.ENABLED]: '启用',
 }
 
-/** 日志状态 */
-export const LogStatus = {
-  /** 失败 */
-  FAIL: 0,
-  /** 成功 */
-  SUCCESS: 1,
-} as const
-
-export type LogStatus = typeof LogStatus[keyof typeof LogStatus]
-
-/** 日志状态标签 */
-export const LOG_STATUS_LABEL: Record<LogStatus, string> = {
-  [LogStatus.FAIL]: '失败',
-  [LogStatus.SUCCESS]: '成功',
-}
-
 /** 团队成员状态 */
 export const TeamMemberStatus = {
   /** 待确认 */
