@@ -15,7 +15,6 @@ Student Competition Information Management System
 | HTTP | Axios | 1.x |
 | 图标 | Lucide React | 1.x |
 | 富文本 | TipTap | 3.x |
-| WebSocket | STOMP + SockJS | - |
 
 ## 目录结构
 
@@ -46,7 +45,7 @@ frontend/src/
 │   └── ... (共 32 个组件)
 ├── config/         # 环境变量封装
 │   └── env.ts      # 读取 VITE_* 环境变量
-├── hooks/          # 自定义 Hooks
+├── hooks/          # 自定义 Hooks (useFetch, usePagination 等)
 ├── motion/         # 动画配置
 ├── pages/          # 页面组件 (按角色分)
 │   ├── admin/      # 管理员页面
