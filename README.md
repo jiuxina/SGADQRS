@@ -4,19 +4,17 @@ Student Competition Information Management System
 
 ## 项目简介
 
-SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、教师、学生三种角色，提供竞赛管理、报名管理、成绩管理、团队协作等功能。
+SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、教师、学生三种角色，提供竞赛管理、报名管理、成绩管理、团队协作等功能。项目包含 7 张数据表。
 
 ## 功能特性
 
 ### 管理员
 - 系统总览仪表盘
 - 用户管理（增删改查、启用/禁用）
-- 组织架构管理（院系、专业、班级）
 - 竞赛审核与管理
 - 报名监管
 - 成绩管理
 - 公告管理
-- 系统日志
 - 数据统计
 
 ### 教师
@@ -24,7 +22,6 @@ SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、
 - 团队管理
 - 成绩录入与发布（按竞赛自定义奖项选择）
 - 证书附件上传
-- 消息通知
 
 ### 学生
 - 竞赛浏览与报名
@@ -32,7 +29,6 @@ SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、
 - 成绩查询（显示自定义奖项名称）
 - 证书下载
 - 参赛历史
-- 消息通知
 
 ## 技术栈
 
@@ -45,7 +41,6 @@ SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、
 - **动画**: Motion (Framer Motion)
 - **图标**: Lucide React
 - **富文本**: TipTap
-- **WebSocket**: STOMP + SockJS
 
 ### 后端
 - **框架**: Spring Boot 3.2.5
@@ -53,7 +48,6 @@ SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、
 - **数据库**: MySQL 8
 - **认证**: JWT (jjwt 0.12.5)
 - **安全**: Spring Security
-- **WebSocket**: Spring WebSocket + STOMP
 - **API 文档**: SpringDoc OpenAPI 2.5.0
 - **Excel 导出**: EasyExcel 3.3.4
 - **工具包**: Hutool 5.8.27
@@ -139,11 +133,9 @@ SGADQRS/
 │   └── package.json
 ├── backend/                 # 后端项目
 │   ├── src/main/java/com/scms/
-│   │   ├── annotation/      # 自定义注解 (@LogOperation)
-│   │   ├── aspect/          # AOP 切面 (操作日志)
 │   │   ├── common/          # 通用类 (Result, GlobalExceptionHandler)
-│   │   ├── config/          # 配置 (WebSocket, MyBatis, WebMvc)
-│   │   ├── controller/      # REST 控制器 (12 个)
+│   │   ├── config/          # 配置 (MyBatis, WebMvc)
+│   │   ├── controller/      # REST 控制器 (9 个)
 │   │   ├── dto/             # 数据传输对象
 │   │   ├── entity/          # 数据库实体
 │   │   ├── export/          # Excel 导出模型
@@ -186,10 +178,6 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api/ws': {
-        target: 'http://localhost:8080',
-        ws: true,
-      },
       '/api': {
         target: 'http://localhost:8080',
       },
@@ -220,8 +208,6 @@ export default defineConfig({
 | PUT | /api/competition | 更新竞赛 |
 | PUT | /api/competition/{id}/audit | 审核竞赛 |
 | DELETE | /api/competition/{id} | 删除竞赛 |
-| POST | /api/competition/{id}/attachment | 添加竞赛附件 |
-| DELETE | /api/competition/attachment/{id} | 删除竞赛附件 |
 | GET | /api/competition/dashboard | 仪表盘统计 |
 
 ### 报名管理
@@ -270,42 +256,14 @@ export default defineConfig({
 | DELETE | /api/notice/{id} | 删除公告 |
 | PUT | /api/notice/{id}/top | 置顶/取消置顶 |
 
-### 消息管理
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/message/list | 消息列表 |
-| POST | /api/message/send | 发送消息 |
-| PUT | /api/message/{id}/read | 标记已读 |
-| PUT | /api/message/readAll | 全部标记已读 |
-| GET | /api/message/unread | 未读消息数 |
-
-### 组织架构
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/dept/list | 学院列表 |
-| POST/PUT/DELETE | /api/dept/{id} | 学院 CRUD |
-| GET | /api/dept/major/list | 专业列表 |
-| POST/PUT/DELETE | /api/dept/major/{id} | 专业 CRUD |
-| GET | /api/dept/class/list | 班级列表 |
-| POST/PUT/DELETE | /api/dept/class/{id} | 班级 CRUD |
-
 ### 数据统计
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | /api/stats/admin | 管理员统计数据 |
 | GET | /api/stats/enrollment-trends | 报名趋势 |
-| GET | /api/stats/college-stats | 院系统计 |
 | GET | /api/stats/competition-rankings | 竞赛热度排行 |
 | GET | /api/stats/upcoming | 即将开始/截止的竞赛 |
-
-### 系统日志
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/log/list | 操作日志列表 |
 
 ### 文件上传
 
@@ -321,7 +279,6 @@ export default defineConfig({
 | GET | /api/export/registrations | 导出报名 |
 | GET | /api/export/teams | 导出团队 |
 | GET | /api/export/results | 导出成绩 |
-| GET | /api/export/users | 导出用户 |
 | GET | /api/export/student-transcript | 学生成绩单 |
 
 ## 部署
@@ -357,13 +314,6 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
-
-    location /api/ws {
-        proxy_pass http://localhost:8080/api/ws;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
 }
 ```
 
@@ -381,15 +331,11 @@ server {
 2. 在 `frontend/src/api/index.ts` 导出
 3. 在 `frontend/src/api/types.ts` 定义类型
 
-### 数据库迁移
+### 数据库结构
 
-```bash
-# 连接数据库
-mysql -u root -p scms
+数据库共 7 张表，完整字段定义和表间关系详见 [AGENT.md](AGENT.md) 中的「数据库结构」章节。
 
-# 执行迁移脚本
-source backend/sql/migration_xxx.sql
-```
+> 当前数据库结构为最终定稿，禁止新增表、新增字段、删除表、删除字段或修改字段类型。详细规定见 AGENT.md。
 
 ## 常见问题
 
@@ -408,11 +354,6 @@ taskkill /PID <进程ID> /F
 1. 确认后端已启动
 2. 检查 `vite.config.ts` 代理配置
 3. 检查浏览器控制台错误信息
-
-### Q: WebSocket 连接失败
-
-- 确认 WebSocket URL 为 `/api/ws`（不是 `/ws`）
-- 检查 Vite proxy 配置中 `ws: true`
 
 ## 更新日志
 
