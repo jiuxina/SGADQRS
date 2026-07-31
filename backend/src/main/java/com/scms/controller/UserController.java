@@ -1,8 +1,11 @@
 package com.scms.controller;
 
 import com.scms.common.Result;
+import com.scms.dto.BatchUserDTO;
 import com.scms.dto.UserDTO;
+import com.scms.dto.UserStatsDTO;
 import com.scms.service.UserService;
+import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,6 +28,13 @@ public class UserController {
                           @RequestParam(required = false) String keyword,
                           @RequestParam(required = false) Integer userType) {
         return userService.listUsers(current, size, keyword, userType);
+    }
+
+    @Operation(summary = "用户统计")
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<UserStatsDTO> stats() {
+        return userService.getUserStats();
     }
 
     @Operation(summary = "用户详情")
@@ -54,12 +64,26 @@ public class UserController {
         return userService.deleteUser(id);
     }
 
+    @Operation(summary = "批量删除用户")
+    @PostMapping("/batch-delete")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<?> batchDelete(@RequestBody List<Long> ids) {
+        return userService.batchDeleteUsers(ids);
+    }
+
     @Operation(summary = "禁用/启用用户")
     @PutMapping("/disable/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public Result<?> toggleStatus(@PathVariable Long id, @RequestBody java.util.Map<String, Integer> body) {
         Integer status = body.get("status");
         return userService.toggleUserStatus(id, status);
+    }
+
+    @Operation(summary = "批量禁用/启用用户")
+    @PostMapping("/batch-disable")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<?> batchToggleStatus(@RequestBody BatchUserDTO dto) {
+        return userService.batchToggleUserStatus(dto);
     }
 
     @Operation(summary = "重置密码")

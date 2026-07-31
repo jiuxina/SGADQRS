@@ -5,14 +5,20 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
 import com.scms.common.Result;
 import com.scms.dto.UserDTO;
+import com.scms.dto.BatchUserDTO;
+import com.scms.dto.UserStatsDTO;
 import com.scms.entity.User;
 import com.scms.mapper.UserMapper;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -90,6 +96,13 @@ public class UserService {
     }
 
     @Transactional
+    public Result<?> batchDeleteUsers(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Result.error("用户ID列表不能为空");
+        userMapper.deleteBatchIds(ids);
+        return Result.success("批量删除成功", null);
+    }
+
+    @Transactional
     public Result<?> toggleUserStatus(Long id, Integer status) {
         User user = userMapper.selectById(id);
         if (user == null) return Result.error("用户不存在");
@@ -99,12 +112,65 @@ public class UserService {
     }
 
     @Transactional
+    public Result<?> batchToggleUserStatus(BatchUserDTO dto) {
+        List<Long> ids = dto.getIds();
+        Integer status = dto.getStatus();
+        if (ids == null || ids.isEmpty()) return Result.error("用户ID列表不能为空");
+        if (status == null) return Result.error("状态不能为空");
+
+        List<User> users = userMapper.selectBatchIds(ids);
+        if (users.isEmpty()) return Result.error("未找到指定用户");
+
+        for (User user : users) {
+            user.setStatus(status);
+        }
+        users.forEach(userMapper::updateById);
+        return Result.success(status == 1 ? "批量启用成功" : "批量禁用成功", null);
+    }
+
+    @Transactional
     public Result<?> resetPassword(Long id) {
         User user = userMapper.selectById(id);
         if (user == null) return Result.error("用户不存在");
         user.setPassword(passwordEncoder.encode("123456"));
         userMapper.updateById(user);
         return Result.success("密码重置成功，新密码为 123456", null);
+    }
+
+    public Result<UserStatsDTO> getUserStats() {
+        try {
+            List<Map<String, Object>> counts = userMapper.countByUserType();
+            
+            long totalCount = 0;
+            long studentCount = 0;
+            long teacherCount = 0;
+            long adminCount = 0;
+            
+            for (Map<String, Object> row : counts) {
+                Integer userType = (Integer) row.get("userType");
+                Long count = (Long) row.get("count");
+                totalCount += count;
+                
+                if (userType == 1) studentCount = count;
+                else if (userType == 2) teacherCount = count;
+                else if (userType == 3) adminCount = count;
+            }
+            
+            // 验证数据一致性
+            long calculatedTotal = studentCount + teacherCount + adminCount;
+            if (totalCount != calculatedTotal) {
+                log.warn("用户统计数据不一致: totalCount={}, calculatedTotal={}", totalCount, calculatedTotal);
+                totalCount = calculatedTotal;
+            }
+            
+            log.debug("用户统计查询完成: total={}, student={}, teacher={}, admin={}", 
+                    totalCount, studentCount, teacherCount, adminCount);
+            
+            return Result.success(new UserStatsDTO(totalCount, studentCount, teacherCount, adminCount));
+        } catch (Exception e) {
+            log.error("获取用户统计失败", e);
+            return Result.error("获取用户统计失败: " + e.getMessage());
+        }
     }
 
 }

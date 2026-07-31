@@ -30,8 +30,9 @@ public class RegistrationController {
                           @RequestParam(required = false) Long competitionId,
                           @RequestParam(required = false) Long studentId,
                           @RequestParam(required = false) Integer status,
-                          @RequestParam(required = false) Long publisherId) {
-        return registrationService.listRegistrations(current, size, competitionId, studentId, status, publisherId);
+                          @RequestParam(required = false) Long publisherId,
+                          @RequestParam(required = false) String keyword) {
+        return registrationService.listRegistrations(current, size, competitionId, studentId, status, publisherId, keyword);
     }
 
     @Operation(summary = "学生报名")
@@ -96,7 +97,9 @@ public class RegistrationController {
     @Operation(summary = "审核团队")
     @PutMapping("/team/{id}/audit")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public Result<?> auditTeam(@PathVariable Long id, @RequestParam Integer status) {
-        return registrationService.auditTeam(id, status);
+    public Result<?> auditTeam(@PathVariable Long id,
+                               @RequestParam Integer status,
+                               @RequestParam(required = false) String auditRemark) {
+        return registrationService.auditTeam(id, status, auditRemark);
     }
 }

@@ -27,17 +27,28 @@ public class StatsService {
     private final CompetitionRegistrationMapper registrationMapper;
     private final CompetitionResultMapper resultMapper;
     private final UserMapper userMapper;
+    private final UserService userService;
 
     public Result<?> getAdminStats() {
         Map<String, Object> stats = new HashMap<>();
 
-        // 用户统计
-        long totalStudents = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUserType, 1));
-        long totalTeachers = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUserType, 2));
+        // 用户统计 - 委托给 UserService 以确保一致性
+        var userStatsResult = userService.getUserStats();
+        if (userStatsResult.getCode() == 200 && userStatsResult.getData() != null) {
+            var userStats = userStatsResult.getData();
+            stats.put("totalStudents", userStats.getStudentCount());
+            stats.put("totalTeachers", userStats.getTeacherCount());
+            stats.put("totalUsers", userStats.getTotalCount());
+        } else {
+            // 回退到原始逻辑
+            long totalStudents = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUserType, 1));
+            long totalTeachers = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUserType, 2));
+            stats.put("totalStudents", totalStudents);
+            stats.put("totalTeachers", totalTeachers);
+            stats.put("totalUsers", totalStudents + totalTeachers);
+        }
+        
         long disabledUsers = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getStatus, 0));
-        stats.put("totalStudents", totalStudents);
-        stats.put("totalTeachers", totalTeachers);
-        stats.put("totalUsers", totalStudents + totalTeachers);
         stats.put("disabledUsers", disabledUsers);
 
         // 竞赛统计
@@ -47,6 +58,14 @@ public class StatsService {
         stats.put("totalCompetitions", totalCompetitions);
         stats.put("publishedCompetitions", publishedCompetitions);
         stats.put("ongoingCompetitions", ongoingCompetitions);
+
+        // 竞赛状态分布（全量统计，用于仪表盘图表）
+        Map<Integer, Long> competitionByStatus = new LinkedHashMap<>();
+        for (int s = 0; s <= 5; s++) {
+            competitionByStatus.put(s, competitionMapper.selectCount(
+                    new LambdaQueryWrapper<Competition>().eq(Competition::getStatus, s)));
+        }
+        stats.put("competitionByStatus", competitionByStatus);
 
         // 报名统计
         stats.put("totalRegistrations", registrationMapper.selectCount(null));

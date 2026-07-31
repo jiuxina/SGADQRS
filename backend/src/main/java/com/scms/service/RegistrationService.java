@@ -28,7 +28,7 @@ public class RegistrationService {
     private final UserMapper userMapper;
 
     public Result<?> listRegistrations(int current, int size, Long competitionId,
-                                        Long studentId, Integer status, Long publisherId) {
+                                        Long studentId, Integer status, Long publisherId, String keyword) {
         Page<CompetitionRegistration> page = new Page<>(current, size);
         LambdaQueryWrapper<CompetitionRegistration> wrapper = new LambdaQueryWrapper<>();
 
@@ -39,6 +39,16 @@ public class RegistrationService {
         // 教师只能看自己发布的竞赛的报名
         if (publisherId != null) {
             wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            wrapper.and(w -> w
+                .apply("student_id IN (SELECT id FROM sys_user WHERE real_name LIKE CONCAT('%', {0}, '%'))", keyword)
+                .or()
+                .apply("team_id IN (SELECT id FROM competition_team WHERE team_name LIKE CONCAT('%', {0}, '%'))", keyword)
+                .or()
+                .apply("competition_id IN (SELECT id FROM competition WHERE competition_name LIKE CONCAT('%', {0}, '%'))", keyword)
+            );
         }
 
         wrapper.orderByDesc(CompetitionRegistration::getCreateTime);
@@ -188,10 +198,11 @@ public class RegistrationService {
     }
 
     @Transactional
-    public Result<?> auditTeam(Long id, Integer status) {
+    public Result<?> auditTeam(Long id, Integer status, String auditRemark) {
         CompetitionTeam team = teamMapper.selectById(id);
         if (team == null) return Result.error("团队不存在");
         team.setStatus(status);
+        team.setAuditRemark(auditRemark);
         teamMapper.updateById(team);
         return Result.success(status == 2 ? "审核通过" : "已拒绝", null);
     }

@@ -1,6 +1,7 @@
 package com.scms.controller;
 
 import com.scms.common.Result;
+import com.scms.dto.BatchResultDTO;
 import com.scms.dto.ResultDTO;
 import com.scms.security.LoginUser;
 import com.scms.service.ResultService;
@@ -27,9 +28,10 @@ public class ResultController {
                           @RequestParam(required = false) Long studentId,
                           @RequestParam(required = false) Integer awardLevel,
                           @RequestParam(required = false) Integer isPublished,
+                          @RequestParam(required = false) String keyword,
                           @AuthenticationPrincipal LoginUser loginUser) {
         Long publisherId = "teacher".equals(loginUser.getRoleCode()) ? loginUser.getUserId() : null;
-        return resultService.listResults(current, size, competitionId, studentId, awardLevel, isPublished, publisherId);
+        return resultService.listResults(current, size, competitionId, studentId, awardLevel, isPublished, publisherId, keyword);
     }
 
     @Operation(summary = "录入成绩")
@@ -37,6 +39,13 @@ public class ResultController {
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public Result<?> save(@RequestBody ResultDTO dto) {
         return resultService.saveResult(dto);
+    }
+
+    @Operation(summary = "批量录入成绩")
+    @PostMapping("/batch")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public Result<?> batch(@RequestBody BatchResultDTO dto) {
+        return resultService.saveBatchResults(dto);
     }
 
     @Operation(summary = "更新成绩")
@@ -58,5 +67,14 @@ public class ResultController {
     @PreAuthorize("hasRole('STUDENT')")
     public Result<?> studentStats(@AuthenticationPrincipal LoginUser loginUser) {
         return resultService.getStudentStats(loginUser.getUserId());
+    }
+
+    @Operation(summary = "成绩统计")
+    @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public Result<?> stats(@RequestParam Long competitionId,
+                           @AuthenticationPrincipal LoginUser loginUser) {
+        Long publisherId = "teacher".equals(loginUser.getRoleCode()) ? loginUser.getUserId() : null;
+        return resultService.getResultStats(competitionId, publisherId);
     }
 }

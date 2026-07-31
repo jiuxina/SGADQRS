@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
 import com.scms.common.Result;
+import com.scms.dto.BatchResultDTO;
 import com.scms.dto.ResultDTO;
 import com.scms.entity.*;
 import com.scms.mapper.*;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +28,7 @@ public class ResultService {
     private final CompetitionTeamMapper teamMapper;
 
     public Result<?> listResults(int current, int size, Long competitionId, Long studentId,
-                                  Integer awardLevel, Integer isPublished, Long publisherId) {
+                                  Integer awardLevel, Integer isPublished, Long publisherId, String keyword) {
         Page<CompetitionResult> page = new Page<>(current, size);
         LambdaQueryWrapper<CompetitionResult> wrapper = new LambdaQueryWrapper<>();
         if (competitionId != null) wrapper.eq(CompetitionResult::getCompetitionId, competitionId);
@@ -35,6 +37,15 @@ public class ResultService {
         if (isPublished != null) wrapper.eq(CompetitionResult::getIsPublished, isPublished);
         if (publisherId != null) {
             wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
+        }
+        if (keyword != null && !keyword.isBlank()) {
+            wrapper.and(w -> w
+                .apply("student_id IN (SELECT id FROM sys_user WHERE real_name LIKE CONCAT('%', {0}, '%'))", keyword)
+                .or()
+                .apply("team_id IN (SELECT id FROM competition_team WHERE team_name LIKE CONCAT('%', {0}, '%'))", keyword)
+                .or()
+                .apply("competition_id IN (SELECT id FROM competition WHERE competition_name LIKE CONCAT('%', {0}, '%'))", keyword)
+            );
         }
         wrapper.orderByDesc(CompetitionResult::getCreateTime);
 
@@ -59,6 +70,31 @@ public class ResultService {
         result.setIsPublished(0);
         resultMapper.insert(result);
         return Result.success("保存成功", result);
+    }
+
+    @Transactional
+    public Result<?> saveBatchResults(BatchResultDTO dto) {
+        if (dto.getCompetitionId() == null) {
+            return Result.error("竞赛ID不能为空");
+        }
+        if (dto.getResults() == null || dto.getResults().isEmpty()) {
+            return Result.error("成绩列表不能为空");
+        }
+
+        List<CompetitionResult> saved = new ArrayList<>();
+        for (BatchResultDTO.Item item : dto.getResults()) {
+            CompetitionResult result = new CompetitionResult();
+            result.setCompetitionId(dto.getCompetitionId());
+            result.setStudentId(item.getStudentId());
+            result.setScore(item.getScore());
+            result.setRanking(item.getRanking());
+            result.setAwardLevel(item.getAwardLevel());
+            result.setAwardName(resolveAwardName(dto.getCompetitionId(), item.getAwardLevel(), null));
+            result.setIsPublished(0);
+            resultMapper.insert(result);
+            saved.add(result);
+        }
+        return Result.success("批量录入成功，共 " + saved.size() + " 条", saved);
     }
 
     @Transactional
@@ -110,6 +146,19 @@ public class ResultService {
                         .eq(CompetitionResult::getIsPublished, 1)
                         .isNotNull(CompetitionResult::getAwardLevel)
         ));
+        return Result.success(stats);
+    }
+
+    public Result<?> getResultStats(Long competitionId, Long publisherId) {
+        java.util.Map<String, Object> stats = resultMapper.getResultStats(competitionId, publisherId);
+        // 确保所有字段都有默认值，避免前端处理null
+        stats.putIfAbsent("totalCount", 0L);
+        stats.putIfAbsent("scoredCount", 0L);
+        stats.putIfAbsent("avgScore", 0);
+        stats.putIfAbsent("maxScore", 0);
+        stats.putIfAbsent("minScore", 0);
+        stats.putIfAbsent("publishedCount", 0L);
+        stats.putIfAbsent("unpublishedCount", 0L);
         return Result.success(stats);
     }
 
