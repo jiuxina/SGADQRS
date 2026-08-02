@@ -33,6 +33,6 @@ export const registrationApi = {
   joinTeam: (teamId: number) => request.post(`/registration/team/${teamId}/join`),
 
   /** 审核团队 */
-  auditTeam: (id: number, status: number) =>
-    request.put(`/registration/team/${id}/audit`, null, { params: { status } }),
+  auditTeam: (id: number, status: number, auditRemark?: string) =>
+    request.put(`/registration/team/${id}/audit`, null, { params: { status, ...(auditRemark ? { auditRemark } : {}) } }),
 }

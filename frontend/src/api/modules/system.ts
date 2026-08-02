@@ -2,7 +2,7 @@ import { request } from '../request'
 import type { PageResult, NoticeItem, FileUploadResult } from '../types'
 
 export const noticeApi = {
-  list: (params: { current?: number; size?: number; noticeType?: number; status?: number }) =>
+  list: (params: { current?: number; size?: number; noticeType?: number; status?: number; keyword?: string }) =>
     request.get<PageResult<NoticeItem>>('/notice/list', { params }),
   create: (data: Record<string, unknown>) => request.post('/notice', data),
   update: (data: Record<string, unknown>) => request.put('/notice', data),
@@ -11,7 +11,7 @@ export const noticeApi = {
 }
 
 export const statsApi = {
-  admin: () => request.get('/stats/admin'),
+  admin: (params?: { startDate?: string; endDate?: string }) => request.get('/stats/admin', { params }),
   upcoming: () => request.get('/stats/upcoming'),
 }
 

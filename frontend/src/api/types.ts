@@ -227,3 +227,12 @@ export interface UpcomingStats {
   upcomingDeadlines: UpcomingDeadline[]
   upcomingStarts: UpcomingStart[]
 }
+
+// ===== 用户统计 =====
+
+export interface UserStats {
+  totalCount: number
+  studentCount: number
+  teacherCount: number
+  adminCount: number
+}

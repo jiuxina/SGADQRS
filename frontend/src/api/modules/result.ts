@@ -12,9 +12,17 @@ export const resultApi = {
   /** 更新成绩 */
   update: (data: Record<string, unknown>) => request.put('/result', data),
 
+  /** 批量录入成绩 */
+  batch: (data: { competitionId: number; results: Array<{ studentId: number; score: number; ranking?: number | null; awardLevel?: number | null }> }) =>
+    request.post('/result/batch', data),
+
   /** 发布成绩 */
   publish: (competitionId: number) => request.post(`/result/publish/${competitionId}`),
 
   /** 学生成绩统计 */
   studentStats: () => request.get('/result/student/stats'),
+
+  /** 成绩统计（教师/管理员） */
+  stats: (params: { competitionId: number }) =>
+    request.get<{ totalCount: number; scoredCount: number; avgScore: number | null; maxScore: number | null; minScore: number | null; publishedCount: number; unpublishedCount: number }>('/result/stats', { params }),
 }
