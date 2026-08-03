@@ -14,9 +14,9 @@ import EmptyState from '../components/EmptyState'
 import { ListSkeleton } from '../components/PageSkeleton'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import GlassModal from '../components/GlassModal'
-import { registrationApi } from '../api'
+import { registrationApi, competitionApi } from '../api'
 import { toast } from '../components/toastUtils'
-import type { TeamItem } from '../api/types'
+import type { TeamItem, CompetitionItem } from '../api/types'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { formatDate } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
@@ -52,6 +52,8 @@ export default function StudentTeams() {
   const [teamName, setTeamName] = useState('')
   const [teamSlogan, setTeamSlogan] = useState('')
   const [creating, setCreating] = useState(false)
+  const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
+  const [loadingCompetitions, setLoadingCompetitions] = useState(false)
 
   // 加入团队
   const [showJoinModal, setShowJoinModal] = useState(false)
@@ -90,9 +92,22 @@ export default function StudentTeams() {
     }).finally(() => setLoading(false))
   }, [fetchData])
 
+  // 打开创建模态框时加载竞赛列表
+  useEffect(() => {
+    if (!showCreateModal) return
+    setLoadingCompetitions(true)
+    competitionApi.list({ current: 1, size: 100 })
+      .then(result => setCompetitions(result.records))
+      .catch(err => {
+        toast.error('加载竞赛列表失败')
+        console.error('加载竞赛列表失败:', err)
+      })
+      .finally(() => setLoadingCompetitions(false))
+  }, [showCreateModal])
+
   const handleCreate = async () => {
-    if (!createCompId.trim()) {
-      toast.warning('请输入竞赛ID')
+    if (!createCompId) {
+      toast.warning('请选择竞赛')
       return
     }
     if (!teamName.trim()) {
@@ -303,16 +318,24 @@ export default function StudentTeams() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>
-              竞赛ID <span style={{ color: '#ef4444' }}>*</span>
+              选择竞赛 <span style={{ color: '#ef4444' }}>*</span>
             </label>
-            <input
-              type="number"
+            <select
               className="glass-search"
-              placeholder="请输入要参加的竞赛ID"
               value={createCompId}
               onChange={(e) => setCreateCompId(e.target.value)}
+              disabled={loadingCompetitions}
               style={{ width: '100%', marginBottom: 0 }}
-            />
+            >
+              <option value="">
+                {loadingCompetitions ? '加载中...' : '请选择要参加的竞赛'}
+              </option>
+              {competitions.map((comp) => (
+                <option key={comp.id} value={comp.id}>
+                  {comp.competitionName}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>

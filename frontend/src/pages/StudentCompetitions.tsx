@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useDebounce } from '../hooks/useDebounce'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import {
@@ -11,12 +12,12 @@ import {
 } from 'lucide-react'
 import ListMeta from '../components/ListMeta'
 import EmptyState from '../components/EmptyState'
-import { ListSkeleton } from '../components/PageSkeleton'
+import { ListSkeleton, LoadingBar } from '../components/PageSkeleton'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
-import GlassModal from '../components/GlassModal'
-import { competitionApi, registrationApi, fileApi } from '../api'
+import RegistrationModal from '../components/RegistrationModal'
+import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import type { CompetitionItem, TeamItem } from '../api/types'
+import type { CompetitionItem } from '../api/types'
 import CountdownTimer from '../components/CountdownTimer'
 import ConfettiEffect from '../components/ConfettiEffect'
 import FailureEffect from '../components/FailureEffect'
@@ -40,6 +41,7 @@ const statusFilterLabels: Record<string, string> = {
 export default function StudentCompetitions() {
   const user = useAuthStore((s) => s.user)
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -52,23 +54,15 @@ export default function StudentCompetitions() {
   const [failureMessage, setFailureMessage] = useState('')
   const navigate = useNavigate()
   const [registeringComp, setRegisteringComp] = useState<CompetitionItem | null>(null)
-  const [contactPhone, setContactPhone] = useState('')
-  const [isTeamRegistration, setIsTeamRegistration] = useState(false)
-  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
-  const [teamList, setTeamList] = useState<TeamItem[]>([])
-  const [teamsLoading, setTeamsLoading] = useState(false)
   const isMobile = useIsMobile()
-  const [remark, setRemark] = useState('')
-  const [attachmentUrl, setAttachmentUrl] = useState('')
-  const [uploading, setUploading] = useState(false)
 
   const fetchData = useCallback(async () => {
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize, status: 2 }
-    if (searchQuery) params.keyword = searchQuery
+    if (debouncedSearch) params.keyword = debouncedSearch
     if (statusFilter !== 'all') params.status = statusFilter
     else params.status = undefined // 显示所有已发布的
     return competitionApi.list(params as Parameters<typeof competitionApi.list>[0])
-  }, [pagination.current, pagination.pageSize, searchQuery, statusFilter])
+  }, [pagination.current, pagination.pageSize, debouncedSearch, statusFilter])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -97,66 +91,7 @@ export default function StudentCompetitions() {
   }, [fetchData])
 
   // 筛选条件变化时重置到第1页
-  useEffect(() => { pagination.resetPage() }, [searchQuery, statusFilter])
-
-  const handleRegister = async (comp: CompetitionItem) => {
-    if (!user) return
-    if (contactPhone && !phoneRegex.test(contactPhone)) return
-    try {
-      await registrationApi.register({
-        competitionId: comp.id,
-        contactPhone,
-        teamId: isTeamRegistration ? selectedTeamId ?? undefined : undefined,
-        remark: remark || undefined,
-        attachmentUrl: attachmentUrl || undefined,
-      })
-      // 显示庆祝特效
-      setShowConfetti(true)
-      setContactPhone('')
-      setRemark('')
-      setAttachmentUrl('')
-      setIsTeamRegistration(false)
-      setSelectedTeamId(null)
-      setTeamList([])
-      setRegisteringComp(null)
-      loadData()
-    } catch (err) {
-      // 显示失败特效
-      setFailureMessage(err instanceof Error ? err.message : '报名失败')
-      setShowFailure(true)
-    }
-  }
-
-  const loadTeamList = async (competitionId: number) => {
-    setTeamsLoading(true)
-    try {
-      const res = await registrationApi.teamList({ competitionId, current: 1, size: 50 })
-      setTeamList(res.records)
-    } catch (err) {
-      toast.error('加载团队列表失败')
-      console.error('加载团队列表失败:', err)
-    } finally {
-      setTeamsLoading(false)
-    }
-  }
-
-  const phoneRegex = /^1[3-9]\d{9}$/
-  const phoneError = contactPhone.length > 0 && !phoneRegex.test(contactPhone) ? '请输入正确的手机号' : ''
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    try {
-      const res = await fileApi.upload(file)
-      setAttachmentUrl(res.url)
-    } catch (err) {
-      toast.error('上传附件失败')
-      console.error('上传附件失败:', err)
-    } finally {
-      setUploading(false)
-    }
-  }
+  useEffect(() => { pagination.resetPage() }, [debouncedSearch, statusFilter])
 
   if (loading && competitions.length === 0) {
     return <ListSkeleton />
@@ -172,7 +107,7 @@ export default function StudentCompetitions() {
             className="glass-search"
             placeholder="搜索竞赛名称、主办方或描述..."
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); pagination.resetPage() }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{ marginBottom: 0 }}
           />
         </div>
@@ -199,6 +134,7 @@ export default function StudentCompetitions() {
       </motion.div>
 
       {/* Competition cards grid */}
+      <LoadingBar visible={loading && competitions.length > 0} />
       <AnimatePresence mode="wait">
         <motion.div
           key={`${statusFilter}`}
@@ -328,7 +264,7 @@ export default function StudentCompetitions() {
                       已报名
                     </button>
                   ) : (
-<button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }} onClick={() => { setRegisteringComp(comp); setContactPhone(''); setRemark(''); setAttachmentUrl(''); setIsTeamRegistration(false); setSelectedTeamId(null); setTeamList([]) }}>
+<button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }} onClick={() => setRegisteringComp(comp)}>
                         立即报名
                       </button>
                   )
@@ -368,108 +304,21 @@ export default function StudentCompetitions() {
       />
 
       {/* 报名确认模态框 */}
-      <GlassModal open={!!registeringComp} onClose={() => { setRegisteringComp(null); setRemark(''); setAttachmentUrl(''); setIsTeamRegistration(false); setSelectedTeamId(null); setTeamList([]) }} title="确认报名" maxWidth="420px">
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                {registeringComp?.competitionName}
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}>
-                  <input
-                    type="checkbox"
-                    checked={isTeamRegistration}
-                    onChange={(e) => {
-                      setIsTeamRegistration(e.target.checked)
-                      setSelectedTeamId(null)
-                      if (e.target.checked && registeringComp) {
-                        loadTeamList(registeringComp.id)
-                      }
-                    }}
-                    style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }}
-                  />
-                  以团队身份报名
-                </label>
-              </div>
-              {isTeamRegistration && (
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>选择团队</label>
-                  {teamsLoading ? (
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', padding: '8px 0' }}>加载中...</div>
-                  ) : teamList.length === 0 ? (
-                    <EmptyState text="暂无可用团队，请先创建团队" />
-                  ) : (
-                    <select
-                      value={selectedTeamId ?? ''}
-                      onChange={(e) => setSelectedTeamId(e.target.value ? Number(e.target.value) : null)}
-                      style={{
-                        width: '100%', padding: '8px 12px', borderRadius: '8px',
-                        border: '1px solid var(--border-color)', background: 'var(--bg-secondary)',
-                        color: 'var(--text-primary)', fontSize: '13px', outline: 'none',
-                      }}
-                    >
-                      <option value="">请选择团队</option>
-                      {teamList.map((team) => (
-                        <option key={team.id} value={team.id}>{team.teamName}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              )}
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>联系电话</label>
-                <input
-                  type="tel"
-                  className="glass-search"
-                  placeholder="请输入联系电话"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  style={{ width: '100%', marginBottom: 0, borderColor: phoneError ? 'var(--danger, #ef4444)' : undefined }}
-                />
-                {phoneError && (
-                  <div style={{ fontSize: '11px', color: '#ef4444', marginTop: '4px' }}>{phoneError}</div>
-                )}
-              </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>参赛备注</label>
-                <textarea
-                  className="glass-search"
-                  placeholder="选填，填写参赛备注信息"
-                  value={remark}
-                  onChange={(e) => setRemark(e.target.value)}
-                  rows={3}
-                  style={{ width: '100%', marginBottom: 0, resize: 'vertical', fontFamily: 'inherit', paddingTop: '8px' }}
-                />
-              </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>附件材料</label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    type="file"
-                    id="registration-file-input"
-                    style={{ display: 'none' }}
-                    onChange={handleFileUpload}
-                    accept=".pdf,.doc,.docx,.zip,.rar,.jpg,.png"
-                  />
-                  <button
-                    className="btn ghost"
-                    type="button"
-                    style={{ height: '32px', fontSize: '12px' }}
-                    onClick={() => document.getElementById('registration-file-input')?.click()}
-                    disabled={uploading}
-                  >
-                    {uploading ? '上传中...' : '选择文件'}
-                  </button>
-                  {attachmentUrl && (
-                    <span style={{ fontSize: '12px', color: 'var(--accent)' }}>
-                      已上传
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button className="btn ghost" onClick={() => { setRegisteringComp(null); setRemark(''); setAttachmentUrl('') }}>取消</button>
-                <button className="btn ghost" onClick={() => handleRegister(registeringComp!)}>确认报名</button>
-              </div>
-      </GlassModal>
+      <RegistrationModal
+        open={!!registeringComp}
+        onClose={() => setRegisteringComp(null)}
+        competitionId={registeringComp?.id ?? null}
+        competitionName={registeringComp?.competitionName ?? ''}
+        onSuccess={() => {
+          setShowConfetti(true)
+          setRegisteringComp(null)
+          loadData()
+        }}
+        onFail={(message) => {
+          setFailureMessage(message)
+          setShowFailure(true)
+        }}
+      />
     </>
   )
 }

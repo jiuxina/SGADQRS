@@ -1,25 +1,54 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useDebounce } from '../hooks/useDebounce'
 import { motion } from 'motion/react'
-import { Search, Award, Eye, EyeOff, Download } from 'lucide-react'
+import { Search, Award, Eye, EyeOff, Download, Pencil } from 'lucide-react'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { resultApi, competitionApi, exportApi } from '../api'
+import { editGradeDialog } from '../components/editGradeDialogUtils'
 import type { ResultItem, CompetitionItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/toastUtils'
+import { confirmDialog } from '../components/confirmDialogUtils'
 import { formatDate } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
 import ListMeta from '../components/ListMeta'
 import Pagination from '../components/Pagination'
-import { TableSkeleton } from '../components/PageSkeleton'
+import { TableSkeleton, LoadingBar } from '../components/PageSkeleton'
 
 export default function AdminGrades() {
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
   const [results, setResults] = useState<ResultItem[]>([])
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [selectedCompId, setSelectedCompId] = useState<number | null>(null)
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const pagination = usePagination()
+
+  // Batch selection
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const isAllSelected = results.length > 0 && results.every((r) => selectedIds.has(r.id))
+  const isIndeterminate = selectedIds.size > 0 && !isAllSelected
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(results.map((r) => r.id)))
+    }
+  }
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // Clear selection when data changes
+  useEffect(() => { setSelectedIds(new Set()) }, [results])
 
   /** Load competitions for selector */
   useEffect(() => {
@@ -32,25 +61,16 @@ export default function AdminGrades() {
   const fetchData = useCallback(async () => {
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
     if (selectedCompId) params.competitionId = selectedCompId
+    if (debouncedSearch) params.keyword = debouncedSearch
     return resultApi.list(params as Parameters<typeof resultApi.list>[0])
-  }, [selectedCompId, pagination.current, pagination.pageSize])
+  }, [selectedCompId, pagination.current, pagination.pageSize, debouncedSearch])
 
   /** Load results with state */
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetchData()
-      let records = res.records
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase()
-        records = records.filter(
-          (r) =>
-            (r.studentName && r.studentName.toLowerCase().includes(q)) ||
-            (r.teamName && r.teamName.toLowerCase().includes(q)) ||
-            (r.competitionName && r.competitionName.toLowerCase().includes(q))
-        )
-      }
-      setResults(records)
+      setResults(res.records)
       setTotal(res.total)
       pagination.setTotal(res.total)
     } catch (err) {
@@ -59,31 +79,21 @@ export default function AdminGrades() {
     } finally {
       setLoading(false)
     }
-  }, [fetchData, searchQuery])
+  }, [fetchData])
 
   useEffect(() => {
     fetchData().then(res => {
-      let records = res.records
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase()
-        records = records.filter(
-          (r) =>
-            (r.studentName && r.studentName.toLowerCase().includes(q)) ||
-            (r.teamName && r.teamName.toLowerCase().includes(q)) ||
-            (r.competitionName && r.competitionName.toLowerCase().includes(q))
-        )
-      }
-      setResults(records)
+      setResults(res.records)
       setTotal(res.total)
       pagination.setTotal(res.total)
     }).catch(err => {
       toast.error('加载成绩数据失败')
       console.error('加载成绩数据失败:', err)
     }).finally(() => setLoading(false))
-  }, [fetchData, searchQuery])
+  }, [fetchData])
 
   // 筛选条件变化时重置到第1页
-  useEffect(() => { pagination.resetPage() }, [selectedCompId, searchQuery])
+  useEffect(() => { pagination.resetPage() }, [selectedCompId, debouncedSearch])
 
   /** Publish all results for a competition */
   const handlePublish = async (competitionId: number) => {
@@ -93,6 +103,19 @@ export default function AdminGrades() {
       loadData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '发布失败')
+    }
+  }
+
+  const handlePublishWithConfirm = async (competitionId: number) => {
+    const confirmed = await confirmDialog({
+      title: '确认发布全部成绩',
+      message: '发布后将对该竞赛所有已录入成绩进行公开发布，确认执行此批量操作？',
+      confirmText: '确认发布',
+      cancelText: '取消',
+      variant: 'warning',
+    })
+    if (confirmed) {
+      handlePublish(competitionId)
     }
   }
 
@@ -185,9 +208,18 @@ export default function AdminGrades() {
         animate="visible"
       >
         <motion.div variants={staggerItem}>
+          <LoadingBar visible={loading && results.length > 0} />
           <table className="data-table">
             <thead>
               <tr>
+                <th style={{ width: '40px' }}>
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el) => { if (el) el.indeterminate = isIndeterminate }}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th>竞赛名称</th>
                 <th>学生/团队</th>
                 <th>分数</th>
@@ -201,6 +233,13 @@ export default function AdminGrades() {
               {results.map((item) => {
                 return (
                   <tr key={item.id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                      />
+                    </td>
                     <td style={{ fontWeight: '600', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.competitionName || '-'}
                     </td>
@@ -231,26 +270,54 @@ export default function AdminGrades() {
                       )}
                     </td>
                     <td>
-                      {item.isPublished === 0 ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <button
                           className="text-btn blue"
                           style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          onClick={() => handlePublish(item.competitionId)}
+                          onClick={async () => {
+                            const compData = competitions.find(c => c.id === item.competitionId)
+                            const result = await editGradeDialog({
+                              studentName: item.studentName || item.teamName || '该学生',
+                              defaultScore: item.score,
+                              defaultRanking: item.ranking,
+                              defaultAwardLevel: item.awardLevel,
+                              defaultRemark: item.remark,
+                              awards: compData?.awards || undefined,
+                            })
+                            if (result !== null) {
+                              try {
+                                await resultApi.update({ id: item.id, score: result.score, remark: result.remark, ranking: result.ranking, awardLevel: result.awardLevel })
+                                loadData()
+                                toast.success('更新成功')
+                              } catch {
+                                toast.error('更新失败')
+                              }
+                            }
+                          }}
                         >
-                          <Award size={12} strokeWidth={1.5} /> 发布
+                          <Pencil size={12} strokeWidth={1.5} /> 编辑
                         </button>
-                      ) : (
-                        <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
-                          {formatDate(item.publishTime)}
-                        </span>
-                      )}
+                        {item.isPublished === 0 ? (
+                          <button
+                            className="text-btn blue"
+                            style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            onClick={() => handlePublishWithConfirm(item.competitionId)}
+                          >
+                            <Award size={12} strokeWidth={1.5} /> 发布全部
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                            {formatDate(item.publishTime)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
               })}
               {results.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
                     未找到匹配的成绩记录
                   </td>
                 </tr>

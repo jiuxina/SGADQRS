@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { userApi, fileApi } from '../api'
 import { toast } from '../components/toastUtils'
 import { fadeSlideUp } from '../motion/variants'
+import { env } from '../config/env'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -134,7 +135,7 @@ export default function ProfilePage() {
   const getAvatarSrc = () => {
     if (formData.avatar) {
       if (formData.avatar.startsWith('/uploads')) {
-        return `http://localhost:8080${formData.avatar}`
+        return `${env.apiBaseUrl.replace('/api', '')}${formData.avatar}`
       }
       return formData.avatar
     }
@@ -187,17 +188,9 @@ export default function ProfilePage() {
             position: 'absolute',
             bottom: '0',
             right: '0',
-            width: '28px',
-            height: '28px',
-            borderRadius: '50%',
-            background: uploading ? '#999' : '#007AFF',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             pointerEvents: 'none',
-            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
           }}>
-            <Camera size={14} color="#fff" />
+            <Camera size={14} color="var(--text-secondary)" />
           </div>
           {uploading && (
             <div style={{

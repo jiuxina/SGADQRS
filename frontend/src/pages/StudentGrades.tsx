@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
   Trophy,
@@ -23,6 +24,7 @@ export default function StudentGrades() {
   const [results, setResults] = useState<ResultItem[]>([])
   const [loading, setLoading] = useState(true)
   const isMobile = useIsMobile()
+  const navigate = useNavigate()
   const pagination = usePagination()
 
   const fetchData = useCallback(async () => {
@@ -94,7 +96,8 @@ export default function StudentGrades() {
             <div
               key={result.id}
               className="glass-card glass-card-vertical glass-card-static"
-              style={{ padding: '18px' }}
+              style={{ padding: '18px', cursor: 'pointer' }}
+              onClick={() => navigate(`/student/competitions/${result.competitionId}`)}
             >
               {/* Top: Name + status badge */}
               <div style={{ marginBottom: '10px' }}>

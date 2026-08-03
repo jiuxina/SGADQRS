@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { ChevronDown, ChevronRight, Download } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
-import { ListSkeleton } from '../components/PageSkeleton'
+import { ListSkeleton, LoadingBar } from '../components/PageSkeleton'
 import { fadeSlideUp } from '../motion/variants'
 import { registrationApi, competitionApi, exportApi } from '../api'
 import { useAuthStore } from '../store/authStore'
@@ -11,6 +11,7 @@ import { toast } from '../components/toastUtils'
 import { formatDate } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import RejectReasonModal from '../components/RejectReasonModal'
 
 const statusMap: Record<number, { cls: string; label: string }> = {
   0: { cls: 'pending', label: '组建中' },
@@ -32,12 +33,17 @@ export default function TeacherTeams() {
   // 展开行
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
 
-  // 加载竞赛列表
+  // 拒绝原因弹窗
+  const [rejectModalOpen, setRejectModalOpen] = useState(false)
+  const [rejectTargetId, setRejectTargetId] = useState<number | null>(null)
+
+  // 加载竞赛列表（仅当前教师发布的）
   useEffect(() => {
-    competitionApi.list({ current: 1, size: 50 }).then((res) => {
+    if (!user) return
+    competitionApi.list({ current: 1, size: 50, publisherId: user.id }).then((res) => {
       setCompetitions(res.records)
     }).catch(() => {/* ignore */})
-  }, [])
+  }, [user])
 
   const fetchData = useCallback(async (competitionId?: number) => {
     if (!user) return null
@@ -71,9 +77,23 @@ export default function TeacherTeams() {
   // 竞赛切换时重置到第1页
   useEffect(() => { pagination.resetPage() }, [selectedCompId])
 
-  const handleAudit = async (id: number, status: number) => {
-    try { await registrationApi.auditTeam(id, status); loadData(selectedCompId); toast.success('操作成功') }
+  const handleAudit = async (id: number, status: number, auditRemark?: string) => {
+    try { await registrationApi.auditTeam(id, status, auditRemark); loadData(selectedCompId); toast.success('操作成功') }
     catch (err) { toast.error(err instanceof Error ? err.message : '操作失败') }
+  }
+
+  /** Open reject modal */
+  const handleReject = (id: number) => {
+    setRejectTargetId(id)
+    setRejectModalOpen(true)
+  }
+
+  /** Confirm reject with reason */
+  const handleRejectConfirm = async (reason: string) => {
+    if (rejectTargetId === null) return
+    setRejectModalOpen(false)
+    await handleAudit(rejectTargetId, 3, reason || undefined)
+    setRejectTargetId(null)
   }
 
   const toggleExpand = (teamId: number) => {
@@ -130,6 +150,7 @@ export default function TeacherTeams() {
           </div>
         </div>
 
+        <LoadingBar visible={loading && teams.length > 0} />
         <table className="data-table">
           <thead>
             <tr>
@@ -163,10 +184,10 @@ export default function TeacherTeams() {
                   <td>
                     {(team.status === 0 || team.status === 1) ? (
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        <button className="btn primary" style={{ padding: '4px 8px', fontSize: '12px' }}
+                        <button className="btn ghost" style={{ padding: '4px 8px', fontSize: '12px', color: 'var(--accent)' }}
                           onClick={() => handleAudit(team.id, 2)}>通过</button>
                         <button className="btn ghost" style={{ padding: '4px 8px', fontSize: '12px', color: 'var(--danger)' }}
-                          onClick={() => handleAudit(team.id, 3)}>拒绝</button>
+                          onClick={() => handleReject(team.id)}>拒绝</button>
                       </div>
                     ) : <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>-</span>}
                   </td>
@@ -248,6 +269,12 @@ export default function TeacherTeams() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <RejectReasonModal
+        open={rejectModalOpen}
+        onClose={() => { setRejectModalOpen(false); setRejectTargetId(null) }}
+        onConfirm={handleRejectConfirm}
+      />
     </>
   )
 }

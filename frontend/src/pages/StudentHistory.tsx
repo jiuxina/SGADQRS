@@ -41,6 +41,7 @@ type LifecycleStage = 'registered' | 'approved' | 'rejected' | 'participating' |
 function getStage(entry: TimelineEntry): LifecycleStage {
   if (entry.result?.awardLevel) return 'awarded'
   if (entry.result?.score !== null && entry.result?.score !== undefined) return 'scored'
+  if (entry.registration?.status === RegistrationStatus.APPROVED && !entry.result) return 'participating'
   if (entry.registration?.status === RegistrationStatus.APPROVED) return 'approved'
   if (entry.registration?.status === RegistrationStatus.REJECTED) return 'rejected'
   return 'registered'
@@ -72,7 +73,7 @@ function getStageColor(stage: LifecycleStage): string {
   switch (stage) {
     case 'registered': return 'var(--text-tertiary)'
     case 'approved': return '#16a34a'
-    case 'rejected': return '#dc2626'
+    case 'rejected': return 'var(--text-tertiary)'
     case 'participating': return '#2563eb'
     case 'scored': return 'var(--accent)'
     case 'awarded': return '#d97706'

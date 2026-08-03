@@ -18,6 +18,9 @@ import { resolveCoverUrl } from '../utils/format'
 interface FormData {
   name: string
   organizer: string
+  category: string
+  eligibility: string
+  contactInfo: string
   description: string
   rules: string
   registrationStart: string
@@ -57,6 +60,9 @@ export default function TeacherCompetitionCreate() {
   const [form, setForm] = useState<FormData>({
     name: '',
     organizer: '',
+    category: '',
+    eligibility: '',
+    contactInfo: '',
     description: '',
     rules: '',
     registrationStart: '',
@@ -70,6 +76,19 @@ export default function TeacherCompetitionCreate() {
   const [awards, setAwards] = useState<AwardItem[]>([])
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const isMobile = useIsMobile()
+  const hasUnsavedChanges = useRef(false)
+
+  // 离开页面时提示保存
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges.current) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [])
 
   // 编辑模式：加载已有竞赛数据
   useEffect(() => {
@@ -80,6 +99,9 @@ export default function TeacherCompetitionCreate() {
         setForm({
           name: comp.competitionName ?? '',
           organizer: comp.organizer ?? '',
+          category: comp.category ?? '',
+          eligibility: comp.eligibility ?? '',
+          contactInfo: comp.contactInfo ?? '',
           description: comp.description ?? '',
           rules: comp.rules ?? '',
           registrationStart: extractDate(comp.registrationStart),
@@ -102,6 +124,7 @@ export default function TeacherCompetitionCreate() {
   }, [isEdit, editId, navigate])
 
   function updateField(field: keyof FormData, value: string) {
+    hasUnsavedChanges.current = true
     setForm((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
@@ -115,6 +138,7 @@ export default function TeacherCompetitionCreate() {
     try {
       const result = await fileApi.upload(file)
       setCoverImage(result.url)
+      hasUnsavedChanges.current = true
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '封面上传失败')
     } finally {
@@ -164,6 +188,7 @@ export default function TeacherCompetitionCreate() {
           fileSize: result.fileSize,
           fileType: result.fileType,
         }])
+        hasUnsavedChanges.current = true
       }
       toast.success('附件上传成功')
     } catch (err) {
@@ -175,6 +200,7 @@ export default function TeacherCompetitionCreate() {
   }
 
   function handleDeleteAttachment(index: number) {
+    hasUnsavedChanges.current = true
     setAttachments((prev) => prev.filter((_, i) => i !== index))
   }
 
@@ -184,13 +210,16 @@ export default function TeacherCompetitionCreate() {
         ...(isEdit ? { id: editId } : {}),
         competitionName: form.name,
         organizer: form.organizer,
+        category: form.category || undefined,
+        eligibility: form.eligibility || undefined,
+        contactInfo: form.contactInfo || undefined,
         coverImage: coverImage ?? undefined,
         description: form.description,
         rules: form.rules,
         registrationStart: form.registrationStart + ' 00:00:00',
         registrationEnd: form.registrationEnd + ' 23:59:59',
         competitionStart: form.competitionStart + ' 00:00:00',
-        competitionEnd: form.competitionEnd + ' 00:00:00',
+        competitionEnd: form.competitionEnd + ' 23:59:59',
         location: form.location,
         maxMembers: Number(form.maxMembers) || 1,
         maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
@@ -203,6 +232,7 @@ export default function TeacherCompetitionCreate() {
       } else {
         await competitionApi.create(payload)
       }
+      hasUnsavedChanges.current = false
       navigate(-1)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '保存失败')
@@ -217,13 +247,16 @@ export default function TeacherCompetitionCreate() {
         ...(isEdit ? { id: editId } : {}),
         competitionName: form.name,
         organizer: form.organizer,
+        category: form.category || undefined,
+        eligibility: form.eligibility || undefined,
+        contactInfo: form.contactInfo || undefined,
         coverImage: coverImage ?? undefined,
         description: form.description,
         rules: form.rules,
         registrationStart: form.registrationStart + ' 00:00:00',
         registrationEnd: form.registrationEnd + ' 23:59:59',
         competitionStart: form.competitionStart + ' 00:00:00',
-        competitionEnd: form.competitionEnd + ' 00:00:00',
+        competitionEnd: form.competitionEnd + ' 23:59:59',
         location: form.location,
         maxMembers: Number(form.maxMembers) || 1,
         maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
@@ -236,6 +269,7 @@ export default function TeacherCompetitionCreate() {
       } else {
         await competitionApi.create(payload)
       }
+      hasUnsavedChanges.current = false
       navigate(-1)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '提交失败')
@@ -348,6 +382,35 @@ export default function TeacherCompetitionCreate() {
             {errors.organizer && <div style={errorStyle}>{errors.organizer}</div>}
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div>
+              <label style={labelStyle}>竞赛分类</label>
+              <select
+                className="glass-input"
+                value={form.category}
+                onChange={(e) => updateField('category', e.target.value)}
+                style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.55)', background: 'rgba(255, 255, 255, 0.32)', backdropFilter: 'blur(18px) saturate(1.5)', fontSize: '14px', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit', appearance: 'none', cursor: 'pointer' }}
+              >
+                <option value="">请选择分类</option>
+                <option value="编程">编程</option>
+                <option value="设计">设计</option>
+                <option value="学术">学术</option>
+                <option value="数学建模">数学建模</option>
+                <option value="电子硬件">电子硬件</option>
+                <option value="创新创业">创新创业</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>参赛资格</label>
+              <input className="glass-input" placeholder="如：全日制本科生，限大二及以上" value={form.eligibility} onChange={(e) => updateField('eligibility', e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>联系方式</label>
+              <input className="glass-input" placeholder="如：张老师 13800138000" value={form.contactInfo} onChange={(e) => updateField('contactInfo', e.target.value)} />
+            </div>
+          </div>
+
           <div style={fieldGroupStyle}>
             <label style={labelStyle}>竞赛描述</label>
             <textarea style={textareaStyle} placeholder="请输入竞赛描述" value={form.description} onChange={(e) => updateField('description', e.target.value)} />
@@ -378,6 +441,7 @@ export default function TeacherCompetitionCreate() {
                   placeholder="奖项名称"
                   value={award.name}
                   onChange={(e) => {
+                    hasUnsavedChanges.current = true
                     const newAwards = [...awards]
                     newAwards[index] = { ...newAwards[index], name: e.target.value }
                     setAwards(newAwards)
@@ -385,7 +449,7 @@ export default function TeacherCompetitionCreate() {
                   style={{ flex: 1, height: '36px' }}
                 />
                 <button
-                  onClick={() => setAwards(awards.filter((_, i) => i !== index))}
+                  onClick={() => { hasUnsavedChanges.current = true; setAwards(awards.filter((_, i) => i !== index)) }}
                   style={{
                     width: '28px', height: '28px', borderRadius: '50%',
                     border: 'none', cursor: 'pointer', flexShrink: 0,
@@ -399,6 +463,7 @@ export default function TeacherCompetitionCreate() {
             ))}
             <button
               onClick={() => {
+                hasUnsavedChanges.current = true
                 const nextLevel = awards.length > 0 ? Math.max(...awards.map(a => a.level)) + 1 : 1
                 setAwards([...awards, { name: '', level: nextLevel }])
               }}

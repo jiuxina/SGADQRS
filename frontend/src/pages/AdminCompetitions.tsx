@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useDebounce } from '../hooks/useDebounce'
 import { motion, AnimatePresence } from 'motion/react'
 import { Search, X, Eye, Calendar, MapPin, Users, Clock, Download } from 'lucide-react'
 
@@ -12,7 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import { confirmDialog } from '../components/confirmDialogUtils'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
-import { ListSkeleton } from '../components/PageSkeleton'
+import { ListSkeleton, LoadingBar } from '../components/PageSkeleton'
 import { getStatusBadge } from '../utils/statusBadge'
 
 type FilterStatus = 'all' | 1 | 2 | 3 | 4 | 0 | 5
@@ -30,6 +31,7 @@ const filterOptions: { key: FilterStatus; label: string }[] = [
 export default function AdminCompetitions() {
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -65,7 +67,7 @@ export default function AdminCompetitions() {
     try {
       const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
       if (filter !== 'all') params.status = filter
-      if (searchQuery) params.keyword = searchQuery
+      if (debouncedSearch) params.keyword = debouncedSearch
       const result = await competitionApi.list(params as Parameters<typeof competitionApi.list>[0])
       setCompetitions(result.records)
       setTotal(result.total)
@@ -76,7 +78,7 @@ export default function AdminCompetitions() {
     } finally {
       setLoading(false)
     }
-  }, [filter, searchQuery, pagination.current, pagination.pageSize])
+  }, [filter, debouncedSearch, pagination.current, pagination.pageSize])
 
   useEffect(() => {
     loadData()
@@ -85,7 +87,7 @@ export default function AdminCompetitions() {
   // 筛选条件变化时重置到第1页
   useEffect(() => {
     pagination.resetPage()
-  }, [filter, searchQuery])
+  }, [filter, debouncedSearch])
 
   const handleAudit = async (id: number, status: number) => {
     try {
@@ -115,7 +117,7 @@ export default function AdminCompetitions() {
     try {
       const params: { status?: number; keyword?: string } = {}
       if (filter !== 'all') params.status = filter as number
-      if (searchQuery) params.keyword = searchQuery
+      if (debouncedSearch) params.keyword = debouncedSearch
       await exportApi.competitions(params)
       toast.success('导出成功')
     } catch (e) {
@@ -180,7 +182,7 @@ export default function AdminCompetitions() {
               {opt.label}
               {opt.key === 1 && pendingCount > 0 && (
                 <span style={{
-                  marginLeft: '6px', background: 'var(--warning)', color: '#fff',
+                  marginLeft: '6px', color: 'var(--warning)',
                   borderRadius: '8px', padding: '0 5px', fontSize: '10px', fontWeight: '700',
                 }}>
                   {pendingCount}
@@ -198,6 +200,7 @@ export default function AdminCompetitions() {
         initial="hidden"
         animate="visible"
       >
+        <LoadingBar visible={loading && competitions.length > 0} />
         <motion.div variants={staggerItem}>
           <table className="data-table">
             <thead>
@@ -246,7 +249,7 @@ export default function AdminCompetitions() {
                         <div style={{ display: 'flex', gap: '6px' }}>
                           {(comp.status === 0 || comp.status === 5) && (
                             <button className="text-btn" style={{ fontSize: '12px', color: 'var(--accent)' }}
-                              onClick={() => navigate(`/teacher/competitions/${comp.id}/edit`)}>
+                              onClick={() => navigate(`/admin/competitions/${comp.id}/edit`)}>
                               编辑
                             </button>
                           )}
@@ -406,7 +409,7 @@ export default function AdminCompetitions() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
                 {(selectedComp.status === 0 || selectedComp.status === 5) && (
                   <button className="text-btn" style={{ fontSize: '13px', color: 'var(--accent)' }}
-                    onClick={() => { navigate(`/teacher/competitions/${selectedComp.id}/edit`); setSelectedComp(null) }}>
+                    onClick={() => { navigate(`/admin/competitions/${selectedComp.id}/edit`); setSelectedComp(null) }}>
                     编辑竞赛
                   </button>
                 )}

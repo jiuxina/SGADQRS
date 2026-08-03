@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { ListSkeleton } from '../components/PageSkeleton'
 import { instant, fadeSlideUp } from '../motion/variants'
@@ -8,14 +8,32 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import type { EnrollmentTrend, CompetitionRanking } from '../api/types'
 import { toast } from '../components/toastUtils'
 
+function getDefaultStartDate(): string {
+  const d = new Date()
+  d.setMonth(d.getMonth() - 6)
+  return d.toISOString().slice(0, 10)
+}
+
+function getDefaultEndDate(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export default function AdminStats() {
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
+  const [startDate, setStartDate] = useState(getDefaultStartDate)
+  const [endDate, setEndDate] = useState(getDefaultEndDate)
   const isMobile = useIsMobile()
 
-  useEffect(() => {
-    statsApi.admin().then((data) => setStats(data as Record<string, unknown>)).catch((e) => { toast.error('加载统计数据失败'); console.error(e) }).finally(() => setLoading(false))
-  }, [])
+  const fetchStats = useCallback(() => {
+    setLoading(true)
+    statsApi.admin({ startDate, endDate })
+      .then((data) => setStats(data as Record<string, unknown>))
+      .catch((e) => { toast.error('加载统计数据失败'); console.error(e) })
+      .finally(() => setLoading(false))
+  }, [startDate, endDate])
+
+  useEffect(() => { fetchStats() }, [fetchStats])
 
   if (loading) return <ListSkeleton />
 
@@ -26,8 +44,64 @@ export default function AdminStats() {
   const maxTrendCount = Math.max(...enrollmentTrends.map(t => t.count), 1)
   const maxRankingCount = Math.max(...competitionRankings.map(r => r.count), 1)
 
+  /** 导出当前统计为 CSV */
+  const handleExport = () => {
+    const rows: string[][] = [
+      ['指标', '数值'],
+      ['总用户', String((stats?.totalUsers as number) || 0)],
+      ['总竞赛', String((stats?.totalCompetitions as number) || 0)],
+      ['已发布', String((stats?.publishedCompetitions as number) || 0)],
+      ['进行中', String((stats?.ongoingCompetitions as number) || 0)],
+      ['总报名', String((stats?.totalRegistrations as number) || 0)],
+      ['学生数', String((stats?.totalStudents as number) || 0)],
+      ['教师数', String((stats?.totalTeachers as number) || 0)],
+      ['获奖数', String(Object.values(awardDistribution).reduce((s, v) => s + v, 0))],
+      [],
+      ['报名趋势'],
+      ['月份', '人数'],
+      ...enrollmentTrends.map(t => [t.month, String(t.count)]),
+      [],
+      ['竞赛热度排行'],
+      ['竞赛名称', '报名人数'],
+      ...competitionRankings.map(c => [c.name, String(c.count)]),
+      [],
+      ['获奖分布'],
+      ['奖项', '人数'],
+      ...Object.entries(awardDistribution).map(([name, count]) => [name, String(count)]),
+    ]
+    const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `统计数据_${startDate}_${endDate}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(link.href)
+    toast.success('导出成功')
+  }
+
   return (
     <>
+      {/* 日期筛选 + 导出 */}
+      <motion.div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginBottom: '16px' }}
+        variants={instant} initial="hidden" animate="visible">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>开始日期</label>
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+            style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', fontSize: '13px', color: 'var(--text-primary)' }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>结束日期</label>
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+            style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', fontSize: '13px', color: 'var(--text-primary)' }} />
+        </div>
+        <div style={{ flex: 1 }} />
+        <button onClick={handleExport}
+          style={{ padding: '7px 16px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--primary, #6366f1)', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+          导出 CSV
+        </button>
+      </motion.div>
       {/* 指标卡片 */}
       <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}
         variants={instant} initial="hidden" animate="visible">

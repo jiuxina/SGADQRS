@@ -44,7 +44,7 @@ const statusMap: Record<number, { badge: string; label: string }> = {
 const statusColorMap: Record<number, string> = {
   0: 'var(--warning)',
   1: 'var(--success)',
-  2: 'var(--danger)',
+  2: 'var(--gray-3)',
 }
 
 export default function StudentRegistration() {

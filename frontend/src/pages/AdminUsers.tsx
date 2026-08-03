@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion } from 'motion/react'
-import { Search, Plus, Download } from 'lucide-react'
-import { TableSkeleton } from '../components/PageSkeleton'
+import { useDebounce } from '../hooks/useDebounce'
+import { motion, AnimatePresence } from 'motion/react'
+import { Search, Plus, Download, Trash2, Ban } from 'lucide-react'
+import { TableSkeleton, LoadingBar } from '../components/PageSkeleton'
 import DigitRoller from '../components/DigitRoller'
 import { fadeInList, fadeSlideUp } from '../motion/variants'
 import GlassModal from '../components/GlassModal'
 import { userApi, fileApi, exportApi } from '../api'
-import type { UserItem } from '../api/types'
+import type { UserItem, UserStats } from '../api/types'
 import { toast } from '../components/toastUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { formatDate } from '../utils/format'
+import { confirmDialog } from '../components/confirmDialogUtils'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 
@@ -49,6 +51,7 @@ const defaultCreateForm: CreateForm = {
 export default function AdminUsers() {
   const [filter, setFilter] = useState<FilterType>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
   const [users, setUsers] = useState<UserItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -63,13 +66,69 @@ export default function AdminUsers() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm)
   const [creating, setCreating] = useState(false)
+  const [stats, setStats] = useState<UserStats>({ totalCount: 0, studentCount: 0, teacherCount: 0, adminCount: 0 })
+
+  // Batch selection
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const isAllSelected = users.length > 0 && users.every((u) => selectedIds.has(u.id))
+  const isIndeterminate = selectedIds.size > 0 && !isAllSelected
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(users.map((u) => u.id)))
+    }
+  }
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // Clear selection when data changes
+  useEffect(() => { setSelectedIds(new Set()) }, [users])
+
+  const handleBatchDelete = async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    const confirmed = await confirmDialog({ message: `确定要删除选中的 ${ids.length} 个用户吗？此操作不可撤销。`, variant: 'danger' })
+    if (!confirmed) return
+    try {
+      await userApi.batchDelete(ids)
+      setSelectedIds(new Set())
+      loadData()
+      toast.success(`成功删除 ${ids.length} 个用户`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '批量删除失败')
+    }
+  }
+
+  const handleBatchDisable = async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    const confirmed = await confirmDialog({ message: `确定要禁用选中的 ${ids.length} 个用户吗？`, variant: 'warning' })
+    if (!confirmed) return
+    try {
+      await userApi.batchDisable(ids)
+      setSelectedIds(new Set())
+      loadData()
+      toast.success(`成功禁用 ${ids.length} 个用户`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '批量禁用失败')
+    }
+  }
 
   const fetchData = useCallback(async () => {
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
     if (filter !== 'all') params.userType = filter
-    if (searchQuery) params.keyword = searchQuery
+    if (debouncedSearch) params.keyword = debouncedSearch
     return userApi.list(params as Parameters<typeof userApi.list>[0])
-  }, [filter, searchQuery, pagination.current, pagination.pageSize])
+  }, [filter, debouncedSearch, pagination.current, pagination.pageSize])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -98,7 +157,23 @@ export default function AdminUsers() {
   }, [fetchData])
 
   // 筛选条件变化时重置到第1页
-  useEffect(() => { pagination.resetPage() }, [filter, searchQuery])
+  useEffect(() => { pagination.resetPage() }, [filter, debouncedSearch])
+
+  // 获取全系统用户统计
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const result = await userApi.stats()
+        setStats(result)
+      } catch (err) {
+        console.error('加载用户统计失败:', err)
+        toast.error('加载用户统计失败，请刷新页面重试')
+        // 设置默认值，避免页面显示异常
+        setStats({ totalCount: 0, studentCount: 0, teacherCount: 0, adminCount: 0 })
+      }
+    }
+    loadStats()
+  }, [])
 
   const openEditModal = (user: UserItem) => {
     setEditingUser(user)
@@ -174,7 +249,8 @@ export default function AdminUsers() {
   }
 
   const handleDelete = async (user: UserItem) => {
-    if (!confirm(`确定要删除用户 "${user.realName}" 吗？此操作不可撤销。`)) return
+    const deleteConfirmed = await confirmDialog({ message: `确定要删除用户 "${user.realName}" 吗？此操作不可撤销。`, variant: 'danger' })
+    if (!deleteConfirmed) return
     try {
       await userApi.delete(user.id)
       loadData()
@@ -187,7 +263,8 @@ export default function AdminUsers() {
   const handleToggleStatus = async (user: UserItem) => {
     const newStatus = user.status === 1 ? 0 : 1
     const action = newStatus === 1 ? '启用' : '禁用'
-    if (!confirm(`确定要${action}用户 "${user.realName}" 吗？`)) return
+    const toggleConfirmed = await confirmDialog({ message: `确定要${action}用户 "${user.realName}" 吗？`, variant: 'warning' })
+    if (!toggleConfirmed) return
     try {
       await userApi.toggleStatus(user.id, newStatus)
       loadData()
@@ -198,7 +275,8 @@ export default function AdminUsers() {
   }
 
   const handleResetPassword = async (user: UserItem) => {
-    if (!confirm(`确定要重置用户 "${user.realName}" 的密码吗？`)) return
+    const resetConfirmed = await confirmDialog({ message: `确定要重置用户 "${user.realName}" 的密码吗？`, variant: 'warning' })
+    if (!resetConfirmed) return
     try {
       await userApi.resetPassword(user.id)
       toast.success('密码重置成功')
@@ -222,14 +300,11 @@ export default function AdminUsers() {
     }
   }
 
-  const studentCount = users.filter((u) => u.userType === 1).length
-  const teacherCount = users.filter((u) => u.userType === 2).length
-
   const handleExport = async () => {
     try {
       const params: { userType?: number; keyword?: string } = {}
       if (filter !== 'all') params.userType = filter as number
-      if (searchQuery) params.keyword = searchQuery
+      if (debouncedSearch) params.keyword = debouncedSearch
       await exportApi.users(params)
       toast.success('导出成功')
     } catch (e) {
@@ -251,9 +326,9 @@ export default function AdminUsers() {
         animate="visible"
       >
         {[
-          { label: '总用户数', value: total, footer: '系统注册用户' },
-          { label: '学生数', value: studentCount, footer: '在校学生账号' },
-          { label: '教师数', value: teacherCount, footer: '教师账号' },
+          { label: '总用户数', value: stats.totalCount, footer: '系统注册用户' },
+          { label: '学生数', value: stats.studentCount, footer: '在校学生账号' },
+          { label: '教师数', value: stats.teacherCount, footer: '教师账号' },
         ].map((item) => (
           <div key={item.label} className="metric-card" style={{ padding: '16px' }}>
             <div style={{ marginBottom: '10px' }}>
@@ -321,11 +396,58 @@ export default function AdminUsers() {
           </div>
         </div>
 
+        <AnimatePresence>
+          {selectedIds.size > 0 && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '12px', borderTop: '1px solid var(--border)', background: 'rgba(0,122,255,0.06)' }}>
+                <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: '600' }}>
+                  已选择 {selectedIds.size} 项
+                </span>
+                <button
+                  className="text-btn orange"
+                  style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onClick={handleBatchDisable}
+                >
+                  <Ban size={12} strokeWidth={1.5} /> 批量禁用
+                </button>
+                <button
+                  className="text-btn red"
+                  style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onClick={handleBatchDelete}
+                >
+                  <Trash2 size={12} strokeWidth={1.5} /> 批量删除
+                </button>
+                <button
+                  className="text-btn blue"
+                  style={{ fontSize: '12px', marginLeft: 'auto' }}
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  取消选择
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <motion.div variants={fadeInList} initial="hidden" animate="visible">
+          <LoadingBar visible={loading && users.length > 0} />
           <div>
             <table className="data-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      ref={(el) => { if (el) el.indeterminate = isIndeterminate }}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
                   <th>用户名</th>
                   <th>真实姓名</th>
                   <th>角色</th>
@@ -341,6 +463,13 @@ export default function AdminUsers() {
               <tbody>
                 {users.map((user) => (
                   <tr key={user.id} style={{ opacity: user.status === 0 ? 0.6 : 1 }}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(user.id)}
+                        onChange={() => toggleSelect(user.id)}
+                      />
+                    </td>
                     <td style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-secondary)' }}>
                       {user.username}
                     </td>
@@ -396,7 +525,7 @@ export default function AdminUsers() {
                 ))}
                 {users.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+                    <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
                       未找到匹配的用户
                     </td>
                   </tr>
@@ -523,7 +652,7 @@ export default function AdminUsers() {
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
           <button className="btn ghost" onClick={() => setShowCreateModal(false)}>取消</button>
-          <button className="btn primary" onClick={handleCreate} disabled={creating}>
+          <button className="btn ghost" onClick={handleCreate} disabled={creating} style={{ color: 'var(--accent)' }}>
             {creating ? '创建中...' : '创建'}
           </button>
         </div>
@@ -649,7 +778,7 @@ export default function AdminUsers() {
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button className="btn ghost" onClick={() => setEditingUser(null)}>取消</button>
-                <button className="btn primary" onClick={handleSave} disabled={saving}>
+                <button className="btn ghost" onClick={handleSave} disabled={saving} style={{ color: 'var(--accent)' }}>
                   {saving ? '保存中...' : '保存'}
                 </button>
               </div>

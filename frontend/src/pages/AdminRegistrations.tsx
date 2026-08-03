@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion } from 'motion/react'
-import { Search, CheckCircle, XCircle, Phone, Download } from 'lucide-react'
+import { useDebounce } from '../hooks/useDebounce'
+import { motion, AnimatePresence } from 'motion/react'
+import { Search, CheckCircle, XCircle, Phone, Download, CheckCheck, X } from 'lucide-react'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { registrationApi, competitionApi, exportApi } from '../api'
 import type { RegistrationItem, CompetitionItem } from '../api/types'
@@ -10,8 +11,10 @@ import { formatDate } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
 import ListMeta from '../components/ListMeta'
 import Pagination from '../components/Pagination'
-import { ListSkeleton } from '../components/PageSkeleton'
+import { ListSkeleton, LoadingBar } from '../components/PageSkeleton'
 import { getStatusBadge } from '../utils/statusBadge'
+import RejectReasonModal from '../components/RejectReasonModal'
+import { confirmDialog } from '../components/confirmDialogUtils'
 
 type FilterStatus = 'all' | 0 | 1 | 2
 
@@ -25,12 +28,58 @@ const filterOptions: { key: FilterStatus; label: string }[] = [
 export default function AdminRegistrations() {
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [selectedCompId, setSelectedCompId] = useState<number | null>(null)
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const pagination = usePagination()
+
+  // 拒绝原因弹窗
+  const [rejectModalOpen, setRejectModalOpen] = useState(false)
+  const [rejectTargetId, setRejectTargetId] = useState<number | null>(null)
+
+  // Batch selection
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const isAllSelected = registrations.length > 0 && registrations.every((r) => selectedIds.has(r.id))
+  const isIndeterminate = selectedIds.size > 0 && !isAllSelected
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(registrations.map((r) => r.id)))
+    }
+  }
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // Clear selection when data changes
+  useEffect(() => { setSelectedIds(new Set()) }, [registrations])
+
+  const handleBatchAudit = async (status: number) => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    const action = status === 1 ? '通过' : '拒绝'
+    const confirmed = await confirmDialog({ message: `确定要${action}选中的 ${ids.length} 条报名记录吗？`, variant: status === 1 ? 'default' : 'danger' })
+    if (!confirmed) return
+    try {
+      await registrationApi.batchAudit({ ids, status })
+      setSelectedIds(new Set())
+      loadData()
+      toast.success(`成功${action} ${ids.length} 条记录`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : `批量${action}失败`)
+    }
+  }
 
   /** Load competitions for selector */
   useEffect(() => {
@@ -44,25 +93,16 @@ export default function AdminRegistrations() {
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
     if (selectedCompId) params.competitionId = selectedCompId
     if (filter !== 'all') params.status = filter
+    if (debouncedSearch) params.keyword = debouncedSearch
     return params
-  }, [selectedCompId, filter, pagination.current, pagination.pageSize])
+  }, [selectedCompId, filter, pagination.current, pagination.pageSize, debouncedSearch])
 
   /** Fetch raw data (no state) */
   const fetchData = useCallback(async () => {
     const params = buildParams()
     const res = await registrationApi.list(params as Parameters<typeof registrationApi.list>[0])
-    let records = res.records
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      records = records.filter(
-        (r) =>
-          (r.studentName && r.studentName.toLowerCase().includes(q)) ||
-          (r.teamName && r.teamName.toLowerCase().includes(q)) ||
-          (r.competitionName && r.competitionName.toLowerCase().includes(q))
-      )
-    }
-    return { records, total: res.total }
-  }, [buildParams, searchQuery])
+    return { records: res.records, total: res.total }
+  }, [buildParams])
 
   /** Load registrations with loading state */
   const loadData = useCallback(async () => {
@@ -92,17 +132,31 @@ export default function AdminRegistrations() {
   }, [fetchData])
 
   // 筛选条件变化时重置到第1页
-  useEffect(() => { pagination.resetPage() }, [selectedCompId, filter, searchQuery])
+  useEffect(() => { pagination.resetPage() }, [selectedCompId, filter, debouncedSearch])
 
   /** Audit a registration */
-  const handleAudit = async (id: number, status: number) => {
+  const handleAudit = async (id: number, status: number, auditRemark?: string) => {
     try {
-      await registrationApi.audit(id, { status })
+      await registrationApi.audit(id, { status, auditRemark })
       toast.success(status === 1 ? '审核通过' : '已拒绝')
       loadData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '操作失败')
     }
+  }
+
+  /** Open reject modal */
+  const handleReject = (id: number) => {
+    setRejectTargetId(id)
+    setRejectModalOpen(true)
+  }
+
+  /** Confirm reject with reason */
+  const handleRejectConfirm = async (reason: string) => {
+    if (rejectTargetId === null) return
+    setRejectModalOpen(false)
+    await handleAudit(rejectTargetId, 2, reason || undefined)
+    setRejectTargetId(null)
   }
 
   const pendingCount = registrations.filter((r) => r.status === 0).length
@@ -184,7 +238,7 @@ export default function AdminRegistrations() {
               {opt.label}
               {opt.key === 0 && pendingCount > 0 && (
                 <span style={{
-                  marginLeft: '6px', background: 'var(--warning)', color: '#fff',
+                  marginLeft: '6px', color: 'var(--warning)',
                   borderRadius: '8px', padding: '0 5px', fontSize: '10px', fontWeight: '700',
                 }}>
                   {pendingCount}
@@ -203,10 +257,56 @@ export default function AdminRegistrations() {
         initial="hidden"
         animate="visible"
       >
+        <AnimatePresence>
+          {selectedIds.size > 0 && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border)', background: 'rgba(0,122,255,0.06)' }}>
+                <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: '600' }}>
+                  已选择 {selectedIds.size} 项
+                </span>
+                <button
+                  className="text-btn blue"
+                  style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onClick={() => handleBatchAudit(1)}
+                >
+                  <CheckCheck size={12} strokeWidth={1.5} /> 批量通过
+                </button>
+                <button
+                  className="text-btn red"
+                  style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onClick={() => handleBatchAudit(2)}
+                >
+                  <X size={12} strokeWidth={1.5} /> 批量拒绝
+                </button>
+                <button
+                  className="text-btn blue"
+                  style={{ fontSize: '12px', marginLeft: 'auto' }}
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  取消选择
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <motion.div variants={staggerItem}>
+          <LoadingBar visible={loading && registrations.length > 0} />
           <table className="data-table">
             <thead>
               <tr>
+                <th style={{ width: '40px' }}>
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el) => { if (el) el.indeterminate = isIndeterminate }}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th>竞赛名称</th>
                 <th>学生</th>
                 <th>团队</th>
@@ -221,6 +321,13 @@ export default function AdminRegistrations() {
                 const badge = getStatusBadge(reg.status, 'registration')
                 return (
                   <tr key={reg.id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(reg.id)}
+                        onChange={() => toggleSelect(reg.id)}
+                      />
+                    </td>
                     <td style={{ fontWeight: '600', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {reg.competitionName || '-'}
                     </td>
@@ -252,7 +359,7 @@ export default function AdminRegistrations() {
                             通过
                           </button>
                           <button className="text-btn danger" style={{ fontSize: '12px' }}
-                            onClick={() => handleAudit(reg.id, 2)}>
+                            onClick={() => handleReject(reg.id)}>
                             拒绝
                           </button>
                         </div>
@@ -268,7 +375,7 @@ export default function AdminRegistrations() {
               })}
               {registrations.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
                     未找到匹配的报名记录
                   </td>
                 </tr>
@@ -285,6 +392,12 @@ export default function AdminRegistrations() {
         total={pagination.total}
         onPageChange={pagination.setCurrent}
         onPageSizeChange={pagination.setPageSize}
+      />
+
+      <RejectReasonModal
+        open={rejectModalOpen}
+        onClose={() => { setRejectModalOpen(false); setRejectTargetId(null) }}
+        onConfirm={handleRejectConfirm}
       />
 
     </>

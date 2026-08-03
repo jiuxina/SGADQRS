@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import LinkExtension from '@tiptap/extension-link'
-import { Plus, Pencil, Send, RotateCcw, Trash2, Pin, X, Link } from 'lucide-react'
+import { Plus, Pencil, Send, RotateCcw, Trash2, Pin, X, Link, Search } from 'lucide-react'
 import ListMeta from '../components/ListMeta'
 import { fadeInList, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { noticeApi } from '../api'
@@ -11,8 +11,10 @@ import type { NoticeItem } from '../api/types'
 import { toast } from '../components/toastUtils'
 import { confirmDialog } from '../components/confirmDialogUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useDebounce } from '../hooks/useDebounce'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { LoadingBar } from '../components/PageSkeleton'
 
 type FilterType = 'all' | 'notice' | 'announcement' | 'published' | 'draft'
 
@@ -87,13 +89,15 @@ function RichTextEditor({ content, onChange }: { content: string; onChange: (htm
 /* ── Page Component ── */
 export default function AdminNotices() {
   const [filter, setFilter] = useState<FilterType>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
   const [showModal, setShowModal] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
   const [newType, setNewType] = useState<'notice' | 'announcement'>('notice')
   const [notices, setNotices] = useState<NoticeItem[]>([])
   const [total, setTotal] = useState(0)
-  const [, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<number | null>(null)
   const isMobile = useIsMobile()
   const pagination = usePagination()
@@ -102,10 +106,11 @@ export default function AdminNotices() {
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
     if (filter === 'notice') params.noticeType = 1
     else if (filter === 'announcement') params.noticeType = 2
-    else if (filter === 'published') params.status = 1
+    else     if (filter === 'published') params.status = 1
     else if (filter === 'draft') params.status = 0
+    if (debouncedSearch) params.keyword = debouncedSearch
     return params
-  }, [filter, pagination.current, pagination.pageSize])
+  }, [filter, pagination.current, pagination.pageSize, debouncedSearch])
 
   const fetchData = useCallback(async () => {
     const params = buildParams()
@@ -132,17 +137,18 @@ export default function AdminNotices() {
   }, [fetchData])
 
   // 筛选条件变化时重置到第1页
-  useEffect(() => { pagination.resetPage() }, [filter])
+  useEffect(() => { pagination.resetPage() }, [filter, debouncedSearch])
 
-  const handleCreate = async () => {
+  const handleSave = async (status: 0 | 1 = 1) => {
     if (!newTitle.trim()) return
     try {
       if (editingId) {
-        await noticeApi.update({ id: editingId, noticeTitle: newTitle, noticeContent: newContent, noticeType: newType === 'notice' ? 1 : 2 })
+        await noticeApi.update({ id: editingId, noticeTitle: newTitle, noticeContent: newContent, noticeType: newType === 'notice' ? 1 : 2, status })
       } else {
-        await noticeApi.create({ noticeTitle: newTitle, noticeContent: newContent, noticeType: newType === 'notice' ? 1 : 2 })
+        await noticeApi.create({ noticeTitle: newTitle, noticeContent: newContent, noticeType: newType === 'notice' ? 1 : 2, status })
       }
       setShowModal(false); setEditingId(null); setNewTitle(''); setNewContent(''); loadData()
+      toast.success(status === 0 ? '草稿已保存' : (editingId ? '更新成功' : '发布成功'))
     } catch (err) { toast.error(err instanceof Error ? err.message : editingId ? '更新失败' : '创建失败') }
   }
 
@@ -222,13 +228,25 @@ export default function AdminNotices() {
             ({filterOptions.find((o) => o.key === filter)?.label})
           </span>
         )}
-        <button
-          className="btn primary"
-          style={{ gap: '6px' }}
-          onClick={() => setShowModal(true)}
-        >
-          <Plus size={14} strokeWidth={2} /> 发布公告
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div className="search-wrap" style={{ width: '220px' }}>
+            <Search strokeWidth={1.5} />
+            <input
+              className="glass-search"
+              placeholder="搜索通知标题..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <button
+            className="btn primary"
+            style={{ gap: '6px' }}
+            onClick={() => setShowModal(true)}
+          >
+            <Plus size={14} strokeWidth={2} /> 发布公告
+          </button>
+        </div>
       </motion.div>
 
       {/* Filter chips */}
@@ -258,6 +276,7 @@ export default function AdminNotices() {
         transition={{ delay: 0.1 }}
       >
         <motion.div variants={fadeInList} initial="hidden" animate="visible">
+          <LoadingBar visible={loading && notices.length > 0} />
           <div>
             <table className="data-table">
               <thead>
@@ -391,7 +410,7 @@ export default function AdminNotices() {
               </button>
 
               <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>
-                发布新通知/公告
+                {editingId ? '编辑通知/公告' : '发布新通知/公告'}
               </div>
 
               {/* Type selector */}
@@ -440,8 +459,11 @@ export default function AdminNotices() {
                 <button className="btn ghost" onClick={() => setShowModal(false)}>
                   取消
                 </button>
-                <button className="btn primary" style={{ gap: '6px' }} onClick={handleCreate}>
-                  <Send size={13} strokeWidth={2} /> 发布
+                <button className="btn ghost" style={{ gap: '6px' }} onClick={() => handleSave(0)}>
+                  <RotateCcw size={13} strokeWidth={2} /> 保存草稿
+                </button>
+                <button className="btn ghost" style={{ gap: '6px', color: 'var(--accent)' }} onClick={() => handleSave(1)}>
+                  <Send size={13} strokeWidth={2} /> {editingId ? '更新发布' : '发布'}
                 </button>
               </div>
             </motion.div>

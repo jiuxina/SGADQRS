@@ -4,13 +4,12 @@ import { motion } from 'motion/react'
 import { UserCheck, UserX, ImageIcon, ExternalLink } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import ListMeta from '../components/ListMeta'
-import { ListSkeleton } from '../components/PageSkeleton'
+import { ListSkeleton, LoadingBar } from '../components/PageSkeleton'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import GlassModal from '../components/GlassModal'
 import { competitionApi, registrationApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem, CompetitionDTO, RegistrationItem } from '../api/types'
-import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/toastUtils'
 import { confirmDialog } from '../components/confirmDialogUtils'
 import { resolveCoverUrl } from '../utils/format'
@@ -25,6 +24,7 @@ export default function TeacherCompetitions() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all')
   const pagination = usePagination()
+  const regPagination = usePagination()
   const [managingComp, setManagingComp] = useState<CompetitionItem | null>(null)
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
   const [regLoading, setRegLoading] = useState(false)
@@ -78,13 +78,12 @@ export default function TeacherCompetitions() {
     }
   }
 
-  const openManage = async (comp: CompetitionItem) => {
-    setManagingComp(comp)
-    setSelectedRegIds([])
+  const fetchRegistrations = useCallback(async (compId: number) => {
     setRegLoading(true)
     try {
-      const result = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: comp.id })
+      const result = await registrationApi.list({ current: regPagination.current, size: regPagination.pageSize, competitionId: compId })
       setRegistrations(result.records)
+      regPagination.setTotal(result.total)
     } catch (err) {
       toast.error('加载报名列表失败')
       console.error('加载报名列表失败:', err)
@@ -92,17 +91,26 @@ export default function TeacherCompetitions() {
     } finally {
       setRegLoading(false)
     }
+  }, [regPagination.current, regPagination.pageSize])
+
+  const openManage = (comp: CompetitionItem) => {
+    setManagingComp(comp)
+    setSelectedRegIds([])
+    setRegistrations([])
+    regPagination.resetPage()
   }
+
+  useEffect(() => {
+    if (!managingComp) return
+    fetchRegistrations(managingComp.id)
+  }, [managingComp?.id, regPagination.current, regPagination.pageSize])
 
   const handleAuditReg = async (id: number, status: number, auditRemark?: string) => {
     try {
       await registrationApi.audit(id, { status, auditRemark })
       setRejectingRegId(null)
       setRejectRemark('')
-      if (managingComp) {
-        const result = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: managingComp.id })
-        setRegistrations(result.records)
-      }
+      if (managingComp) fetchRegistrations(managingComp.id)
       loadData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '审核失败')
@@ -128,10 +136,7 @@ export default function TeacherCompetitions() {
       await registrationApi.batchAudit({ ids: selectedRegIds, status })
       setSelectedRegIds([])
       toast.success(status === 1 ? '批量审核通过' : '已批量拒绝')
-      if (managingComp) {
-        const result = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: managingComp.id })
-        setRegistrations(result.records)
-      }
+      if (managingComp) fetchRegistrations(managingComp.id)
       loadData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '批量审核失败')
@@ -158,6 +163,7 @@ export default function TeacherCompetitions() {
       <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0' }}
         variants={staggerContainer} initial="hidden" animate="visible">
         <motion.div variants={staggerItem}>
+          <LoadingBar visible={loading && competitions.length > 0} />
           <table className="data-table">
             <thead>
               <tr>
@@ -238,7 +244,7 @@ export default function TeacherCompetitions() {
               <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px', paddingRight: '24px' }}>
                 {managingComp?.competitionName}
               </div>
-              <ListMeta count={registrations.length} unit="条报名记录" />
+              <ListMeta count={regPagination.total} unit="条报名记录" />
 
               {registrations.filter(r => r.status === 0).length > 0 && (
                 <div style={{
@@ -374,6 +380,14 @@ export default function TeacherCompetitions() {
                   </tbody>
                 </table>
               )}
+              <Pagination
+                current={regPagination.current}
+                totalPages={regPagination.totalPages}
+                pageSize={regPagination.pageSize}
+                total={regPagination.total}
+                onPageChange={regPagination.setCurrent}
+                onPageSizeChange={regPagination.setPageSize}
+              />
       </GlassModal>
 
     </>
