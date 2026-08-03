@@ -1,4 +1,36 @@
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
+
+/** Thin animated loading bar shown at top of table when filtering/paging */
+export function LoadingBar({ visible }: { visible: boolean }) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            height: '3px',
+            overflow: 'hidden',
+            borderRadius: '2px',
+            background: 'rgba(0,0,0,0.04)',
+          }}
+        >
+          <motion.div
+            animate={{ x: ['-100%', '100%'] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              width: '40%',
+              height: '100%',
+              borderRadius: '2px',
+              background: 'linear-gradient(90deg, transparent, var(--accent, #3b82f6), transparent)',
+            }}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
 
 function shimmer() {
   return {

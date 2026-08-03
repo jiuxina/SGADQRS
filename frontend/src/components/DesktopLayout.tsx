@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { useGlassShimmerContainer } from '../hooks/useAnimations'
 import { useAuthStore } from '../store/authStore'
+import { env } from '../config/env'
 import { useIsMobile } from '../hooks/useIsMobile'
 import PageTransition from './PageTransition'
 
@@ -48,7 +49,7 @@ function getRoleFromPath(pathname: string): 'admin' | 'teacher' | 'student' {
 const navItemsByRole: Record<string, NavItem[]> = {
   admin: [
     { id: 'dashboard', label: '系统总览', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { id: 'competitions', label: '竞赛审核', icon: ClipboardCheck, path: '/admin/competitions', badge: 3 },
+    { id: 'competitions', label: '竞赛审核', icon: ClipboardCheck, path: '/admin/competitions' },
     { id: 'users', label: '用户管理', icon: Users, path: '/admin/users' },
     { id: 'registrations', label: '报名监管', icon: ClipboardList, path: '/admin/registrations' },
     { id: 'grades', label: '成绩管理', icon: Award, path: '/admin/grades' },
@@ -76,7 +77,7 @@ const navItemsByRole: Record<string, NavItem[]> = {
 const mobileTabItemsByRole: Record<string, NavItem[]> = {
   admin: [
     { id: 'dashboard', label: '总览', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { id: 'competitions', label: '审核', icon: ClipboardCheck, path: '/admin/competitions', badge: 3 },
+    { id: 'competitions', label: '审核', icon: ClipboardCheck, path: '/admin/competitions' },
     { id: 'registrations', label: '报名', icon: ClipboardList, path: '/admin/registrations' },
     { id: 'users', label: '用户', icon: Users, path: '/admin/users' },
     { id: 'stats', label: '统计', icon: BarChart3, path: '/admin/stats' },
@@ -130,7 +131,7 @@ function positionTooltip(e: React.MouseEvent<HTMLElement>) {
 
 function getAvatarSrc(user: { avatar?: string | null; gender?: number | null; id?: number } | null): string {
   if (user?.avatar) {
-    return user.avatar.startsWith('/uploads') ? `http://localhost:8080${user.avatar}` : user.avatar
+    return user.avatar.startsWith('/uploads') ? `${env.apiBaseUrl.replace('/api', '')}${user.avatar}` : user.avatar
   }
   const gender = user?.gender || 3
   const idx = ((user?.id ?? 0) % 20) + 1
@@ -233,7 +234,7 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
               {pageTitle}
             </motion.span>
           </AnimatePresence>
-          <button className="mobile-menu-btn" onClick={() => navigate(`/${role}/messages`)} aria-label="通知">
+          <button className="mobile-menu-btn" onClick={() => navigate('/profile')} aria-label="通知">
             <Bell size={20} strokeWidth={1.8} />
           </button>
         </header>
@@ -459,7 +460,7 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                 onKeyDown={handleSearch}
               />
             </div>
-            <button className="header-action-btn" title="通知">
+            <button className="header-action-btn" title="通知" onClick={() => navigate('/profile')}>
               <Bell strokeWidth={1.5} />
             </button>
           </div>

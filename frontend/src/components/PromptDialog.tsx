@@ -97,13 +97,8 @@ export function PromptContainer() {
             </button>
 
             {/* Icon */}
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '14px',
-              background: 'rgba(0, 122, 255, 0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 16px',
-            }}>
-              <Edit3 size={24} strokeWidth={1.8} color="#007AFF" />
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <Edit3 size={16} strokeWidth={1.5} color="var(--text-secondary)" />
             </div>
 
             {/* Title */}

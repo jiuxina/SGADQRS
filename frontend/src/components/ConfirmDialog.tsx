@@ -11,24 +11,24 @@ interface ConfirmState extends ConfirmOptions {
 const variantStyles = {
   danger: {
     icon: AlertTriangle,
-    iconColor: '#FF3B30',
+    iconColor: 'var(--danger)',
     iconBg: 'rgba(255, 59, 48, 0.1)',
-    confirmBg: '#FF3B30',
-    confirmHover: '#e0342a',
+    confirmBg: 'var(--danger)',
+    confirmHover: 'color-mix(in srgb, var(--danger) 90%, black)',
   },
   warning: {
     icon: AlertTriangle,
-    iconColor: '#FF9500',
+    iconColor: 'var(--warning)',
     iconBg: 'rgba(255, 149, 0, 0.1)',
-    confirmBg: '#FF9500',
-    confirmHover: '#e08600',
+    confirmBg: 'var(--warning)',
+    confirmHover: 'color-mix(in srgb, var(--warning) 90%, black)',
   },
   info: {
     icon: HelpCircle,
-    iconColor: '#007AFF',
+    iconColor: 'var(--accent)',
     iconBg: 'rgba(0, 122, 255, 0.1)',
-    confirmBg: '#007AFF',
-    confirmHover: '#0066d6',
+    confirmBg: 'var(--accent)',
+    confirmHover: 'color-mix(in srgb, var(--accent) 90%, black)',
   },
 }
 
@@ -110,13 +110,8 @@ export function ConfirmContainer() {
             </button>
 
             {/* Icon */}
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '14px',
-              background: styles.iconBg,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 16px',
-            }}>
-              <Icon size={24} strokeWidth={1.8} color={styles.iconColor} />
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <Icon size={16} strokeWidth={1.5} color="var(--text-secondary)" />
             </div>
 
             {/* Title */}

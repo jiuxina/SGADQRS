@@ -4,7 +4,7 @@ import { Home, Users, ClipboardCheck, BarChart3, Settings } from 'lucide-react'
 const tabs = [
   { id: 'home', label: '首页', icon: Home, path: '/admin/dashboard' },
   { id: 'students', label: '学生', icon: Users, path: '/teacher/dashboard' },
-  { id: 'reviews', label: '审核', icon: ClipboardCheck, path: '/student/audit' },
+  { id: 'reviews', label: '审核', icon: ClipboardCheck, path: '/student/dashboard' },
   { id: 'reports', label: '报告', icon: BarChart3, path: '/admin/dashboard' },
   { id: 'settings', label: '设置', icon: Settings, path: '/admin/dashboard' },
 ]

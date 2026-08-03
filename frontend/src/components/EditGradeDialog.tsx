@@ -112,13 +112,8 @@ export function EditGradeContainer() {
             </button>
 
             {/* Icon */}
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '14px',
-              background: 'rgba(0, 122, 255, 0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 16px',
-            }}>
-              <Award size={24} strokeWidth={1.8} color="#007AFF" />
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <Award size={16} strokeWidth={1.5} color="var(--text-secondary)" />
             </div>
 
             {/* Title */}

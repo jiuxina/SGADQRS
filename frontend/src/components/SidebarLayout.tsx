@@ -28,7 +28,7 @@ export default function SidebarLayout({ children, variant = 'admin' }: SidebarLa
     ]},
     { section: '管理', items: [
       { id: 'students', label: '赛事管理', icon: Users, path: '/admin/dashboard' },
-      { id: 'audit', label: '参赛审查', icon: ClipboardCheck, path: '/student/audit' },
+      { id: 'audit', label: '参赛审查', icon: ClipboardCheck, path: '/admin/competitions' },
     ]},
     { section: '工具', items: [
       { id: 'teacher', label: '指导端', icon: GraduationCap, path: '/teacher/dashboard' },
@@ -42,7 +42,7 @@ export default function SidebarLayout({ children, variant = 'admin' }: SidebarLa
     ]},
     { section: '工作', items: [
       { id: 'warnings', label: '预警队伍', icon: BookOpen, path: '/teacher/dashboard' },
-      { id: 'audit', label: '参赛审查', icon: ClipboardCheck, path: '/student/audit' },
+      { id: 'audit', label: '参赛审查', icon: ClipboardCheck, path: '/teacher/competitions' },
     ]},
     { section: '其他', items: [
       { id: 'admin', label: '管理端', icon: Settings, path: '/admin/dashboard' },
