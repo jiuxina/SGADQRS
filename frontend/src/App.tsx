@@ -52,6 +52,7 @@ function App() {
           <Route path="/admin/notices" element={<AuthGuard allowedRoles={['admin']}><AdminNotices /></AuthGuard>} />
           <Route path="/admin/grades" element={<AuthGuard allowedRoles={['admin']}><AdminGrades /></AuthGuard>} />
           <Route path="/admin/registrations" element={<AuthGuard allowedRoles={['admin']}><AdminRegistrations /></AuthGuard>} />
+          <Route path="/admin/competitions/:id/edit" element={<AuthGuard allowedRoles={['admin']}><TeacherCompetitionCreate /></AuthGuard>} />
 
           {/* Teacher routes */}
           <Route path="/teacher/dashboard" element={<AuthGuard allowedRoles={['teacher']}><TeacherDashboard /></AuthGuard>} />
