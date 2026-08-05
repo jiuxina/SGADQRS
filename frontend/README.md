@@ -42,10 +42,12 @@ frontend/src/
 │   ├── ConfirmDialog.tsx    # 确认对话框
 │   ├── Toast.tsx            # 轻提示
 │   ├── AuthGuard.tsx        # 路由守卫
+│   ├── RegistrationModal.tsx  # 报名弹窗（共享）
+│   ├── RejectReasonModal.tsx  # 拒绝原因弹窗
 │   └── ... (共 32 个组件)
 ├── config/         # 环境变量封装
 │   └── env.ts      # 读取 VITE_* 环境变量
-├── hooks/          # 自定义 Hooks (useFetch, usePagination 等)
+├── hooks/          # 自定义 Hooks (useFetch, usePagination, useDebounce 等)
 ├── motion/         # 动画配置
 ├── pages/          # 页面组件 (按角色分)
 │   ├── admin/      # 管理员页面
@@ -116,6 +118,19 @@ npm run preview  # 预览构建产物
 ```
 
 ## 更新日志
+
+### 2026-06-16 全面优化
+
+1. **搜索防抖**：新增 `useDebounce` hook，所有搜索输入统一 300ms 防抖
+2. **共享组件**：提取 `RegistrationModal`（报名弹窗）和 `RejectReasonModal`（拒绝原因弹窗）
+3. **批量操作**：管理员用户列表支持批量删除/禁用，报名列表支持批量审核
+4. **成绩批量录入**：教师端支持 CSV 导入和手动批量编辑
+5. **加载进度条**：新增 `LoadingBar` 组件，筛选/翻页时显示滑动进度条
+6. **确认对话框统一**：AdminUsers 从原生 confirm 迁移到 confirmDialog
+7. **服务端搜索**：AdminGrades、AdminRegistrations 搜索改为服务端 keyword 参数
+8. **统计数据修复**：AdminUsers、AdminDashboard 统计卡片改为从 stats API 获取全量数据
+9. **死链接修复**：移除 4 个不存在的路由引用
+10. **默认角色**：登录页默认角色从 admin 改为 student
 
 ### 2024-12-15 UI 优化
 
