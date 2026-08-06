@@ -10,17 +10,17 @@ SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、
 
 ### 管理员
 - 系统总览仪表盘
-- 用户管理（增删改查、启用/禁用）
+- 用户管理（增删改查、启用/禁用、批量操作）
 - 竞赛审核与管理
-- 报名监管
-- 成绩管理
-- 公告管理
-- 数据统计
+- 报名监管（批量审核）
+- 成绩管理（编辑、发布、批量录入）
+- 公告管理（草稿支持）
+- 数据统计（日期筛选、CSV 导出）
 
 ### 教师
 - 竞赛创建与管理（支持自定义奖项）
-- 团队管理
-- 成绩录入与发布（按竞赛自定义奖项选择）
+- 团队管理（审核备注）
+- 成绩录入与发布（批量导入 CSV、按竞赛自定义奖项选择）
 
 ### 学生
 - 竞赛浏览与报名
@@ -220,7 +220,7 @@ export default defineConfig({
 | GET | /api/registration/teams | 团队列表 |
 | POST | /api/registration/team | 创建团队 |
 | POST | /api/registration/team/{id}/join | 加入团队 |
-| PUT | /api/registration/team/{id}/audit | 审核团队 |
+| PUT | /api/registration/team/{id}/audit | 审核团队（支持 auditRemark 参数） |
 
 ### 成绩管理
 
@@ -231,6 +231,8 @@ export default defineConfig({
 | PUT | /api/result | 更新成绩 |
 | POST | /api/result/publish/{competitionId} | 发布成绩 |
 | GET | /api/result/student/stats | 学生成绩统计 |
+| GET | /api/result/stats | 按竞赛统计成绩（平均/最高/最低分） |
+| POST | /api/result/batch | 批量录入成绩 |
 
 ### 用户管理
 
@@ -243,6 +245,9 @@ export default defineConfig({
 | DELETE | /api/user/{id} | 删除用户 |
 | PUT | /api/user/disable/{id} | 启用/禁用用户 |
 | PUT | /api/user/reset-password/{id} | 重置密码 |
+| POST | /api/user/batch-delete | 批量删除用户 |
+| POST | /api/user/batch-disable | 批量禁用/启用用户 |
+| GET | /api/user/stats | 用户统计（学生/教师/管理员数量） |
 
 ### 公告管理
 
@@ -354,6 +359,26 @@ taskkill /PID <进程ID> /F
 3. 检查浏览器控制台错误信息
 
 ## 更新日志
+
+### 2026-06-16 前端/后端全面优化
+
+修复审查报告中 32 项 A/B/C 类问题，主要改动：
+- 修复 4 处硬编码 localhost:8080，统一使用环境变量
+- 修复搜索与服务端分页冲突，支持 keyword 服务端搜索
+- 新增搜索防抖（useDebounce hook，300ms）
+- 新增管理员批量操作（用户批量删除/禁用、报名批量审核）
+- 新增成绩批量录入接口（CSV 导入 + 手动编辑）
+- 新增成绩统计接口（按竞赛统计平均/最高/最低分）
+- 新增用户统计接口
+- 新增拒绝原因输入弹窗
+- 新增管理员成绩编辑功能
+- 新增通知草稿保存功能
+- 修复竞赛结束时间（00:00:00 → 23:59:59）
+- 修复死链接路由
+- 统一确认对话框风格
+- 提取报名弹窗为共享组件 RegistrationModal
+- 新增加载进度条（LoadingBar）
+- 竞赛创建增加分类、参赛资格、联系方式字段
 
 ### 2024-12-15 UI 优化
 

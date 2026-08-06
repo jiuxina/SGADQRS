@@ -87,6 +87,7 @@ SGADQRS/
 | `/admin/grades` | AdminGrades | 成绩管理 |
 | `/admin/stats` | AdminStats | 数据统计 |
 | `/admin/notices` | AdminNotices | 公告管理 |
+| `/admin/competitions/:id/edit` | TeacherCompetitionCreate | 编辑竞赛（管理员） |
 
 ### 教师 (teacher)
 | 路由 | 页面 | 说明 |
@@ -183,6 +184,9 @@ SGADQRS/
 | competition_start | DATETIME | NOT NULL | 竞赛开始时间 |
 | competition_end | DATETIME | NOT NULL | 竞赛结束时间 |
 | location | VARCHAR(200) | NULL | 竞赛地点 |
+| category | VARCHAR(50) | NULL | 竞赛分类 |
+| eligibility | VARCHAR(200) | NULL | 参赛资格 |
+| contact_info | VARCHAR(100) | NULL | 联系方式 |
 | max_members | INT | NOT NULL DEFAULT 1 | 每队最大人数 |
 | max_teams | INT | NULL | 最大队伍数 |
 | awards | JSON | NULL | 自定义奖项列表 `[{"name":"一等奖","level":1}]` |
@@ -222,6 +226,7 @@ SGADQRS/
 | leader_id | BIGINT | NOT NULL | 队长ID → sys_user.id |
 | team_slogan | VARCHAR(200) | NULL | 团队口号 |
 | status | TINYINT | NOT NULL DEFAULT 0 | 0-组建中 1-已提交 2-已通过 3-已拒绝 |
+| audit_remark | VARCHAR(500) | NULL | 审核备注 |
 | create_time | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | 创建时间 |
 
 索引: `idx_team_comp`(competition_id)
@@ -387,6 +392,22 @@ cd frontend && npm run build
 2. **CORS**: 后端 WebMvcConfig 已配置允许 `localhost:3000`
 3. **文件上传**: 最大 10MB，存储路径 `./uploads/`
 4. **JWT 过期**: 24 小时，过期后自动跳转登录页
+
+## 系统约束
+
+### 严禁修改环境变量
+
+**这是一条硬性规定。任何 AI 代理在未经人工明确授权的情况下，不得执行以下操作:**
+
+1. **禁止修改系统环境变量** — 不得使用 `[Environment]::SetEnvironmentVariable`、`setx`、`set` 或任何其他命令修改系统或用户环境变量
+2. **禁止修改 PATH 变量** — 不得向 PATH 环境变量添加或删除任何路径
+3. **禁止修改 Java/Maven/Node 等工具的环境配置** — 不得修改 `JAVA_HOME`、`M2_HOME`、`NODE_PATH` 等环境变量
+4. **禁止创建或修改环境变量配置文件** — 不得修改 `.bashrc`、`.zshrc`、`.profile`、`environment` 等文件
+
+如果需要使用特定工具（如 Maven），应当:
+- 使用完整路径调用工具（例如：`& "C:\tools\maven\apache-maven-3.9.16\bin\mvn.cmd"`）
+- 在当前会话中临时设置变量（不会永久修改环境变量）
+- 明确告知用户需要手动配置环境变量
 
 ## UI 设计规范
 
