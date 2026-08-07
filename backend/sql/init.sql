@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_username` (`username`),
     KEY `idx_user_type` (`user_type`)
-) ENGINE=InnoDB COMMENT='用户表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户表';
 
 -- ===== 2. 竞赛核心表 =====
 
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `competition` (
     PRIMARY KEY (`id`),
     KEY `idx_comp_status` (`status`),
     KEY `idx_comp_publisher` (`publisher_id`)
-) ENGINE=InnoDB COMMENT='竞赛信息表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='竞赛信息表';
 
 -- ===== 3. 报名与团队 =====
 
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS `competition_registration` (
     KEY `idx_reg_comp` (`competition_id`),
     KEY `idx_reg_student` (`student_id`),
     KEY `idx_reg_status` (`status`)
-) ENGINE=InnoDB COMMENT='竞赛报名表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='竞赛报名表';
 
 CREATE TABLE IF NOT EXISTS `competition_team` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `competition_team` (
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_team_comp` (`competition_id`)
-) ENGINE=InnoDB COMMENT='团队信息表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='团队信息表';
 
 CREATE TABLE IF NOT EXISTS `competition_team_member` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `competition_team_member` (
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '0-已退出 1-正常',
     PRIMARY KEY (`id`),
     KEY `idx_tm_team` (`team_id`)
-) ENGINE=InnoDB COMMENT='团队成员表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='团队成员表';
 
 -- ===== 4. 成绩 =====
 
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS `competition_result` (
     KEY `idx_result_comp` (`competition_id`),
     KEY `idx_result_student` (`student_id`),
     KEY `idx_result_publish` (`is_published`)
-) ENGINE=InnoDB COMMENT='竞赛成绩表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='竞赛成绩表';
 
 -- ===== 5. 系统辅助表 =====
 
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS `sys_notice` (
     `publish_time` DATETIME DEFAULT NULL,
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB COMMENT='系统公告表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='系统公告表';
 
 -- ============================================
 -- 初始数据
