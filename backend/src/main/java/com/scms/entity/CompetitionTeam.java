@@ -19,10 +19,6 @@ public class CompetitionTeam {
     /** 状态：0-组建中 1-已提交 2-已通过 3-已拒绝 */
     private Integer status;
 
-    /** 审核备注（非数据库字段，已合并到 competition_registration） */
-    @TableField(exist = false)
-    private String auditRemark;
-
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

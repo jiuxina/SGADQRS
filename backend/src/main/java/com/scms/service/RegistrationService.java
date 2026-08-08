@@ -202,8 +202,20 @@ public class RegistrationService {
         CompetitionTeam team = teamMapper.selectById(id);
         if (team == null) return Result.error("团队不存在");
         team.setStatus(status);
-        team.setAuditRemark(auditRemark);
         teamMapper.updateById(team);
+
+        // 将审核备注同步到该团队所有成员的报名记录
+        LocalDateTime now = LocalDateTime.now();
+        List<CompetitionRegistration> regs = registrationMapper.selectList(
+                new LambdaQueryWrapper<CompetitionRegistration>()
+                        .eq(CompetitionRegistration::getTeamId, id)
+        );
+        for (CompetitionRegistration reg : regs) {
+            reg.setAuditRemark(auditRemark);
+            reg.setAuditTime(now);
+            registrationMapper.updateById(reg);
+        }
+
         return Result.success(status == 2 ? "审核通过" : "已拒绝", null);
     }
 
