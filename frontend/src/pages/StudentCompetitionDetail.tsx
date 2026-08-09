@@ -103,6 +103,13 @@ function StudentCompetitionDetailInner() {
       if (!data) {
         setError('竞赛不存在')
       } else {
+        // Parse JSON string fields if needed
+        if (typeof data.awards === 'string') {
+          try { data.awards = JSON.parse(data.awards) } catch { data.awards = null }
+        }
+        if (typeof data.attachments === 'string') {
+          try { data.attachments = JSON.parse(data.attachments) } catch { data.attachments = null }
+        }
         setComp(data)
       }
     } catch (err) {
