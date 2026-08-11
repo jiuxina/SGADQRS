@@ -44,7 +44,7 @@ frontend/src/
 │   ├── AuthGuard.tsx        # 路由守卫
 │   ├── RegistrationModal.tsx  # 报名弹窗（共享）
 │   ├── RejectReasonModal.tsx  # 拒绝原因弹窗
-│   └── ... (共 32 个组件)
+│   └── ... (共 29 个组件)
 ├── config/         # 环境变量封装
 │   └── env.ts      # 读取 VITE_* 环境变量
 ├── hooks/          # 自定义 Hooks (useFetch, usePagination, useDebounce 等)
