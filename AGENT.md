@@ -16,7 +16,7 @@ SCMS（Student Competition Information Management System）是一个学生竞赛
 | 路由 | React Router DOM | 7.x |
 | 后端 | Spring Boot | 3.2.5 |
 | ORM | MyBatis-Plus | 3.5.6 |
-| 数据库 | MySQL | 8.x |
+| 数据库 | MySQL (Docker) | 8.x |
 | 认证 | JWT (jjwt) | 0.12.5 |
 
 ## 目录结构
@@ -29,7 +29,7 @@ SGADQRS/
 │   │   │   ├── modules/     # 按功能分组 (auth, competition, registration, result, export, system, user)
 │   │   │   ├── request.ts   # Axios 实例 + JWT 拦截器
 │   │   │   └── types.ts     # 接口类型定义
-│   │   ├── components/      # 通用组件 (32 个, 含 GlassModal, EmptyState, PageSkeleton, ListMeta 等)
+│   │   ├── components/      # 通用组件 (29 个, 含 GlassModal, EmptyState, PageSkeleton, ListMeta 等)
 │   │   ├── config/          # 环境变量封装
 │   │   │   ├── env.ts       # VITE_* 环境变量读取
 │   │   │   └── constants.ts # 常量定义
@@ -69,9 +69,11 @@ SGADQRS/
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| 前端 Dev Server | 3000 | Vite 开发服务器 |
+| 前端 Dev Server | 5174 | Vite 开发服务器（使用 start.bat 启动时） |
+| 前端 Dev Server（备用） | 3000 | Vite 开发服务器（手动启动时） |
 | 后端 API | 8080 | Spring Boot (context-path: /api) |
-| MySQL | 3306 | 数据库 |
+| MySQL | 3306 | 数据库 (Docker 容器运行) |
+| 动画演示 | 3001 | 前端动画演示（使用 start.bat 启动时自动启动） |
 
 ## 前端路由规范
 
@@ -184,9 +186,6 @@ SGADQRS/
 | competition_start | DATETIME | NOT NULL | 竞赛开始时间 |
 | competition_end | DATETIME | NOT NULL | 竞赛结束时间 |
 | location | VARCHAR(200) | NULL | 竞赛地点 |
-| category | VARCHAR(50) | NULL | 竞赛分类 |
-| eligibility | VARCHAR(200) | NULL | 参赛资格 |
-| contact_info | VARCHAR(100) | NULL | 联系方式 |
 | max_members | INT | NOT NULL DEFAULT 1 | 每队最大人数 |
 | max_teams | INT | NULL | 最大队伍数 |
 | awards | JSON | NULL | 自定义奖项列表 `[{"name":"一等奖","level":1}]` |
@@ -226,7 +225,6 @@ SGADQRS/
 | leader_id | BIGINT | NOT NULL | 队长ID → sys_user.id |
 | team_slogan | VARCHAR(200) | NULL | 团队口号 |
 | status | TINYINT | NOT NULL DEFAULT 0 | 0-组建中 1-已提交 2-已通过 3-已拒绝 |
-| audit_remark | VARCHAR(500) | NULL | 审核备注 |
 | create_time | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | 创建时间 |
 
 索引: `idx_team_comp`(competition_id)
@@ -347,7 +345,7 @@ competition_registration (1) ──< (N) competition_result [registration_id]
 
 ### 前端
 - 组件: PascalCase (`AdminDashboard.tsx`)
-- 工具函数: camelCase (`formatDate.ts`)
+- 工具函数: camelCase (`format.ts`)
 - 类型定义: `frontend/src/api/types.ts`
 - 样式: Tailwind CSS + CSS 变量
 - 动画: Motion (Framer Motion)
@@ -366,10 +364,13 @@ competition_registration (1) ──< (N) competition_result [registration_id]
 
 ### 启动项目
 ```bash
-# 方式1: 使用脚本
+# 方式1: 一键启动全栈（推荐）
+start.bat
+
+# 方式2: 使用启动所有服务脚本
 start-all.bat
 
-# 方式2: 手动启动
+# 方式3: 手动启动
 # 终端1: 后端
 cd backend && mvn spring-boot:run
 
@@ -392,6 +393,7 @@ cd frontend && npm run build
 2. **CORS**: 后端 WebMvcConfig 已配置允许 `localhost:3000`
 3. **文件上传**: 最大 10MB，存储路径 `./uploads/`
 4. **JWT 过期**: 24 小时，过期后自动跳转登录页
+5. **后端修改后需重新构建**: 修改后端 Java 文件或配置文件后，需执行 `mvn clean package -DskipTests` 重新打包，再重启服务
 
 ## 系统约束
 

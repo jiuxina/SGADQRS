@@ -43,7 +43,7 @@ SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、
 ### 后端
 - **框架**: Spring Boot 3.2.5
 - **ORM**: MyBatis-Plus 3.5.6
-- **数据库**: MySQL 8
+- **数据库**: MySQL 8 (Docker)
 - **认证**: JWT (jjwt 0.12.5)
 - **安全**: Spring Security
 - **API 文档**: SpringDoc OpenAPI 2.5.0
@@ -61,6 +61,8 @@ SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、
 
 ### 数据库准备
 
+MySQL 运行在 Docker 容器中。确保 Docker 已启动，然后：
+
 ```sql
 -- 创建数据库
 CREATE DATABASE scms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -71,7 +73,22 @@ mysql -u root -p scms < backend/sql/init.sql
 
 ### 启动项目
 
-#### 方式一：使用脚本（Windows）
+#### 方式一：一键启动全栈（推荐）
+
+```bash
+# 直接运行 start.bat 即可打开全栈
+start.bat
+```
+
+该脚本会自动：
+- 检查 Java、Node.js、MySQL 环境
+- 创建数据库（如果不存在）
+- 启动后端服务（端口 8080）
+- 启动前端服务（端口 5174）
+- 启动动画演示（端口 3001）
+- 自动打开浏览器
+
+#### 方式二：使用启动所有服务脚本
 
 ```bash
 # 启动所有服务
@@ -81,7 +98,7 @@ start-all.bat
 stop-all.bat
 ```
 
-#### 方式二：手动启动
+#### 方式三：手动启动
 
 **启动后端：**
 ```bash
@@ -98,11 +115,13 @@ npm run dev
 
 ### 访问地址
 
-| 服务 | 地址 |
-|------|------|
-| 前端 | http://localhost:3000 |
-| 后端 API | http://localhost:8080/api |
-| Swagger | http://localhost:8080/api/swagger-ui.html |
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 前端 | http://localhost:5174 | 使用 start.bat 启动时的前端地址 |
+| 前端（备用） | http://localhost:3000 | 手动启动时的前端地址 |
+| 后端 API | http://localhost:8080/api | |
+| Swagger | http://localhost:8080/api/swagger-ui.html | |
+| 动画演示 | http://localhost:3001 | 使用 start.bat 启动时自动启动 |
 
 ### 默认账号
 
@@ -120,7 +139,7 @@ SGADQRS/
 │   ├── src/
 │   │   ├── api/             # API 请求
 │   │   │   └── modules/     # 按功能分组 (auth, competition, registration, result, export, system, user)
-│   │   ├── components/      # 通用组件 (32 个)
+│   │   ├── components/      # 通用组件 (29 个)
 │   │   ├── config/          # 环境变量和常量
 │   │   ├── hooks/           # 自定义 Hooks
 │   │   ├── motion/          # 动画配置

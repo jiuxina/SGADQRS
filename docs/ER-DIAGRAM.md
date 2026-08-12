@@ -93,7 +93,6 @@ erDiagram
         bigint student_id FK
         datetime join_time
         tinyint status "0已退出 1正常"
-        datetime create_time
     }
 
     sys_notice {
@@ -118,6 +117,7 @@ erDiagram
     sys_user ||--o{ competition_result : "学生成绩"
 
     competition_team ||--o{ competition_team_member : "包含成员"
+    competition_team ||--o{ competition_result : "团队成绩"
     sys_user ||--o{ competition_team_member : "加入团队"
     sys_user ||--o{ competition_team : "担任队长"
 
