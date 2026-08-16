@@ -22,5 +22,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:./uploads/");
+        // /public/** 由 StaticFileController 显式处理，解决中文文件名编码问题
     }
 }
