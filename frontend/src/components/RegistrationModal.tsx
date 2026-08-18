@@ -112,10 +112,11 @@ export default function RegistrationModal({
 
   return (
     <GlassModal open={open} onClose={handleClose} title="确认报名" maxWidth="420px">
-      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
         {competitionName}
       </div>
-      <div style={{ marginBottom: '16px' }}>
+      <div>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}>
           <input
             type="checkbox"
@@ -127,7 +128,7 @@ export default function RegistrationModal({
         </label>
       </div>
       {isTeamRegistration && (
-        <div style={{ marginBottom: '16px' }}>
+        <div>
           <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>选择团队</label>
           {teamsLoading ? (
             <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', padding: '8px 0' }}>加载中...</div>
@@ -151,7 +152,7 @@ export default function RegistrationModal({
           )}
         </div>
       )}
-      <div style={{ marginBottom: '12px' }}>
+      <div>
         <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>联系电话</label>
         <input
           type="tel"
@@ -165,7 +166,7 @@ export default function RegistrationModal({
           <div style={{ fontSize: '11px', color: '#ef4444', marginTop: '4px' }}>{phoneError}</div>
         )}
       </div>
-      <div style={{ marginBottom: '12px' }}>
+      <div>
         <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>参赛备注</label>
         <textarea
           className="glass-search"
@@ -176,7 +177,7 @@ export default function RegistrationModal({
           style={{ width: '100%', marginBottom: 0, resize: 'vertical', fontFamily: 'inherit', paddingTop: '8px' }}
         />
       </div>
-      <div style={{ marginBottom: '20px' }}>
+      <div>
         <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>附件材料</label>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <input
@@ -205,6 +206,7 @@ export default function RegistrationModal({
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
         <button className="btn ghost" onClick={handleClose}>取消</button>
         <button className="btn ghost" onClick={handleRegister}>确认报名</button>
+      </div>
       </div>
     </GlassModal>
   )
