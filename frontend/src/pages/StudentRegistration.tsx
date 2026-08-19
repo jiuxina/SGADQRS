@@ -41,11 +41,6 @@ const statusMap: Record<number, { badge: string; label: string }> = {
   2: { badge: 'fail', label: '已拒绝' },
 }
 
-const statusColorMap: Record<number, string> = {
-  0: 'var(--warning)',
-  1: 'var(--success)',
-  2: 'var(--gray-3)',
-}
 
 export default function StudentRegistration() {
   const user = useAuthStore((s) => s.user)
@@ -201,7 +196,6 @@ export default function StudentRegistration() {
         >
           {registrations.map((reg) => {
             const st = statusMap[reg.status] || statusMap[0]
-            const accentColor = statusColorMap[reg.status] || 'var(--gray-2)'
             return (
               <div
                 key={reg.id}
@@ -210,7 +204,7 @@ export default function StudentRegistration() {
               >
                 {/* Top: Name + status */}
                 <div style={{ marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                     <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1.35, flex: 1 }}>
                       {reg.competitionName || '-'}
                     </span>
@@ -221,9 +215,6 @@ export default function StudentRegistration() {
                       {st.label}
                     </span>
                   </div>
-
-                  {/* Status accent line */}
-                  <div style={{ width: '32px', height: '3px', borderRadius: '2px', background: accentColor, marginBottom: '10px' }} />
                 </div>
 
                 {/* Meta info */}

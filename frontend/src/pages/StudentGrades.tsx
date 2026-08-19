@@ -91,7 +91,6 @@ export default function StudentGrades() {
         }}
       >
         {results.map((result) => {
-          const accentColor = result.awardName ? '#d97706' : 'var(--gray-3)'
           return (
             <div
               key={result.id}
@@ -101,7 +100,7 @@ export default function StudentGrades() {
             >
               {/* Top: Name + status badge */}
               <div style={{ marginBottom: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                   <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1.35, flex: 1 }}>
                     {result.competitionName || '-'}
                   </span>
@@ -111,9 +110,6 @@ export default function StudentGrades() {
                     <span className="glass-badge pending" style={{ fontSize: '11px', padding: '2px 8px', flexShrink: 0 }}>待公布</span>
                   )}
                 </div>
-
-                {/* Accent line */}
-                <div style={{ width: '32px', height: '3px', borderRadius: '2px', background: accentColor, marginBottom: '10px' }} />
               </div>
 
               {/* Score + Ranking highlight */}
