@@ -20,7 +20,7 @@ export function formatDate(dateStr: string | null | undefined): string {
 export function resolveCoverUrl(url: string | null | undefined): string | null {
   if (!url) return null
   if (url.startsWith('http')) return url
-  if (url.startsWith('/uploads')) return `${env.apiBaseUrl.replace('/api', '')}${url}`
+  if (url.startsWith('/uploads') || url.startsWith('/public')) return `${env.apiBaseUrl}${url}`
   return url
 }
 
