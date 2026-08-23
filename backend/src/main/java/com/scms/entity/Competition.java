@@ -30,8 +30,21 @@ public class Competition {
     private Integer maxMembers;
     private Integer maxTeams;
 
-    /** 自定义奖项列表（JSON格式） */
+    /** 自定义奖项列表（JSON格式，原始存储） */
+    @JsonIgnore
     private String awards;
+
+    /** 奖项列表（解析后供前端使用） */
+    @JsonProperty("awards")
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getAwardList() {
+        if (awards == null || awards.isBlank()) return Collections.emptyList();
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(awards, List.class);
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
 
     /** 附件列表（JSON格式，原始存储） */
     @JsonIgnore

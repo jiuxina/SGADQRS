@@ -28,11 +28,11 @@ public class AuthService {
                 new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername())
         );
         if (user == null) {
-            return Result.error("用户不存在");
+            return Result.error("账号或密码错误");
         }
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            return Result.error("密码错误");
+            return Result.error("账号或密码错误");
         }
 
         // 更新登录时间
@@ -45,6 +45,11 @@ public class AuthService {
             case 2 -> "teacher";
             default -> "student";
         };
+
+        // 校验前端选择的身份是否与实际角色一致
+        if (dto.getRole() != null && !dto.getRole().isEmpty() && !dto.getRole().equals(roleCode)) {
+            return Result.error("账号或密码错误");
+        }
 
         String token = jwtTokenUtil.generateToken(user.getId(), user.getUsername(), roleCode);
 
