@@ -24,6 +24,10 @@ spring:
       max-file-size: 10MB
       max-request-size: 20MB
 
+logging:
+  file:
+    name: app.log
+
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   configuration:

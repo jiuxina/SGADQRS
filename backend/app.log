@@ -1,48 +1,45 @@
-2026-06-16 13:48:41.466 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
-2026-06-16 13:48:41.544 [main] INFO  com.scms.ScmsApplication - Starting ScmsApplication v1.0.0 using Java 21.0.9 with PID 2848 (F:\xm\SGADQRS\backend\target\scms-backend-1.0.0.jar started by jiuxi in F:\xm\SGADQRS\backend)
-2026-06-16 13:48:41.546 [main] INFO  com.scms.ScmsApplication - No active profile set, falling back to 1 default profile: "default"
-2026-06-16 13:48:43.903 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
-2026-06-16 13:48:43.935 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
-2026-06-16 13:48:43.940 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
-2026-06-16 13:48:43.941 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.20]
-2026-06-16 13:48:44.080 [main] INFO  o.a.c.c.C.[.[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2026-06-16 13:48:44.083 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2431 ms
-2026-06-16 13:48:46.526 [main] INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@58182b96, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@37d6dddc, org.springframework.security.web.context.SecurityContextHolderFilter@7848321e, org.springframework.security.web.header.HeaderWriterFilter@30798137, org.springframework.web.filter.CorsFilter@8f6b4ab, org.springframework.security.web.authentication.logout.LogoutFilter@7dd3981e, com.scms.security.JwtAuthenticationFilter@3079c26a, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@7b5833ee, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@1e471884, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@6e517c9e, org.springframework.security.web.session.SessionManagementFilter@297bd171, org.springframework.security.web.access.ExceptionTranslationFilter@4afdfc0f, org.springframework.security.web.access.intercept.AuthorizationFilter@4005e485]
-2026-06-16 13:48:47.027 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
-2026-06-16 13:48:47.070 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/api'
-2026-06-16 13:48:47.082 [main] INFO  com.scms.ScmsApplication - Started ScmsApplication in 6.069 seconds (process running for 7.055)
-2026-06-16 13:50:48.902 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
-2026-06-16 13:50:48.975 [main] INFO  com.scms.ScmsApplication - Starting ScmsApplication v1.0.0 using Java 21.0.9 with PID 14560 (F:\xm\SGADQRS\backend\target\scms-backend-1.0.0.jar started by jiuxi in F:\xm\SGADQRS\backend)
-2026-06-16 13:50:48.976 [main] INFO  com.scms.ScmsApplication - No active profile set, falling back to 1 default profile: "default"
-2026-06-16 13:50:51.204 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
-2026-06-16 13:50:51.237 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
-2026-06-16 13:50:51.243 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
-2026-06-16 13:50:51.243 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.20]
-2026-06-16 13:50:51.385 [main] INFO  o.a.c.c.C.[.[localhost].[/api] - Initializing Spring embedded WebApplicationContext
-2026-06-16 13:50:51.388 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2308 ms
-2026-06-16 13:50:53.828 [main] INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@148ab138, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6f106af8, org.springframework.security.web.context.SecurityContextHolderFilter@4a04ca74, org.springframework.security.web.header.HeaderWriterFilter@6451a288, org.springframework.web.filter.CorsFilter@1edf71d9, org.springframework.security.web.authentication.logout.LogoutFilter@1f71e024, com.scms.security.JwtAuthenticationFilter@27e199ce, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@24aedcc5, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@74ebd159, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@52d9d817, org.springframework.security.web.session.SessionManagementFilter@734f8317, org.springframework.security.web.access.ExceptionTranslationFilter@1d7c9811, org.springframework.security.web.access.intercept.AuthorizationFilter@6ce2e079]
-2026-06-16 13:50:54.393 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
-2026-06-16 13:50:54.404 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
-2026-06-16 13:50:54.435 [main] INFO  o.s.b.a.l.ConditionEvaluationReportLogger - 
-
-Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
-2026-06-16 13:50:54.485 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
-
-***************************
-APPLICATION FAILED TO START
-***************************
-
-Description:
-
-Web server failed to start. Port 8080 was already in use.
-
-Action:
-
-Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
-
-2026-06-16 13:51:05.618 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[.[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-06-16 13:51:05.628 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2026-06-16 13:51:05.629 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
-2026-06-16 13:51:05.948 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
-2026-06-16 13:51:06.160 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@7bf618a
-2026-06-16 13:51:06.165 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-06-19T19:18:03.060+08:00  INFO 3900 --- [main] com.scms.ScmsApplication                 : Starting ScmsApplication v1.0.0 using Java 21.0.9 with PID 3900 (F:\xm\SGADQRS\backend\target\scms-backend-1.0.0.jar started by jiuxi in F:\xm\SGADQRS\backend)
+2026-06-19T19:18:03.075+08:00  INFO 3900 --- [main] com.scms.ScmsApplication                 : No active profile set, falling back to 1 default profile: "default"
+2026-06-19T19:18:05.406+08:00  INFO 3900 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-06-19T19:18:05.443+08:00  INFO 3900 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-19T19:18:05.444+08:00  INFO 3900 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-06-19T19:18:05.564+08:00  INFO 3900 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/api]    : Initializing Spring embedded WebApplicationContext
+2026-06-19T19:18:05.566+08:00  INFO 3900 --- [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2371 ms
+2026-06-19T19:18:07.955+08:00  INFO 3900 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@5bb7a59, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@4bfa5eb9, org.springframework.security.web.context.SecurityContextHolderFilter@4ced17f3, org.springframework.security.web.header.HeaderWriterFilter@30dd00b6, org.springframework.web.filter.CorsFilter@2a2b7a35, org.springframework.security.web.authentication.logout.LogoutFilter@30d5e37c, com.scms.security.JwtAuthenticationFilter@585513a8, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@6ce9771c, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@4a9b92c6, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@58186f9f, org.springframework.security.web.session.SessionManagementFilter@628ba266, org.springframework.security.web.access.ExceptionTranslationFilter@49e479da, org.springframework.security.web.access.intercept.AuthorizationFilter@6cd45b6c]
+2026-06-19T19:18:08.597+08:00  INFO 3900 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/api'
+2026-06-19T19:18:08.621+08:00  INFO 3900 --- [main] com.scms.ScmsApplication                 : Started ScmsApplication in 6.22 seconds (process running for 7.085)
+2026-06-19T19:18:18.734+08:00  INFO 3900 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/api]    : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-19T19:18:18.770+08:00  INFO 3900 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-19T19:18:18.772+08:00  INFO 3900 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-06-19T19:39:39.404+08:00  INFO 35064 --- [main] com.scms.ScmsApplication                 : Starting ScmsApplication v1.0.0 using Java 21.0.9 with PID 35064 (F:\xm\SGADQRS\backend\target\scms-backend-1.0.0.jar started by jiuxi in F:\xm\SGADQRS\backend)
+2026-06-19T19:39:39.406+08:00  INFO 35064 --- [main] com.scms.ScmsApplication                 : No active profile set, falling back to 1 default profile: "default"
+2026-06-19T19:39:41.733+08:00  INFO 35064 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-06-19T19:39:41.756+08:00  INFO 35064 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-19T19:39:41.757+08:00  INFO 35064 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-06-19T19:39:41.884+08:00  INFO 35064 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/api]    : Initializing Spring embedded WebApplicationContext
+2026-06-19T19:39:41.884+08:00  INFO 35064 --- [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2367 ms
+2026-06-19T19:39:44.316+08:00  INFO 35064 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@6eed46e9, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@4d20616a, org.springframework.security.web.context.SecurityContextHolderFilter@5df92089, org.springframework.security.web.header.HeaderWriterFilter@619c3546, org.springframework.web.filter.CorsFilter@6ad6ae45, org.springframework.security.web.authentication.logout.LogoutFilter@f849027, com.scms.security.JwtAuthenticationFilter@1e76afeb, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@45571cfc, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@faec277, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@7c4d1c7b, org.springframework.security.web.session.SessionManagementFilter@7548e1fb, org.springframework.security.web.access.ExceptionTranslationFilter@6cceb281, org.springframework.security.web.access.intercept.AuthorizationFilter@734a149a]
+2026-06-19T19:39:44.814+08:00  INFO 35064 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/api'
+2026-06-19T19:39:44.825+08:00  INFO 35064 --- [main] com.scms.ScmsApplication                 : Started ScmsApplication in 6.08 seconds (process running for 6.905)
+2026-06-19T19:39:57.777+08:00  INFO 35064 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/api]    : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-19T19:39:57.777+08:00  INFO 35064 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-19T19:39:57.778+08:00  INFO 35064 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-06-19T19:40:09.040+08:00  INFO 35064 --- [http-nio-8080-exec-4] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-19T19:40:09.242+08:00  INFO 35064 --- [http-nio-8080-exec-4] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4d3a59af
+2026-06-19T19:40:09.245+08:00  INFO 35064 --- [http-nio-8080-exec-4] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-19T20:13:37.182+08:00  INFO 20212 --- [main] com.scms.ScmsApplication                 : Starting ScmsApplication v1.0.0 using Java 21.0.9 with PID 20212 (F:\xm\SGADQRS\backend\target\scms-backend-1.0.0.jar started by jiuxi in F:\xm\SGADQRS\backend)
+2026-06-19T20:13:37.184+08:00  INFO 20212 --- [main] com.scms.ScmsApplication                 : No active profile set, falling back to 1 default profile: "default"
+2026-06-19T20:13:39.501+08:00  INFO 20212 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-06-19T20:13:39.528+08:00  INFO 20212 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-19T20:13:39.528+08:00  INFO 20212 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-06-19T20:13:39.639+08:00  INFO 20212 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/api]    : Initializing Spring embedded WebApplicationContext
+2026-06-19T20:13:39.639+08:00  INFO 20212 --- [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2344 ms
+2026-06-19T20:13:42.323+08:00  INFO 20212 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@75e0a54c, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@40f9f60d, org.springframework.security.web.context.SecurityContextHolderFilter@7c3c453b, org.springframework.security.web.header.HeaderWriterFilter@50ff7063, org.springframework.web.filter.CorsFilter@6bd7439d, org.springframework.security.web.authentication.logout.LogoutFilter@6182ffef, com.scms.security.JwtAuthenticationFilter@e62319f, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@15ac02d5, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2af9a5ef, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@628ba266, org.springframework.security.web.session.SessionManagementFilter@30cafd13, org.springframework.security.web.access.ExceptionTranslationFilter@5e24592e, org.springframework.security.web.access.intercept.AuthorizationFilter@1124910c]
+2026-06-19T20:13:42.957+08:00  INFO 20212 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/api'
+2026-06-19T20:13:42.973+08:00  INFO 20212 --- [main] com.scms.ScmsApplication                 : Started ScmsApplication in 6.463 seconds (process running for 7.268)
+2026-06-19T20:13:56.640+08:00  INFO 20212 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/api]    : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-19T20:13:56.640+08:00  INFO 20212 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-19T20:13:56.641+08:00  INFO 20212 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-06-19T20:13:56.937+08:00  INFO 20212 --- [http-nio-8080-exec-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-19T20:13:57.140+08:00  INFO 20212 --- [http-nio-8080-exec-1] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5c2a22b3
+2026-06-19T20:13:57.142+08:00  INFO 20212 --- [http-nio-8080-exec-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
