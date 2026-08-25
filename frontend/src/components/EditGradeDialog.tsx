@@ -201,11 +201,15 @@ export function EditGradeContainer() {
                 style={{ width: '100%', boxSizing: 'border-box', height: '40px' }}
               >
                 <option value="">请选择奖项</option>
-                {state.awards && state.awards.length > 0 ? (
-                  state.awards.map((award) => (
-                    <option key={award.level} value={award.level}>{award.name}</option>
-                  ))
-                ) : (
+                {(() => {
+                  let list = state.awards
+                  if (typeof list === 'string') { try { list = JSON.parse(list) } catch { list = null } }
+                  return Array.isArray(list) && list.length > 0 ? (
+                    list.map((award: { name: string; level: number }) => (
+                      <option key={award.level} value={award.level}>{award.name}</option>
+                    ))
+                  ) : null
+                })() || (
                   <>
                     <option value="1">特等奖</option>
                     <option value="2">一等奖</option>

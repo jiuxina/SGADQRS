@@ -147,7 +147,8 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const role = getRoleFromPath(location.pathname)
+  const pathRole = getRoleFromPath(location.pathname)
+  const role = (user?.role as 'admin' | 'teacher' | 'student') || pathRole
   const navItems = navItemsByRole[role] || navItemsByRole.student
   const mobileTabs = mobileTabItemsByRole[role] || mobileTabItemsByRole.student
   const activeId = navItems.find((item) => location.pathname === item.path)?.id || 'dashboard'

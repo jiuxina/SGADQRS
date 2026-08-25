@@ -27,7 +27,7 @@ export default function GlassModal({ open, onClose, title, maxWidth = '520px', c
           onClick={onClose}
         >
           <motion.div
-            className="glass-card glass-card-static"
+            className="glass-card glass-card-vertical glass-card-static"
             style={{
               width: '90%', maxWidth, maxHeight: '85vh', overflow: 'auto',
               padding: '24px', position: 'relative',

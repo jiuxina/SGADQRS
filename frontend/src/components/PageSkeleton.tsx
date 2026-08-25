@@ -63,7 +63,7 @@ export function DashboardSkeleton() {
 
 export function ListSkeleton() {
   return (
-    <div className="glass-card glass-card-static" style={{ padding: '0' }}>
+    <div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0' }}>
       {[1, 2, 3, 4, 5].map((i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
           <motion.div {...shimmer()} style={{ width: 32, height: 32, borderRadius: '8px', background: 'rgba(0,0,0,0.06)', flexShrink: 0 }} />
@@ -79,7 +79,7 @@ export function ListSkeleton() {
 
 export function TableSkeleton() {
   return (
-    <div className="glass-card glass-card-static" style={{ padding: '0' }}>
+    <div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0' }}>
       {/* Header row */}
       <div style={{ display: 'flex', gap: '16px', padding: '12px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <Bar width="80px" height="12px" />
