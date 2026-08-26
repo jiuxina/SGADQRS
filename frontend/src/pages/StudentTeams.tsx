@@ -315,7 +315,8 @@ export default function StudentTeams() {
 
       {/* 创建团队模态框 */}
       <GlassModal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="创建团队" maxWidth="400px">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>
               选择竞赛 <span style={{ color: '#ef4444' }}>*</span>
@@ -370,31 +371,34 @@ export default function StudentTeams() {
             {creating ? '创建中...' : '确认创建'}
           </button>
         </div>
+        </div>
       </GlassModal>
 
       {/* 加入团队模态框 */}
       <GlassModal open={showJoinModal} onClose={() => setShowJoinModal(false)} title="加入团队" maxWidth="380px">
-        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-          输入团队ID即可申请加入
-        </div>
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>
-            团队ID
-          </label>
-          <input
-            type="number"
-            className="glass-search"
-            placeholder="请输入团队ID"
-            value={joinTeamId}
-            onChange={(e) => setJoinTeamId(e.target.value)}
-            style={{ width: '100%', marginBottom: 0 }}
-          />
-        </div>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-          <button className="btn ghost" onClick={() => setShowJoinModal(false)}>取消</button>
-          <button className="btn ghost" onClick={handleJoin} disabled={joining}>
-            {joining ? '加入中...' : '申请加入'}
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+            输入团队ID即可申请加入
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>
+              团队ID
+            </label>
+            <input
+              type="number"
+              className="glass-search"
+              placeholder="请输入团队ID"
+              value={joinTeamId}
+              onChange={(e) => setJoinTeamId(e.target.value)}
+              style={{ width: '100%', marginBottom: 0 }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <button className="btn ghost" onClick={() => setShowJoinModal(false)}>取消</button>
+            <button className="btn ghost" onClick={handleJoin} disabled={joining}>
+              {joining ? '加入中...' : '申请加入'}
+            </button>
+          </div>
         </div>
       </GlassModal>
     </>

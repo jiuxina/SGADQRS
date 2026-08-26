@@ -46,7 +46,7 @@ function ScoreDistChart({ results }: { results: ResultItem[] }) {
   for (let i = 0; i < yTickCount; i++) yTicks.push(Math.round((maxCount * i) / (yTickCount - 1)))
 
   return (
-    <div className="glass-card glass-card-static" style={{ padding: '18px', marginTop: '16px' }}>
+    <div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '18px', marginTop: '16px' }}>
       <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '14px' }}>
         成绩分布
       </div>

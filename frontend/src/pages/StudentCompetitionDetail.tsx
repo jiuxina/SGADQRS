@@ -151,44 +151,64 @@ function StudentCompetitionDetailInner() {
       <PageHeader onBack={() => navigate('/student/competitions')} />
 
       <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" style={{ maxWidth: '960px', margin: '0 auto' }}>
-        {/* Cover Image */}
-        {resolveCoverUrl(comp.coverImage) && (
+        {/* Cover + Title Header */}
+        {resolveCoverUrl(comp.coverImage) ? (
           <div style={{
-            width: '100%', aspectRatio: '16/9', borderRadius: '16px',
-            overflow: 'hidden', marginBottom: '24px', position: 'relative',
+            display: 'flex', gap: '24px', marginBottom: '24px',
+            alignItems: isMobile ? 'stretch' : 'center',
+            flexDirection: isMobile ? 'column' : 'row',
           }}>
-            <img
-              src={resolveCoverUrl(comp.coverImage)!}
-              alt={comp.competitionName}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
             <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%)',
-            }} />
+              width: isMobile ? '100%' : '320px', flexShrink: 0,
+              aspectRatio: '16/9', borderRadius: '14px',
+              overflow: 'hidden',
+            }}>
+              <img
+                src={resolveCoverUrl(comp.coverImage)!}
+                alt={comp.competitionName}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                <h1 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
+                  {comp.competitionName}
+                </h1>
+                <span className={`glass-badge ${getStatusBadge(comp.status, 'student-competition').cls}`} style={{ fontSize: '12px', padding: '3px 10px' }}>
+                  {getStatusBadge(comp.status, 'student-competition').label}
+                </span>
+              </div>
+              <div style={{ fontSize: '14px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
+                主办方：{comp.organizer}
+              </div>
+              {comp.publisherName && (
+                <div style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>
+                  发布者：{comp.publisherName}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
+                {comp.competitionName}
+              </h1>
+              <span className={`glass-badge ${getStatusBadge(comp.status, 'student-competition').cls}`} style={{ fontSize: '12px', padding: '3px 10px' }}>
+                {getStatusBadge(comp.status, 'student-competition').label}
+              </span>
+            </div>
+            <div style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>
+              主办方：{comp.organizer}
+            </div>
+            {comp.publisherName && (
+              <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                发布者：{comp.publisherName}
+              </div>
+            )}
           </div>
         )}
-
-        {/* Title & Status */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
-              {comp.competitionName}
-            </h1>
-            <span className={`glass-badge ${getStatusBadge(comp.status, 'student-competition').cls}`} style={{ fontSize: '12px', padding: '3px 10px' }}>
-              {getStatusBadge(comp.status, 'student-competition').label}
-            </span>
-          </div>
-          <div style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>
-            主办方：{comp.organizer}
-          </div>
-          {comp.publisherName && (
-            <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-              发布者：{comp.publisherName}
-            </div>
-          )}
-        </div>
 
         {/* Countdown - only for registering status */}
         {comp.status === 2 && !comp.hasRegistered && (

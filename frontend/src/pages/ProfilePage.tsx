@@ -222,7 +222,7 @@ export default function ProfilePage() {
       </div>
 
       {/* 编辑个人信息 */}
-      <div className="glass-card glass-card-static" style={{ padding: '24px', marginBottom: '24px' }}>
+      <div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
           <User size={18} strokeWidth={1.8} color="#007AFF" />
           <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
@@ -299,24 +299,6 @@ export default function ProfilePage() {
                     onChange={() => setFormData({ ...formData, gender: g })}
                     style={{ display: 'none' }}
                   />
-                  <span style={{
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    border: `2px solid ${formData.gender === g ? '#007AFF' : 'rgba(0,0,0,0.2)'}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    {formData.gender === g && (
-                      <span style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#007AFF',
-                      }} />
-                    )}
-                  </span>
                   <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{genderLabel(g)}</span>
                 </label>
               ))}
@@ -336,7 +318,7 @@ export default function ProfilePage() {
       </div>
 
       {/* 修改密码 */}
-      <div className="glass-card glass-card-static" style={{ padding: '24px' }}>
+      <div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
           <Lock size={18} strokeWidth={1.8} color="#007AFF" />
           <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>

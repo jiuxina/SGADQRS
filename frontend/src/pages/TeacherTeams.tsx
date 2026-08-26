@@ -184,9 +184,9 @@ export default function TeacherTeams() {
                   <td>
                     {(team.status === 0 || team.status === 1) ? (
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        <button className="btn ghost" style={{ padding: '4px 8px', fontSize: '12px', color: 'var(--accent)' }}
+                        <button className="text-btn blue" style={{ fontSize: '12px' }}
                           onClick={() => handleAudit(team.id, 2)}>通过</button>
-                        <button className="btn ghost" style={{ padding: '4px 8px', fontSize: '12px', color: 'var(--danger)' }}
+                        <button className="text-btn danger" style={{ fontSize: '12px' }}
                           onClick={() => handleReject(team.id)}>拒绝</button>
                       </div>
                     ) : <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>-</span>}
