@@ -1,3 +1,4 @@
+import { Component, type ReactNode, type ErrorInfo } from 'react'
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import AdminDashboard from './pages/AdminDashboard'
@@ -35,8 +36,49 @@ function DashboardLayout() {
   )
 }
 
+class GlobalErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('全局错误边界捕获:', error, info)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          height: '100dvh', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: '16px',
+          background: 'var(--bg-primary, #f5f5f7)', color: 'var(--text-primary)',
+        }}>
+          <div style={{ fontSize: '16px', fontWeight: '600' }}>页面出现了意外错误</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', maxWidth: '400px', textAlign: 'center' }}>
+            {this.state.error?.message || '未知错误'}
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '8px 24px', borderRadius: '10px', border: 'none',
+              background: '#007AFF', color: '#fff', fontSize: '14px',
+              fontWeight: '600', cursor: 'pointer',
+            }}
+          >
+            刷新页面
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 function App() {
   return (
+    <GlobalErrorBoundary>
     <div style={{ height: '100dvh', overflow: 'hidden' }}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -80,6 +122,7 @@ function App() {
       <PromptContainer />
       <EditGradeContainer />
     </div>
+    </GlobalErrorBoundary>
   )
 }
 
