@@ -83,11 +83,13 @@ CREATE TABLE IF NOT EXISTS `competition_team` (
     `competition_id` BIGINT NOT NULL,
     `team_name` VARCHAR(50) NOT NULL,
     `leader_id` BIGINT NOT NULL COMMENT '队长ID',
+    `teacher_id` BIGINT DEFAULT NULL COMMENT '指导老师ID → sys_user.id',
     `team_slogan` VARCHAR(200) DEFAULT NULL,
     `status` TINYINT NOT NULL DEFAULT 0 COMMENT '0-组建中 1-已提交 2-已通过 3-已拒绝',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    KEY `idx_team_comp` (`competition_id`)
+    KEY `idx_team_comp` (`competition_id`),
+    KEY `idx_team_teacher` (`teacher_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='团队信息表';
 
 CREATE TABLE IF NOT EXISTS `competition_team_member` (
@@ -95,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `competition_team_member` (
     `team_id` BIGINT NOT NULL,
     `student_id` BIGINT NOT NULL,
     `join_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '0-已退出 1-正常',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '0-已退出 1-正常 2-待审核 3-已拒绝',
     PRIMARY KEY (`id`),
     KEY `idx_tm_team` (`team_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='团队成员表';
@@ -172,10 +174,10 @@ INSERT INTO `competition_registration` VALUES (4, 3, NULL, 6, 1, '13700000003', 
 INSERT INTO `competition_registration` VALUES (5, 5, NULL, 7, 0, '13700000004', NULL, NULL, 2, '名额已满', NOW(), NOW());
 INSERT INTO `competition_registration` VALUES (6, 6, NULL, 8, 0, '13700000005', NULL, NULL, 0, NULL, NULL, NOW());
 
--- 团队数据
-INSERT INTO `competition_team` VALUES (1, 1, '算法小分队', 4, '热爱数学建模', 2, NOW());
-INSERT INTO `competition_team` VALUES (2, 3, '创新未来队', 6, '用科技改变世界', 2, NOW());
-INSERT INTO `competition_team` VALUES (3, 2, '代码大师队', 4, '挑战极限', 1, NOW());
+-- 团队数据 (含指导老师)
+INSERT INTO `competition_team` VALUES (1, 1, '算法小分队', 4, 2, '热爱数学建模', 2, NOW());
+INSERT INTO `competition_team` VALUES (2, 3, '创新未来队', 6, 3, '用科技改变世界', 2, NOW());
+INSERT INTO `competition_team` VALUES (3, 2, '代码大师队', 4, NULL, '挑战极限', 1, NOW());
 
 -- 团队成员
 INSERT INTO `competition_team_member` VALUES (1, 1, 4, NOW(), 1);
