@@ -16,4 +16,7 @@ public class TeamDTO {
     private String teamName;
 
     private String teamSlogan;
+
+    /** 指导老师ID（可选） */
+    private Long teacherId;
 }

@@ -73,9 +73,10 @@ public class RegistrationController {
                               @RequestParam(defaultValue = "10") int size,
                               @RequestParam(required = false) Long competitionId,
                               @RequestParam(required = false) Integer status,
+                              @RequestParam(required = false) Long teacherId,
                               @AuthenticationPrincipal LoginUser loginUser) {
-        Long publisherId = "teacher".equals(loginUser.getRoleCode()) ? loginUser.getUserId() : null;
-        return registrationService.listTeams(current, size, competitionId, status, publisherId);
+        Long publisherId = "teacher".equals(loginUser.getRoleCode()) && teacherId == null ? loginUser.getUserId() : null;
+        return registrationService.listTeams(current, size, competitionId, status, publisherId, teacherId);
     }
 
     @Operation(summary = "创建团队")
@@ -101,5 +102,39 @@ public class RegistrationController {
                                @RequestParam Integer status,
                                @RequestParam(required = false) String auditRemark) {
         return registrationService.auditTeam(id, status, auditRemark);
+    }
+
+    // ===== 指导老师操作 =====
+
+    @Operation(summary = "接受指导邀请")
+    @PutMapping("/team/{teamId}/advisor/accept")
+    @PreAuthorize("hasRole('TEACHER')")
+    public Result<?> acceptAdvisor(@PathVariable Long teamId,
+                                   @AuthenticationPrincipal LoginUser loginUser) {
+        return registrationService.acceptAdvisor(teamId, loginUser.getUserId());
+    }
+
+    @Operation(summary = "拒绝指导邀请")
+    @PutMapping("/team/{teamId}/advisor/reject")
+    @PreAuthorize("hasRole('TEACHER')")
+    public Result<?> rejectAdvisor(@PathVariable Long teamId,
+                                   @AuthenticationPrincipal LoginUser loginUser) {
+        return registrationService.rejectAdvisor(teamId, loginUser.getUserId());
+    }
+
+    @Operation(summary = "审核入队请求")
+    @PutMapping("/team/{teamId}/member/{memberId}/audit")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public Result<?> auditJoinRequest(@PathVariable Long teamId,
+                                      @PathVariable Long memberId,
+                                      @RequestParam Integer status) {
+        return registrationService.auditJoinRequest(teamId, memberId, status);
+    }
+
+    @Operation(summary = "获取待审核入队申请")
+    @GetMapping("/team/{teamId}/member/pending")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public Result<?> listPendingJoinRequests(@PathVariable Long teamId) {
+        return registrationService.listPendingJoinRequests(teamId);
     }
 }

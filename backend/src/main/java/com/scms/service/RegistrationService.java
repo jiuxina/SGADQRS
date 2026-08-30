@@ -139,7 +139,7 @@ public class RegistrationService {
 
     // ===== 团队管理 =====
 
-    public Result<?> listTeams(int current, int size, Long competitionId, Integer status, Long publisherId) {
+    public Result<?> listTeams(int current, int size, Long competitionId, Integer status, Long publisherId, Long teacherId) {
         Page<CompetitionTeam> page = new Page<>(current, size);
         LambdaQueryWrapper<CompetitionTeam> wrapper = new LambdaQueryWrapper<>();
         if (competitionId != null) wrapper.eq(CompetitionTeam::getCompetitionId, competitionId);
@@ -147,6 +147,7 @@ public class RegistrationService {
         if (publisherId != null) {
             wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
         }
+        if (teacherId != null) wrapper.eq(CompetitionTeam::getTeacherId, teacherId);
         wrapper.orderByDesc(CompetitionTeam::getCreateTime);
 
         Page<CompetitionTeam> result = teamMapper.selectPage(page, wrapper);
@@ -160,6 +161,7 @@ public class RegistrationService {
         team.setCompetitionId(dto.getCompetitionId());
         team.setTeamName(dto.getTeamName());
         team.setLeaderId(leaderId);
+        team.setTeacherId(dto.getTeacherId());
         team.setTeamSlogan(dto.getTeamSlogan());
         team.setStatus(0);
         teamMapper.insert(team);
@@ -184,17 +186,19 @@ public class RegistrationService {
                 new LambdaQueryWrapper<CompetitionTeamMember>()
                         .eq(CompetitionTeamMember::getTeamId, teamId)
                         .eq(CompetitionTeamMember::getStudentId, studentId)
-                        .eq(CompetitionTeamMember::getStatus, 1)
+                        .in(CompetitionTeamMember::getStatus, 1, 2)
         );
-        if (count > 0) return Result.error("您已在该团队中");
+        if (count > 0) return Result.error("您已在该团队中或正在等待审核");
 
         CompetitionTeamMember member = new CompetitionTeamMember();
         member.setTeamId(teamId);
         member.setStudentId(studentId);
-        member.setStatus(1);
+        // 有指导老师时需要老师审核，status=2(待审核)；无指导老师则直接加入
+        member.setStatus(team.getTeacherId() != null ? 2 : 1);
         teamMemberMapper.insert(member);
 
-        return Result.success("加入团队成功", null);
+        String msg = team.getTeacherId() != null ? "已提交入队申请，等待指导老师审核" : "加入团队成功";
+        return Result.success(msg, null);
     }
 
     @Transactional
@@ -219,6 +223,89 @@ public class RegistrationService {
         return Result.success(status == 2 ? "审核通过" : "已拒绝", null);
     }
 
+    // ===== 指导老师相关 =====
+
+    /**
+     * 教师接受指导邀请
+     */
+    @Transactional
+    public Result<?> acceptAdvisor(Long teamId, Long teacherId) {
+        CompetitionTeam team = teamMapper.selectById(teamId);
+        if (team == null) return Result.error("团队不存在");
+        if (!teacherId.equals(team.getTeacherId())) return Result.error("您不是该团队的邀请指导老师");
+        // 教师接受后，团队状态可保持不变（由学生决定是否提交审核）
+        return Result.success("已接受指导邀请", null);
+    }
+
+    /**
+     * 教师拒绝指导邀请（清除teacher_id）
+     */
+    @Transactional
+    public Result<?> rejectAdvisor(Long teamId, Long teacherId) {
+        CompetitionTeam team = teamMapper.selectById(teamId);
+        if (team == null) return Result.error("团队不存在");
+        if (!teacherId.equals(team.getTeacherId())) return Result.error("您不是该团队的邀请指导老师");
+        team.setTeacherId(null);
+        teamMapper.updateById(team);
+
+        // 将所有待审核成员改为直接加入（无需老师审核了）
+        List<CompetitionTeamMember> pendingMembers = teamMemberMapper.selectList(
+                new LambdaQueryWrapper<CompetitionTeamMember>()
+                        .eq(CompetitionTeamMember::getTeamId, teamId)
+                        .eq(CompetitionTeamMember::getStatus, 2)
+        );
+        for (CompetitionTeamMember m : pendingMembers) {
+            m.setStatus(1);
+            teamMemberMapper.updateById(m);
+        }
+
+        return Result.success("已拒绝指导邀请", null);
+    }
+
+    /**
+     * 指导老师审核入队请求
+     */
+    @Transactional
+    public Result<?> auditJoinRequest(Long teamId, Long memberId, Integer status) {
+        CompetitionTeam team = teamMapper.selectById(teamId);
+        if (team == null) return Result.error("团队不存在");
+
+        CompetitionTeamMember member = teamMemberMapper.selectById(memberId);
+        if (member == null) return Result.error("成员记录不存在");
+        if (!member.getTeamId().equals(teamId)) return Result.error("该成员不属于此团队");
+        if (member.getStatus() != 2) return Result.error("该成员不在待审核状态");
+
+        if (status == 1) {
+            member.setStatus(1); // 通过
+        } else if (status == 3) {
+            member.setStatus(3); // 拒绝
+        } else {
+            return Result.error("无效的审核状态");
+        }
+        teamMemberMapper.updateById(member);
+
+        return Result.success(status == 1 ? "已通过入队申请" : "已拒绝入队申请", null);
+    }
+
+    /**
+     * 获取教师的待处理入队申请（指定团队的待审核成员）
+     */
+    public Result<?> listPendingJoinRequests(Long teamId) {
+        List<CompetitionTeamMember> members = teamMemberMapper.selectList(
+                new LambdaQueryWrapper<CompetitionTeamMember>()
+                        .eq(CompetitionTeamMember::getTeamId, teamId)
+                        .eq(CompetitionTeamMember::getStatus, 2)
+        );
+        members.forEach(m -> {
+            User user = userMapper.selectById(m.getStudentId());
+            if (user != null) {
+                m.setStudentName(user.getRealName());
+                m.setStudentUsername(user.getUsername());
+            }
+        });
+        return Result.success("查询成功", members);
+    }
+
     private void fillRegistrationInfo(CompetitionRegistration reg) {
         if (reg.getCompetitionId() != null) {
             Competition comp = competitionMapper.selectById(reg.getCompetitionId());
@@ -239,6 +326,10 @@ public class RegistrationService {
             User leader = userMapper.selectById(team.getLeaderId());
             if (leader != null) team.setLeaderName(leader.getRealName());
         }
+        if (team.getTeacherId() != null) {
+            User teacher = userMapper.selectById(team.getTeacherId());
+            if (teacher != null) team.setTeacherName(teacher.getRealName());
+        }
         if (team.getCompetitionId() != null) {
             Competition comp = competitionMapper.selectById(team.getCompetitionId());
             if (comp != null) team.setCompetitionName(comp.getCompetitionName());
@@ -247,7 +338,7 @@ public class RegistrationService {
         List<CompetitionTeamMember> members = teamMemberMapper.selectList(
                 new LambdaQueryWrapper<CompetitionTeamMember>()
                         .eq(CompetitionTeamMember::getTeamId, team.getId())
-                        .eq(CompetitionTeamMember::getStatus, 1)
+                        .in(CompetitionTeamMember::getStatus, 1, 2)
         );
         members.forEach(m -> {
             User user = userMapper.selectById(m.getStudentId());
