@@ -142,6 +142,8 @@ export interface TeamItem {
   teamName: string
   leaderId: number
   leaderName: string | null
+  teacherId: number | null
+  teacherName: string | null
   teamSlogan: string | null
   status: number
   members: TeamMember[]
