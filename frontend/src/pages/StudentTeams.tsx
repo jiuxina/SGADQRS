@@ -8,15 +8,16 @@ import {
   Calendar,
   Hash,
   MessageSquareQuote,
+  GraduationCap,
 } from 'lucide-react'
 import ListMeta from '../components/ListMeta'
 import EmptyState from '../components/EmptyState'
 import { ListSkeleton } from '../components/PageSkeleton'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import GlassModal from '../components/GlassModal'
-import { registrationApi, competitionApi } from '../api'
+import { registrationApi, competitionApi, userApi } from '../api'
 import { toast } from '../components/toastUtils'
-import type { TeamItem, CompetitionItem } from '../api/types'
+import type { TeamItem, CompetitionItem, UserItem } from '../api/types'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { formatDate } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
@@ -35,9 +36,10 @@ const teamStatusClass: Record<number, string> = {
 }
 
 const memberStatusLabel: Record<number, string> = {
-  0: '待确认',
+  0: '已退出',
   1: '已确认',
-  2: '已拒绝',
+  2: '待审核',
+  3: '已拒绝',
 }
 
 export default function StudentTeams() {
@@ -54,6 +56,10 @@ export default function StudentTeams() {
   const [creating, setCreating] = useState(false)
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [loadingCompetitions, setLoadingCompetitions] = useState(false)
+
+  // 指导老师
+  const [teachers, setTeachers] = useState<UserItem[]>([])
+  const [selectedTeacherId, setSelectedTeacherId] = useState('')
 
   // 加入团队
   const [showJoinModal, setShowJoinModal] = useState(false)
@@ -92,15 +98,21 @@ export default function StudentTeams() {
     }).finally(() => setLoading(false))
   }, [fetchData])
 
-  // 打开创建模态框时加载竞赛列表
+  // 打开创建模态框时加载竞赛列表和教师列表
   useEffect(() => {
     if (!showCreateModal) return
     setLoadingCompetitions(true)
-    competitionApi.list({ current: 1, size: 100 })
-      .then(result => setCompetitions(result.records))
+    Promise.all([
+      competitionApi.list({ current: 1, size: 100 }),
+      userApi.list({ current: 1, size: 100, userType: 2 }),
+    ])
+      .then(([compResult, teacherResult]) => {
+        setCompetitions(compResult.records)
+        setTeachers(teacherResult.records)
+      })
       .catch(err => {
-        toast.error('加载竞赛列表失败')
-        console.error('加载竞赛列表失败:', err)
+        toast.error('加载数据失败')
+        console.error('加载数据失败:', err)
       })
       .finally(() => setLoadingCompetitions(false))
   }, [showCreateModal])
@@ -120,12 +132,14 @@ export default function StudentTeams() {
         competitionId: Number(createCompId),
         teamName: teamName.trim(),
         teamSlogan: teamSlogan.trim() || undefined,
+        teacherId: selectedTeacherId ? Number(selectedTeacherId) : undefined,
       })
       toast.success('团队创建成功')
       setShowCreateModal(false)
       setCreateCompId('')
       setTeamName('')
       setTeamSlogan('')
+      setSelectedTeacherId('')
       loadData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '创建失败')
@@ -254,6 +268,10 @@ export default function StudentTeams() {
                   队长：{team.leaderName ?? `用户#${team.leaderId}`}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                  <GraduationCap size={12} strokeWidth={1.5} />
+                  指导老师：{team.teacherName ?? '未指定'}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
                   <Users size={12} strokeWidth={1.5} />
                   成员 {team.members.length} 人
                 </div>
@@ -287,7 +305,10 @@ export default function StudentTeams() {
                           )}
                           <span>{m.studentName ?? m.studentUsername ?? `用户#${m.studentId}`}</span>
                         </div>
-                        <span style={{ fontSize: '11px', color: m.status === 1 ? 'var(--accent)' : 'var(--text-tertiary)' }}>
+                        <span style={{
+                          fontSize: '11px',
+                          color: m.status === 1 ? 'var(--accent)' : m.status === 2 ? '#f59e0b' : m.status === 3 ? '#ef4444' : 'var(--text-tertiary)',
+                        }}>
                           {memberStatusLabel[m.status] ?? ''}
                         </span>
                       </div>
@@ -363,6 +384,25 @@ export default function StudentTeams() {
               maxLength={100}
               style={{ width: '100%', marginBottom: 0 }}
             />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>
+              指导老师
+            </label>
+            <select
+              className="glass-search"
+              value={selectedTeacherId}
+              onChange={(e) => setSelectedTeacherId(e.target.value)}
+              disabled={loadingCompetitions}
+              style={{ width: '100%', marginBottom: 0 }}
+            >
+              <option value="">不指定（可选）</option>
+              {teachers.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.realName}{t.deptName ? ` - ${t.deptName}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
