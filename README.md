@@ -1,113 +1,59 @@
 # SCMS - 学生竞赛信息管理系统
 
-Student Competition Information Management System
-
-## 项目简介
-
-SCMS 是一个面向高校的学生竞赛信息管理平台，支持管理员、教师、学生三种角色，提供竞赛管理、报名管理、成绩管理、团队协作等功能。项目包含 7 张数据表。
-
-## 功能特性
-
-### 管理员
-- 系统总览仪表盘
-- 用户管理（增删改查、启用/禁用、批量操作）
-- 竞赛审核与管理
-- 报名监管（批量审核）
-- 成绩管理（编辑、发布、批量录入）
-- 公告管理（草稿支持）
-- 数据统计（日期筛选、CSV 导出）
-
-### 教师
-- 竞赛创建与管理（支持自定义奖项）
-- 团队管理（审核备注）
-- 成绩录入与发布（批量导入 CSV、按竞赛自定义奖项选择）
-
-### 学生
-- 竞赛浏览与报名
-- 团队组建与管理
-- 成绩查询（显示自定义奖项名称）
-- 参赛历史
+> Student Competition Information Management System
+>
+> 面向高校的学生竞赛信息管理平台，支持管理员、教师、学生三种角色，覆盖竞赛发布、报名审核、团队组建、成绩录入、数据统计全流程。
 
 ## 技术栈
 
-### 前端
-- **框架**: React 19 + TypeScript
-- **构建**: Vite 8
-- **样式**: Tailwind CSS 4
-- **状态管理**: Zustand 5
-- **路由**: React Router DOM 7
-- **动画**: Motion (Framer Motion)
-- **图标**: Lucide React
-- **富文本**: TipTap
+前端: React 19 + TypeScript + Vite 8 + Tailwind CSS 4 + Zustand 5 + React Router 7 + Motion (Framer Motion) + Lucide React + TipTap 富文本编辑器
 
-### 后端
-- **框架**: Spring Boot 3.2.5
-- **ORM**: MyBatis-Plus 3.5.6
-- **数据库**: MySQL 8 (Docker)
-- **认证**: JWT (jjwt 0.12.5)
-- **安全**: Spring Security
-- **API 文档**: SpringDoc OpenAPI 2.5.0
-- **Excel 导出**: EasyExcel 3.3.4
-- **工具包**: Hutool 5.8.27
+后端: Spring Boot 3.2.5 + Java 17 + MyBatis-Plus 3.5.6 + MySQL 8 + Spring Security + JWT (jjwt 0.12.5) + EasyExcel 3.3.4 + SpringDoc OpenAPI 2.5.0
 
 ## 快速开始
 
 ### 环境要求
 
-- JDK 17+
-- Node.js 18+
-- MySQL 8.0+
-- Maven 3.8+
+JDK 17+、Node.js 18+、MySQL 8.0+、Maven 3.8+
 
 ### 数据库准备
 
-MySQL 运行在 Docker 容器中。确保 Docker 已启动，然后：
+MySQL 运行在 Docker 容器 `mysql-scms` 中（端口 3306）。创建数据库并导入初始化脚本:
 
 ```sql
--- 创建数据库
 CREATE DATABASE scms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
 
--- 导入初始化脚本
-mysql -u root -p scms < backend/sql/init.sql
+```bash
+docker exec -i mysql-scms mysql -u root -proot scms < backend/sql/init.sql
 ```
 
 ### 启动项目
 
-#### 方式一：一键启动全栈（推荐）
+**一键启动（推荐）:**
 
 ```bash
-# 直接运行 start.bat 即可打开全栈
 start.bat
 ```
 
-该脚本会自动：
-- 检查 Java、Node.js、MySQL 环境
-- 创建数据库（如果不存在）
-- 启动后端服务（端口 8080）
-- 启动前端服务（端口 5174）
-- 启动动画演示（端口 3001）
-- 自动打开浏览器
+该脚本自动检查环境、创建数据库、启动后端 (8080)、前端 (5174)、动画演示 (3001) 并打开浏览器。注意: start.bat 使用预构建的 JAR 文件 (`backend/target/scms-backend-1.0.0.jar`) 启动后端，需先执行 `mvn clean package -DskipTests` 构建 JAR。
 
-#### 方式二：使用启动所有服务脚本
+**开发模式启动 (使用 mvn spring-boot:run):**
 
 ```bash
-# 启动所有服务
 start-all.bat
-
-# 停止所有服务
-stop-all.bat
 ```
 
-#### 方式三：手动启动
+该脚本使用 `mvn spring-boot:run` 启动后端（支持热编译）、`npm run dev` 启动前端，适合日常开发调试。
 
-**启动后端：**
+**手动启动:**
+
 ```bash
+# 终端 1 - 后端
 cd backend
-mvn spring-boot:run
-```
+C:\apache-maven\apache-maven-3.9.16\bin\mvn.cmd spring-boot:run
 
-**启动前端：**
-```bash
+# 终端 2 - 前端
 cd frontend
 npm install
 npm run dev
@@ -115,13 +61,11 @@ npm run dev
 
 ### 访问地址
 
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| 前端 | http://localhost:5174 | 使用 start.bat 启动时的前端地址 |
-| 前端（备用） | http://localhost:3000 | 手动启动时的前端地址 |
-| 后端 API | http://localhost:8080/api | |
-| Swagger | http://localhost:8080/api/swagger-ui.html | |
-| 动画演示 | http://localhost:3001 | 使用 start.bat 启动时自动启动 |
+| 服务 | 地址 |
+|------|------|
+| 前端 | http://localhost:5174 (start.bat) 或 http://localhost:3000 (手动) |
+| 后端 API | http://localhost:8080/api |
+| Swagger 文档 | http://localhost:8080/api/swagger-ui.html |
 
 ### 默认账号
 
@@ -135,191 +79,76 @@ npm run dev
 
 ```
 SGADQRS/
-├── frontend/                # 前端项目
+├── frontend/                    # 前端项目 (React + Vite)
 │   ├── src/
-│   │   ├── api/             # API 请求
-│   │   │   └── modules/     # 按功能分组 (auth, competition, registration, result, export, system, user)
-│   │   ├── components/      # 通用组件 (29 个)
-│   │   ├── config/          # 环境变量和常量
-│   │   ├── hooks/           # 自定义 Hooks
-│   │   ├── motion/          # 动画配置
-│   │   ├── pages/           # 页面组件 (按 admin/teacher/student 分组)
-│   │   ├── store/           # Zustand 状态管理
-│   │   ├── types/           # 类型声明
-│   │   └── utils/           # 工具函数
+│   │   ├── api/                 # API 请求层
+│   │   │   ├── request.ts       # Axios 实例 + JWT 拦截器
+│   │   │   ├── types.ts         # TypeScript 类型定义
+│   │   │   └── modules/         # 按功能分组的 API 模块
+│   │   ├── components/          # 通用组件 (29 个)
+│   │   ├── config/              # 环境变量 + 常量
+│   │   ├── hooks/               # 自定义 Hooks (6 个)
+│   │   ├── motion/              # Motion 动画配置
+│   │   ├── pages/               # 页面 (按 admin/teacher/student 分组, 共 21 个)
+│   │   ├── store/               # Zustand 状态管理
+│   │   ├── types/               # 类型声明
+│   │   └── utils/               # 工具函数
 │   └── package.json
-├── backend/                 # 后端项目
+├── backend/                     # 后端项目 (Spring Boot)
 │   ├── src/main/java/com/scms/
-│   │   ├── common/          # 通用类 (Result, GlobalExceptionHandler)
-│   │   ├── config/          # 配置 (MyBatis, WebMvc)
-│   │   ├── controller/      # REST 控制器 (9 个)
-│   │   ├── dto/             # 数据传输对象
-│   │   ├── entity/          # 数据库实体
-│   │   ├── export/          # Excel 导出模型
-│   │   ├── mapper/          # MyBatis Mapper
-│   │   ├── security/        # JWT + Spring Security
-│   │   ├── service/         # 业务逻辑
-│   │   └── util/            # 工具类 (ExcelUtil)
-│   ├── sql/                 # 数据库脚本
+│   │   ├── common/              # 通用类 (Result, GlobalExceptionHandler)
+│   │   ├── config/              # 配置 (MyBatis, WebMvc, MetaObjectHandler)
+│   │   ├── controller/          # REST 控制器 (10 个, ~50 个 API 端点)
+│   │   ├── dto/                 # 数据传输对象 (12 个)
+│   │   ├── entity/              # 数据库实体 (7 个)
+│   │   ├── export/              # Excel 导出模型 (5 个)
+│   │   ├── mapper/              # MyBatis Mapper (7 个)
+│   │   ├── security/            # JWT + Spring Security (5 个)
+│   │   ├── service/             # 业务逻辑 (8 个)
+│   │   └── util/                # 工具类 (ExcelUtil)
+│   ├── src/main/resources/
+│   │   └── application.yml      # 应用配置
+│   ├── sql/
+│   │   └── init.sql             # 建表 + 初始数据
 │   └── pom.xml
-├── docs/                    # 文档 (ER 图)
-├── AGENT.md                 # AI 代理指南
-└── README.md                # 本文件
+├── docs/                        # 项目文档
+├── start.bat / stop.bat         # 启停脚本 (JAR 模式)
+├── start-all.bat / stop-all.bat # 开发启停脚本 (mvn 模式)
+├── AGENT.md                     # AI 代理指南
+├── DEVELOPMENT.md               # 完整开发文档
+└── README.md                    # 本文件
 ```
 
-## 配置说明
+## 核心功能
 
-### 后端配置 (application.yml)
+**管理员**: 系统总览仪表盘、用户 CRUD (含批量操作)、竞赛审核与管理、报名监管 (批量审核)、成绩管理与发布、公告管理 (富文本 + 草稿)、数据统计与 CSV 导出
 
-```yaml
-server:
-  port: 8080
-  servlet:
-    context-path: /api
+**教师**: 竞赛创建与管理 (自定义奖项、附件上传)、团队管理 (含指导老师审核)、成绩录入与发布 (批量 CSV 导入)、仪表盘
 
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/scms
-    username: root
-    password: root
+**学生**: 竞赛浏览与报名、团队组建 (创建/加入/邀请指导老师)、成绩查询 (自定义奖项展示)、参赛历史时间线
 
-jwt:
-  secret: your-secret-key
-  expiration: 86400000  # 24小时
-```
+## 数据库
 
-### 前端配置 (vite.config.ts)
+系统共 7 张表: `sys_user` (用户)、`competition` (竞赛)、`competition_registration` (报名)、`competition_team` (团队)、`competition_team_member` (团队成员)、`competition_result` (成绩)、`sys_notice` (公告)。
 
-```typescript
-export default defineConfig({
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-      },
-    },
-  },
-})
-```
+完整的表结构定义、字段说明和表间关系详见 [AGENT.md](AGENT.md) 和 [DEVELOPMENT.md](DEVELOPMENT.md)。
 
-## API 接口
+> 当前数据库结构为最终定稿，禁止新增表/字段、删除表/字段、修改字段类型或添加 FK 约束。如需变更须用户明确确认并同步更新文档。
 
-> 完整接口文档：启动后端后访问 `http://localhost:8080/api/swagger-ui.html`
-
-### 认证
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /api/auth/login | 用户登录 |
-| POST | /api/auth/register | 用户注册 |
-| GET | /api/auth/info | 获取当前用户信息 |
-
-### 竞赛管理
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/competition/list | 竞赛列表（分页、筛选） |
-| GET | /api/competition/{id} | 竞赛详情 |
-| POST | /api/competition | 创建竞赛 |
-| PUT | /api/competition | 更新竞赛 |
-| PUT | /api/competition/{id}/audit | 审核竞赛 |
-| DELETE | /api/competition/{id} | 删除竞赛 |
-| GET | /api/competition/dashboard | 仪表盘统计 |
-
-### 报名管理
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/registration/list | 报名列表 |
-| POST | /api/registration | 学生报名 |
-| PUT | /api/registration/{id}/audit | 审核报名 |
-| PUT | /api/registration/batch-audit | 批量审核报名 |
-| DELETE | /api/registration/{id} | 取消报名 |
-| GET | /api/registration/teams | 团队列表 |
-| POST | /api/registration/team | 创建团队 |
-| POST | /api/registration/team/{id}/join | 加入团队 |
-| PUT | /api/registration/team/{id}/audit | 审核团队（支持 auditRemark 参数） |
-
-### 成绩管理
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/result/list | 成绩列表 |
-| POST | /api/result | 录入成绩 |
-| PUT | /api/result | 更新成绩 |
-| POST | /api/result/publish/{competitionId} | 发布成绩 |
-| GET | /api/result/student/stats | 学生成绩统计 |
-| GET | /api/result/stats | 按竞赛统计成绩（平均/最高/最低分） |
-| POST | /api/result/batch | 批量录入成绩 |
-
-### 用户管理
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/user/list | 用户列表 |
-| GET | /api/user/{id} | 用户详情 |
-| POST | /api/user | 创建用户 |
-| PUT | /api/user | 更新用户 |
-| DELETE | /api/user/{id} | 删除用户 |
-| PUT | /api/user/disable/{id} | 启用/禁用用户 |
-| PUT | /api/user/reset-password/{id} | 重置密码 |
-| POST | /api/user/batch-delete | 批量删除用户 |
-| POST | /api/user/batch-disable | 批量禁用/启用用户 |
-| GET | /api/user/stats | 用户统计（学生/教师/管理员数量） |
-
-### 公告管理
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/notice/list | 公告列表 |
-| POST | /api/notice | 发布公告 |
-| PUT | /api/notice | 更新公告 |
-| DELETE | /api/notice/{id} | 删除公告 |
-| PUT | /api/notice/{id}/top | 置顶/取消置顶 |
-
-### 数据统计
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/stats/admin | 管理员统计数据 |
-| GET | /api/stats/enrollment-trends | 报名趋势 |
-| GET | /api/stats/competition-rankings | 竞赛热度排行 |
-| GET | /api/stats/upcoming | 即将开始/截止的竞赛 |
-
-### 文件上传
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /api/file/upload | 上传文件 |
-
-### 数据导出
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/export/competitions | 导出竞赛 |
-| GET | /api/export/registrations | 导出报名 |
-| GET | /api/export/teams | 导出团队 |
-| GET | /api/export/results | 导出成绩 |
-| GET | /api/export/student-transcript | 学生成绩单 |
-
-## 部署
-
-### 生产环境构建
+## 生产部署
 
 ```bash
-# 后端
+# 后端打包
 cd backend
-mvn clean package -DskipTests
+C:\apache-maven\apache-maven-3.9.16\bin\mvn.cmd clean package -DskipTests
 java -jar target/scms-backend-1.0.0.jar
 
-# 前端
+# 前端构建
 cd frontend
 npm run build
-# 将 dist/ 目录部署到 Nginx
 ```
 
-### Nginx 配置示例
+Nginx 反向代理配置:
 
 ```nginx
 server {
@@ -339,77 +168,6 @@ server {
 }
 ```
 
-## 开发指南
-
-### 添加新页面
-
-1. 在 `frontend/src/pages/` 创建页面组件
-2. 在 `frontend/src/App.tsx` 添加路由
-3. 在 `frontend/src/components/DesktopLayout.tsx` 添加菜单项
-
-### 添加新 API
-
-1. 在 `frontend/src/api/modules/` 创建 API 模块
-2. 在 `frontend/src/api/index.ts` 导出
-3. 在 `frontend/src/api/types.ts` 定义类型
-
-### 数据库结构
-
-数据库共 7 张表，完整字段定义和表间关系详见 [AGENT.md](AGENT.md) 中的「数据库结构」章节。
-
-> 当前数据库结构为最终定稿，禁止新增表、新增字段、删除表、删除字段或修改字段类型。详细规定见 AGENT.md。
-
-## 常见问题
-
-### Q: 后端启动失败，端口被占用
-
-```bash
-# 查看占用端口的进程
-netstat -ano | findstr :8080
-
-# 终止进程
-taskkill /PID <进程ID> /F
-```
-
-### Q: 前端无法连接后端
-
-1. 确认后端已启动
-2. 检查 `vite.config.ts` 代理配置
-3. 检查浏览器控制台错误信息
-
-## 更新日志
-
-### 2026-06-16 前端/后端全面优化
-
-修复审查报告中 32 项 A/B/C 类问题，主要改动：
-- 修复 4 处硬编码 localhost:8080，统一使用环境变量
-- 修复搜索与服务端分页冲突，支持 keyword 服务端搜索
-- 新增搜索防抖（useDebounce hook，300ms）
-- 新增管理员批量操作（用户批量删除/禁用、报名批量审核）
-- 新增成绩批量录入接口（CSV 导入 + 手动编辑）
-- 新增成绩统计接口（按竞赛统计平均/最高/最低分）
-- 新增用户统计接口
-- 新增拒绝原因输入弹窗
-- 新增管理员成绩编辑功能
-- 新增通知草稿保存功能
-- 修复竞赛结束时间（00:00:00 → 23:59:59）
-- 修复死链接路由
-- 统一确认对话框风格
-- 提取报名弹窗为共享组件 RegistrationModal
-- 新增加载进度条（LoadingBar）
-- 竞赛创建增加分类、参赛资格、联系方式字段
-
-### 2024-12-15 UI 优化
-
-1. **卡片布局优化**：学生端各页面（竞赛浏览、成绩查询、团队管理、报名管理、参赛历史）的卡片布局从 2 列调整为 4 列，提升信息密度
-2. **竞赛详情页错误处理**：添加错误边界（Error Boundary），防止页面白屏，并提供友好的错误提示
-3. **悬停效果修正**：修复卡片悬停时变得更透明的问题，现在悬停时卡片会变得更不透明，符合直觉交互
-4. **封面图比例统一**：赛事封面图统一为 16:9 比例显示
-
 ## 许可证
 
 本项目仅供学习交流使用。
-
-## 联系方式
-
-如有问题，请提交 Issue 或联系项目维护者。

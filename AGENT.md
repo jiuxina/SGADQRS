@@ -223,11 +223,12 @@ SGADQRS/
 | competition_id | BIGINT | NOT NULL | 竞赛ID → competition.id |
 | team_name | VARCHAR(50) | NOT NULL | 团队名称 |
 | leader_id | BIGINT | NOT NULL | 队长ID → sys_user.id |
+| teacher_id | BIGINT | NULL | 指导老师ID → sys_user.id |
 | team_slogan | VARCHAR(200) | NULL | 团队口号 |
 | status | TINYINT | NOT NULL DEFAULT 0 | 0-组建中 1-已提交 2-已通过 3-已拒绝 |
 | create_time | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | 创建时间 |
 
-索引: `idx_team_comp`(competition_id)
+索引: `idx_team_comp`(competition_id), `idx_team_teacher`(teacher_id)
 
 #### 5. competition_team_member — 团队成员表
 
@@ -237,7 +238,7 @@ SGADQRS/
 | team_id | BIGINT | NOT NULL | 团队ID → competition_team.id |
 | student_id | BIGINT | NOT NULL | 学生ID → sys_user.id |
 | join_time | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | 加入时间 |
-| status | TINYINT | NOT NULL DEFAULT 1 | 0-已退出 1-正常 |
+| status | TINYINT | NOT NULL DEFAULT 1 | 0-已退出 1-正常 2-待审核 3-已拒绝 |
 
 索引: `idx_tm_team`(team_id)
 
@@ -280,6 +281,7 @@ SGADQRS/
 sys_user (1) ──< (N) competition          [publisher_id]
 sys_user (1) ──< (N) competition_registration  [student_id]
 sys_user (1) ──< (N) competition_team      [leader_id]
+sys_user (1) ──< (N) competition_team      [teacher_id]  (指导老师)
 sys_user (1) ──< (N) competition_team_member   [student_id]
 sys_user (1) ──< (N) competition_result    [student_id]
 
