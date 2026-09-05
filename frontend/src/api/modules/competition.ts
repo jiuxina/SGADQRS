@@ -15,10 +15,6 @@ export const competitionApi = {
   /** 更新竞赛 */
   update: (data: CompetitionDTO) => request.put('/competition', data),
 
-  /** 审核竞赛 */
-  audit: (id: number, status: number, remark?: string) =>
-    request.put(`/competition/${id}/audit`, null, { params: { status, remark } }),
-
   /** 删除竞赛 */
   delete: (id: number) => request.delete(`/competition/${id}`),
 

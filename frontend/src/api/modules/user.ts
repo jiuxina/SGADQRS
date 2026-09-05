@@ -1,5 +1,5 @@
 import { request } from '../request'
-import type { PageResult, UserItem, UserStats } from '../types'
+import type { PageResult, PublicProfile, UserCard, UserItem, UserStats } from '../types'
 
 export const userApi = {
   /** 用户列表 */
@@ -11,6 +11,15 @@ export const userApi = {
 
   /** 用户详情 */
   getById: (id: number) => request.get<UserItem>(`/user/${id}`),
+
+  /** 社区公开资料（未解锁仅脱敏卡） */
+  publicProfile: (id: number) => request.get<PublicProfile>(`/user/public/${id}`),
+
+  /** 本人更新社区资料 */
+  updateProfile: (data: Record<string, unknown>) => request.put('/user/profile', data),
+
+  /** 本人修改密码 */
+  changePassword: (data: { oldPassword: string; newPassword: string }) => request.put('/user/password', data),
 
   /** 创建用户 */
   create: (data: Record<string, unknown>) => request.post('/user', data),
@@ -33,3 +42,5 @@ export const userApi = {
   /** 批量禁用用户 */
   batchDisable: (ids: number[]) => request.post('/user/batch-disable', { ids }),
 }
+
+export type { UserCard }

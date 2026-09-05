@@ -10,16 +10,7 @@ export const exportApi = {
     return downloadFile(`/export/competitions${qs ? '?' + qs : ''}`, '竞赛列表.xlsx')
   },
 
-  /** 导出报名列表 */
-  registrations: (params?: { competitionId?: number; status?: number }) => {
-    const query = new URLSearchParams()
-    if (params?.competitionId) query.set('competitionId', String(params.competitionId))
-    if (params?.status != null) query.set('status', String(params.status))
-    const qs = query.toString()
-    return downloadFile(`/export/registrations${qs ? '?' + qs : ''}`, '报名列表.xlsx')
-  },
-
-  /** 导出团队列表 */
+  /** 导出参赛队伍列表 */
   teams: (params?: { competitionId?: number; status?: number }) => {
     const query = new URLSearchParams()
     if (params?.competitionId) query.set('competitionId', String(params.competitionId))
