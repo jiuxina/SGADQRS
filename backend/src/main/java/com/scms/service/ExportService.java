@@ -3,14 +3,12 @@ package com.scms.service;
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scms.entity.Competition;
-import com.scms.entity.CompetitionRegistration;
 import com.scms.entity.CompetitionResult;
 import com.scms.entity.CompetitionTeam;
 import com.scms.entity.CompetitionTeamMember;
 import com.scms.entity.User;
 import com.scms.export.*;
 import com.scms.mapper.CompetitionMapper;
-import com.scms.mapper.CompetitionRegistrationMapper;
 import com.scms.mapper.CompetitionResultMapper;
 import com.scms.mapper.CompetitionTeamMapper;
 import com.scms.mapper.CompetitionTeamMemberMapper;
@@ -34,7 +32,6 @@ public class ExportService {
     private static final DateTimeFormatter D_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private final CompetitionMapper competitionMapper;
-    private final CompetitionRegistrationMapper registrationMapper;
     private final CompetitionTeamMapper teamMapper;
     private final CompetitionTeamMemberMapper teamMemberMapper;
     private final CompetitionResultMapper resultMapper;
@@ -60,10 +57,9 @@ public class ExportService {
             e.setCompetitionStart(fmtDt(c.getCompetitionStart()));
             e.setCompetitionEnd(fmtDt(c.getCompetitionEnd()));
             e.setLocation(c.getLocation());
-            e.setMaxTeams(c.getMaxTeams());
             e.setMaxMembers(c.getMaxMembers());
-            e.setRegistrationCount(registrationMapper.selectCount(
-                    new LambdaQueryWrapper<CompetitionRegistration>().eq(CompetitionRegistration::getCompetitionId, c.getId())
+            e.setRegistrationCount(teamMapper.selectCount(
+                    new LambdaQueryWrapper<CompetitionTeam>().eq(CompetitionTeam::getCompetitionId, c.getId())
             ).intValue());
             e.setStatusText(competitionStatusText(c.getStatus()));
             excelList.add(e);
@@ -71,34 +67,6 @@ public class ExportService {
 
         setResponseHeader(response, "竞赛列表");
         EasyExcel.write(response.getOutputStream(), CompetitionExcel.class).sheet("竞赛列表").doWrite(excelList);
-    }
-
-    // ===== 报名导出 =====
-    public void exportRegistrations(HttpServletResponse response, Long competitionId, Integer status) throws IOException {
-        LambdaQueryWrapper<CompetitionRegistration> wrapper = new LambdaQueryWrapper<>();
-        if (competitionId != null) wrapper.eq(CompetitionRegistration::getCompetitionId, competitionId);
-        if (status != null) wrapper.eq(CompetitionRegistration::getStatus, status);
-        wrapper.orderByDesc(CompetitionRegistration::getCreateTime);
-
-        List<CompetitionRegistration> list = registrationMapper.selectList(wrapper);
-        List<RegistrationExcel> excelList = new ArrayList<>();
-        for (CompetitionRegistration r : list) {
-            RegistrationExcel e = new RegistrationExcel();
-            e.setId(r.getId());
-            e.setCompetitionName(getCompetitionName(r.getCompetitionId()));
-            e.setStudentName(getUserName(r.getStudentId()));
-            e.setTeamName(getTeamName(r.getTeamId()));
-            e.setIsTeamLeaderText(r.getIsTeamLeader() != null && r.getIsTeamLeader() == 1 ? "是" : "否");
-            e.setContactPhone(r.getContactPhone());
-            e.setRemark(r.getRemark());
-            e.setStatusText(registrationStatusText(r.getStatus()));
-            e.setAuditRemark(r.getAuditRemark());
-            e.setCreateTime(fmtDt(r.getCreateTime()));
-            excelList.add(e);
-        }
-
-        setResponseHeader(response, "报名列表");
-        EasyExcel.write(response.getOutputStream(), RegistrationExcel.class).sheet("报名列表").doWrite(excelList);
     }
 
     // ===== 团队导出 =====
@@ -120,7 +88,6 @@ public class ExportService {
             e.setMemberCount(teamMemberMapper.selectCount(
                     new LambdaQueryWrapper<CompetitionTeamMember>()
                             .eq(CompetitionTeamMember::getTeamId, t.getId())
-                            .eq(CompetitionTeamMember::getStatus, 1)
             ).intValue());
             e.setStatusText(teamStatusText(t.getStatus()));
             e.setCreateTime(fmtDt(t.getCreateTime()));

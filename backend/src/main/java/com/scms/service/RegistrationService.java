@@ -4,142 +4,36 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
 import com.scms.common.Result;
-import com.scms.dto.AuditDTO;
-import com.scms.dto.BatchAuditDTO;
-import com.scms.dto.RegistrationDTO;
 import com.scms.dto.TeamDTO;
 import com.scms.entity.*;
 import com.scms.mapper.*;
+import com.scms.security.LoginUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * 参赛队伍（参赛单位）服务：报名与队伍合一。
+ * 审核链：队长建队(0组建中) → 提交审核(1) → 管理员审(2通过/3拒绝)；单人赛=1人队，创建即提交。
+ * 指导老师由队长指定，老师只读不审批。
+ */
 @Service
 @RequiredArgsConstructor
 public class RegistrationService {
 
-    private final CompetitionRegistrationMapper registrationMapper;
     private final CompetitionTeamMapper teamMapper;
     private final CompetitionTeamMemberMapper teamMemberMapper;
     private final CompetitionMapper competitionMapper;
     private final UserMapper userMapper;
+    private final RecruitPostMapper recruitPostMapper;
+    private final NotificationService notificationService;
 
-    public Result<?> listRegistrations(int current, int size, Long competitionId,
-                                        Long studentId, Integer status, Long publisherId, String keyword) {
-        Page<CompetitionRegistration> page = new Page<>(current, size);
-        LambdaQueryWrapper<CompetitionRegistration> wrapper = new LambdaQueryWrapper<>();
-
-        if (competitionId != null) wrapper.eq(CompetitionRegistration::getCompetitionId, competitionId);
-        if (studentId != null) wrapper.eq(CompetitionRegistration::getStudentId, studentId);
-        if (status != null) wrapper.eq(CompetitionRegistration::getStatus, status);
-
-        // 教师只能看自己发布的竞赛的报名
-        if (publisherId != null) {
-            wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
-        }
-
-        if (keyword != null && !keyword.isBlank()) {
-            wrapper.and(w -> w
-                .apply("student_id IN (SELECT id FROM sys_user WHERE real_name LIKE CONCAT('%', {0}, '%'))", keyword)
-                .or()
-                .apply("team_id IN (SELECT id FROM competition_team WHERE team_name LIKE CONCAT('%', {0}, '%'))", keyword)
-                .or()
-                .apply("competition_id IN (SELECT id FROM competition WHERE competition_name LIKE CONCAT('%', {0}, '%'))", keyword)
-            );
-        }
-
-        wrapper.orderByDesc(CompetitionRegistration::getCreateTime);
-        Page<CompetitionRegistration> result = registrationMapper.selectPage(page, wrapper);
-        result.getRecords().forEach(this::fillRegistrationInfo);
-        return Result.success(new PageResult<>(result));
-    }
-
-    @Transactional
-    public Result<?> register(RegistrationDTO dto, Long studentId) {
-        Competition comp = competitionMapper.selectById(dto.getCompetitionId());
-        if (comp == null) return Result.error("竞赛不存在");
-        if (comp.getStatus() != 2) return Result.error("竞赛不在报名期内");
-
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(comp.getRegistrationStart()) || now.isAfter(comp.getRegistrationEnd())) {
-            return Result.error("不在报名时间内");
-        }
-
-        // 检查是否已报名
-        long count = registrationMapper.selectCount(
-                new LambdaQueryWrapper<CompetitionRegistration>()
-                        .eq(CompetitionRegistration::getCompetitionId, dto.getCompetitionId())
-                        .eq(CompetitionRegistration::getStudentId, studentId)
-        );
-        if (count > 0) return Result.error("您已报名该竞赛");
-
-        CompetitionRegistration reg = new CompetitionRegistration();
-        reg.setCompetitionId(dto.getCompetitionId());
-        reg.setStudentId(studentId);
-        reg.setTeamId(dto.getTeamId());
-        reg.setIsTeamLeader(dto.getTeamId() != null ? 1 : 0);
-        reg.setContactPhone(dto.getContactPhone());
-        reg.setRemark(dto.getRemark());
-        reg.setAttachmentUrl(dto.getAttachmentUrl());
-        reg.setStatus(0);
-        registrationMapper.insert(reg);
-
-        return Result.success("报名成功", reg);
-    }
-
-    @Transactional
-    public Result<?> auditRegistration(Long id, AuditDTO dto) {
-        CompetitionRegistration reg = registrationMapper.selectById(id);
-        if (reg == null) return Result.error("报名记录不存在");
-
-        reg.setStatus(dto.getStatus());
-        reg.setAuditRemark(dto.getAuditRemark());
-        reg.setAuditTime(LocalDateTime.now());
-        registrationMapper.updateById(reg);
-        return Result.success(dto.getStatus() == 1 ? "审核通过" : "已拒绝", null);
-    }
-
-    @Transactional
-    public Result<?> batchAuditRegistration(BatchAuditDTO dto) {
-        List<Long> ids = dto.getIds();
-        if (ids == null || ids.isEmpty()) {
-            return Result.error("请选择要审核的报名记录");
-        }
-        Integer status = dto.getStatus();
-        if (status == null || (status != 1 && status != 2)) {
-            return Result.error("审核状态无效");
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        for (Long id : ids) {
-            CompetitionRegistration reg = registrationMapper.selectById(id);
-            if (reg == null) continue;
-            reg.setStatus(status);
-            reg.setAuditRemark(dto.getAuditRemark());
-            reg.setAuditTime(now);
-            registrationMapper.updateById(reg);
-        }
-
-        String msg = status == 1 ? "批量审核通过" : "已批量拒绝";
-        return Result.success(msg, null);
-    }
-
-    @Transactional
-    public Result<?> cancelRegistration(Long id, Long studentId) {
-        CompetitionRegistration reg = registrationMapper.selectById(id);
-        if (reg == null) return Result.error("报名记录不存在");
-        if (!reg.getStudentId().equals(studentId)) return Result.error("无权操作");
-        reg.setStatus(-1);
-        registrationMapper.updateById(reg);
-        return Result.success("已取消报名", null);
-    }
-
-    // ===== 团队管理 =====
-
-    public Result<?> listTeams(int current, int size, Long competitionId, Integer status, Long publisherId, Long teacherId) {
+    public Result<?> listTeams(int current, int size, Long competitionId, Integer status, Long publisherId, Long teacherId, Long memberId) {
         Page<CompetitionTeam> page = new Page<>(current, size);
         LambdaQueryWrapper<CompetitionTeam> wrapper = new LambdaQueryWrapper<>();
         if (competitionId != null) wrapper.eq(CompetitionTeam::getCompetitionId, competitionId);
@@ -148,6 +42,9 @@ public class RegistrationService {
             wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
         }
         if (teacherId != null) wrapper.eq(CompetitionTeam::getTeacherId, teacherId);
+        if (memberId != null) {
+            wrapper.apply("id IN (SELECT team_id FROM competition_team_member WHERE student_id = {0})", memberId);
+        }
         wrapper.orderByDesc(CompetitionTeam::getCreateTime);
 
         Page<CompetitionTeam> result = teamMapper.selectPage(page, wrapper);
@@ -155,170 +52,192 @@ public class RegistrationService {
         return Result.success(new PageResult<>(result));
     }
 
+    /** 某竞赛的参赛者名单（已通过队伍的全部在队成员，含1人队），供成绩录入使用 */
+    public Result<?> listParticipants(Long competitionId) {
+        if (competitionId == null) return Result.error("请指定竞赛");
+        List<CompetitionTeam> teams = teamMapper.selectList(
+                new LambdaQueryWrapper<CompetitionTeam>()
+                        .eq(CompetitionTeam::getCompetitionId, competitionId)
+                        .eq(CompetitionTeam::getStatus, 2)
+        );
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (CompetitionTeam team : teams) {
+            List<CompetitionTeamMember> members = teamMemberMapper.selectList(
+                    new LambdaQueryWrapper<CompetitionTeamMember>()
+                            .eq(CompetitionTeamMember::getTeamId, team.getId())
+            );
+            for (CompetitionTeamMember m : members) {
+                User u = userMapper.selectById(m.getStudentId());
+                Map<String, Object> row = new HashMap<>();
+                row.put("teamId", team.getId());
+                row.put("teamName", team.getTeamName());
+                row.put("studentId", m.getStudentId());
+                row.put("studentName", u != null ? u.getRealName() : null);
+                rows.add(row);
+            }
+        }
+        return Result.success(rows);
+    }
+
+    /** 创建参赛队伍；单人赛自动建1人队并直接进入"已提交" */
     @Transactional
     public Result<?> createTeam(TeamDTO dto, Long leaderId) {
+        Competition comp = competitionMapper.selectById(dto.getCompetitionId());
+        if (comp == null) return Result.error("竞赛不存在");
+        if (comp.getStatus() != 2 && comp.getStatus() != 3) return Result.error("该竞赛当前不可参赛");
+
         CompetitionTeam team = new CompetitionTeam();
         team.setCompetitionId(dto.getCompetitionId());
         team.setTeamName(dto.getTeamName());
         team.setLeaderId(leaderId);
         team.setTeacherId(dto.getTeacherId());
         team.setTeamSlogan(dto.getTeamSlogan());
-        team.setStatus(0);
+        boolean solo = comp.getMaxMembers() != null && comp.getMaxMembers() == 1;
+        team.setStatus(solo ? 1 : 0);
         teamMapper.insert(team);
 
-        // 队长自动加入
         CompetitionTeamMember member = new CompetitionTeamMember();
         member.setTeamId(team.getId());
         member.setStudentId(leaderId);
-        member.setStatus(1);
         teamMemberMapper.insert(member);
 
-        return Result.success("创建团队成功", team);
+        return Result.success(solo ? "报名成功" : "创建队伍成功", team);
     }
 
+    /** 队长提交审核（0组建中 → 1已提交） */
     @Transactional
-    public Result<?> joinTeam(Long teamId, Long studentId) {
+    public Result<?> submitTeam(Long teamId, Long leaderId) {
         CompetitionTeam team = teamMapper.selectById(teamId);
-        if (team == null) return Result.error("团队不存在");
+        if (team == null) return Result.error("队伍不存在");
+        if (!leaderId.equals(team.getLeaderId())) return Result.error("只有队长可以提交审核");
+        if (team.getStatus() != 0) return Result.error("当前状态不可提交");
+        team.setStatus(1);
+        teamMapper.updateById(team);
+        return Result.success("已提交审核", null);
+    }
 
-        // 检查是否已在团队中
-        long count = teamMemberMapper.selectCount(
-                new LambdaQueryWrapper<CompetitionTeamMember>()
-                        .eq(CompetitionTeamMember::getTeamId, teamId)
-                        .eq(CompetitionTeamMember::getStudentId, studentId)
-                        .in(CompetitionTeamMember::getStatus, 1, 2)
-        );
-        if (count > 0) return Result.error("您已在该团队中或正在等待审核");
+    /** 队长更换指导老师（teacherId 传空表示取消指定） */
+    @Transactional
+    public Result<?> changeTeacher(Long teamId, Long leaderId, Long teacherId) {
+        CompetitionTeam team = teamMapper.selectById(teamId);
+        if (team == null) return Result.error("队伍不存在");
+        if (!leaderId.equals(team.getLeaderId())) return Result.error("只有队长可以指定指导老师");
+        if (teacherId != null) {
+            User teacher = userMapper.selectById(teacherId);
+            if (teacher == null || teacher.getUserType() == null || teacher.getUserType() != 2) {
+                return Result.error("指导老师不存在");
+            }
+        }
+        team.setTeacherId(teacherId);
+        teamMapper.updateById(team);
+        return Result.success(teacherId != null ? "指导老师已更新" : "已取消指导老师", null);
+    }
 
-        CompetitionTeamMember member = new CompetitionTeamMember();
-        member.setTeamId(teamId);
-        member.setStudentId(studentId);
-        // 有指导老师时需要老师审核，status=2(待审核)；无指导老师则直接加入
-        member.setStatus(team.getTeacherId() != null ? 2 : 1);
-        teamMemberMapper.insert(member);
-
-        String msg = team.getTeacherId() != null ? "已提交入队申请，等待指导老师审核" : "加入团队成功";
-        return Result.success(msg, null);
+    /** 管理员审核参赛队伍（1已提交 → 2通过/3拒绝） */
+    /** 解散队伍：队长本人操作，仅限组建中(0)/待审核(1)；成员清空、关联招募帖一并下架 */
+    @Transactional
+    public Result<?> disbandTeam(Long id, Long meId) {
+        CompetitionTeam team = teamMapper.selectById(id);
+        if (team == null) return Result.error("队伍不存在");
+        if (!meId.equals(team.getLeaderId())) return Result.error("只有队长可以解散队伍");
+        if (team.getStatus() != null && team.getStatus() >= 2) {
+            return Result.error("已通过/已拒绝的队伍不能解散，如有需要请联系管理员");
+        }
+        // 下架关联招募帖（status 1 招募中 → 0 已关闭）
+        recruitPostMapper.selectList(new LambdaQueryWrapper<RecruitPost>()
+                        .eq(RecruitPost::getTeamId, id))
+                .forEach(post -> {
+                    post.setStatus(0);
+                    recruitPostMapper.updateById(post);
+                });
+        teamMemberMapper.delete(new LambdaQueryWrapper<CompetitionTeamMember>()
+                .eq(CompetitionTeamMember::getTeamId, id));
+        teamMapper.deleteById(id);
+        return Result.success("队伍已解散", null);
     }
 
     @Transactional
     public Result<?> auditTeam(Long id, Integer status, String auditRemark) {
         CompetitionTeam team = teamMapper.selectById(id);
-        if (team == null) return Result.error("团队不存在");
+        if (team == null) return Result.error("队伍不存在");
+        if (status == null || (status != 2 && status != 3)) return Result.error("无效的审核状态");
         team.setStatus(status);
         teamMapper.updateById(team);
 
-        // 将审核备注同步到该团队所有成员的报名记录
-        LocalDateTime now = LocalDateTime.now();
-        List<CompetitionRegistration> regs = registrationMapper.selectList(
-                new LambdaQueryWrapper<CompetitionRegistration>()
-                        .eq(CompetitionRegistration::getTeamId, id)
+        // 审核结果通知全体成员
+        User leader = userMapper.selectById(team.getLeaderId());
+        String leaderName = leader != null ? leader.getRealName() : "";
+        String title = status == 2 ? "参赛队伍审核通过" : "参赛队伍未通过审核";
+        String content = (team.getTeamName() != null ? "「" + team.getTeamName() + "」" : "你的队伍")
+                + (status == 2 ? " 已通过参赛审核。" : " 未通过参赛审核。")
+                + (auditRemark != null && !auditRemark.isBlank() ? "备注：" + auditRemark : "");
+        List<CompetitionTeamMember> members = teamMemberMapper.selectList(
+                new LambdaQueryWrapper<CompetitionTeamMember>()
+                        .eq(CompetitionTeamMember::getTeamId, id)
         );
-        for (CompetitionRegistration reg : regs) {
-            reg.setAuditRemark(auditRemark);
-            reg.setAuditTime(now);
-            registrationMapper.updateById(reg);
+        for (CompetitionTeamMember m : members) {
+            notificationService.send(m.getStudentId(), "interaction", title, content, "team", team.getId());
         }
-
         return Result.success(status == 2 ? "审核通过" : "已拒绝", null);
     }
 
-    // ===== 指导老师相关 =====
-
     /**
-     * 教师接受指导邀请
+     * 将学生加入队伍（社区申请/邀请同意后走此入口）：校验容量与防重，成员直接生效。
      */
     @Transactional
-    public Result<?> acceptAdvisor(Long teamId, Long teacherId) {
+    public Result<?> addMemberToTeam(Long teamId, Long studentId) {
         CompetitionTeam team = teamMapper.selectById(teamId);
         if (team == null) return Result.error("团队不存在");
-        if (!teacherId.equals(team.getTeacherId())) return Result.error("您不是该团队的邀请指导老师");
-        // 教师接受后，团队状态可保持不变（由学生决定是否提交审核）
-        return Result.success("已接受指导邀请", null);
-    }
+        Competition comp = competitionMapper.selectById(team.getCompetitionId());
+        if (comp == null) return Result.error("所属竞赛不存在");
 
-    /**
-     * 教师拒绝指导邀请（清除teacher_id）
-     */
-    @Transactional
-    public Result<?> rejectAdvisor(Long teamId, Long teacherId) {
-        CompetitionTeam team = teamMapper.selectById(teamId);
-        if (team == null) return Result.error("团队不存在");
-        if (!teacherId.equals(team.getTeacherId())) return Result.error("您不是该团队的邀请指导老师");
-        team.setTeacherId(null);
-        teamMapper.updateById(team);
-
-        // 将所有待审核成员改为直接加入（无需老师审核了）
-        List<CompetitionTeamMember> pendingMembers = teamMemberMapper.selectList(
+        long activeCount = teamMemberMapper.selectCount(
                 new LambdaQueryWrapper<CompetitionTeamMember>()
                         .eq(CompetitionTeamMember::getTeamId, teamId)
-                        .eq(CompetitionTeamMember::getStatus, 2)
         );
-        for (CompetitionTeamMember m : pendingMembers) {
-            m.setStatus(1);
-            teamMemberMapper.updateById(m);
+        if (comp.getMaxMembers() != null && activeCount >= comp.getMaxMembers()) {
+            return Result.error("队伍人数已满");
         }
 
-        return Result.success("已拒绝指导邀请", null);
-    }
-
-    /**
-     * 指导老师审核入队请求
-     */
-    @Transactional
-    public Result<?> auditJoinRequest(Long teamId, Long memberId, Integer status) {
-        CompetitionTeam team = teamMapper.selectById(teamId);
-        if (team == null) return Result.error("团队不存在");
-
-        CompetitionTeamMember member = teamMemberMapper.selectById(memberId);
-        if (member == null) return Result.error("成员记录不存在");
-        if (!member.getTeamId().equals(teamId)) return Result.error("该成员不属于此团队");
-        if (member.getStatus() != 2) return Result.error("该成员不在待审核状态");
-
-        if (status == 1) {
-            member.setStatus(1); // 通过
-        } else if (status == 3) {
-            member.setStatus(3); // 拒绝
-        } else {
-            return Result.error("无效的审核状态");
-        }
-        teamMemberMapper.updateById(member);
-
-        return Result.success(status == 1 ? "已通过入队申请" : "已拒绝入队申请", null);
-    }
-
-    /**
-     * 获取教师的待处理入队申请（指定团队的待审核成员）
-     */
-    public Result<?> listPendingJoinRequests(Long teamId) {
-        List<CompetitionTeamMember> members = teamMemberMapper.selectList(
+        long count = teamMemberMapper.selectCount(
                 new LambdaQueryWrapper<CompetitionTeamMember>()
                         .eq(CompetitionTeamMember::getTeamId, teamId)
-                        .eq(CompetitionTeamMember::getStatus, 2)
+                        .eq(CompetitionTeamMember::getStudentId, studentId)
         );
-        members.forEach(m -> {
-            User user = userMapper.selectById(m.getStudentId());
-            if (user != null) {
-                m.setStudentName(user.getRealName());
-                m.setStudentUsername(user.getUsername());
+        if (count > 0) return Result.error("您已在该团队中");
+
+        CompetitionTeamMember member = new CompetitionTeamMember();
+        member.setTeamId(teamId);
+        member.setStudentId(studentId);
+        teamMemberMapper.insert(member);
+
+        return Result.success("加入团队成功", null);
+    }
+
+    /** 队伍详情：管理员、指导老师/竞赛发布教师、队伍成员（含队长）可见 */
+    public Result<?> getTeamDetail(Long id, LoginUser loginUser) {
+        CompetitionTeam team = teamMapper.selectById(id);
+        if (team == null) return Result.error("队伍不存在");
+        String role = loginUser.getRoleCode();
+        Long meId = loginUser.getUserId();
+        boolean allowed = "admin".equals(role);
+        if (!allowed && "teacher".equals(role)) {
+            if (meId.equals(team.getTeacherId())) {
+                allowed = true;
+            } else if (team.getCompetitionId() != null) {
+                Competition comp = competitionMapper.selectById(team.getCompetitionId());
+                allowed = comp != null && meId.equals(comp.getPublisherId());
             }
-        });
-        return Result.success("查询成功", members);
-    }
-
-    private void fillRegistrationInfo(CompetitionRegistration reg) {
-        if (reg.getCompetitionId() != null) {
-            Competition comp = competitionMapper.selectById(reg.getCompetitionId());
-            if (comp != null) reg.setCompetitionName(comp.getCompetitionName());
         }
-        if (reg.getStudentId() != null) {
-            User user = userMapper.selectById(reg.getStudentId());
-            if (user != null) reg.setStudentName(user.getRealName());
+        if (!allowed && "student".equals(role)) {
+            Long count = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
+                    .eq(CompetitionTeamMember::getTeamId, id)
+                    .eq(CompetitionTeamMember::getStudentId, meId));
+            allowed = count != null && count > 0;
         }
-        if (reg.getTeamId() != null) {
-            CompetitionTeam team = teamMapper.selectById(reg.getTeamId());
-            if (team != null) reg.setTeamName(team.getTeamName());
-        }
+        if (!allowed) return Result.error("无权查看该队伍");
+        fillTeamInfo(team);
+        return Result.success(team);
     }
 
     private void fillTeamInfo(CompetitionTeam team) {
@@ -338,7 +257,6 @@ public class RegistrationService {
         List<CompetitionTeamMember> members = teamMemberMapper.selectList(
                 new LambdaQueryWrapper<CompetitionTeamMember>()
                         .eq(CompetitionTeamMember::getTeamId, team.getId())
-                        .in(CompetitionTeamMember::getStatus, 1, 2)
         );
         members.forEach(m -> {
             User user = userMapper.selectById(m.getStudentId());

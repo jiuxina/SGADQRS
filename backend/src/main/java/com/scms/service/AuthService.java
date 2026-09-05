@@ -35,10 +35,6 @@ public class AuthService {
             return Result.error("账号或密码错误");
         }
 
-        // 更新登录时间
-        user.setLastLoginTime(LocalDateTime.now());
-        userMapper.updateById(user);
-
         // 根据 userType 映射角色
         String roleCode = switch (user.getUserType()) {
             case 3 -> "admin";
@@ -74,7 +70,6 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setRealName(dto.getUsername());
         user.setUserType("teacher".equals(dto.getRole()) ? 2 : 1);
-        user.setRole(dto.getRole() != null ? dto.getRole() : "student");
 
         userMapper.insert(user);
 
@@ -98,6 +93,7 @@ public class AuthService {
         info.put("id", user.getId());
         info.put("username", user.getUsername());
         info.put("realName", user.getRealName());
+        info.put("nickname", user.getNickname());
         info.put("avatar", user.getAvatar());
         info.put("role", roleCode);
         info.put("userType", user.getUserType());
@@ -105,6 +101,8 @@ public class AuthService {
         info.put("deptName", user.getDeptName());
         info.put("majorName", user.getMajorName());
         info.put("className", user.getClassName());
+        info.put("bio", user.getBio());
+        info.put("skills", user.getSkills());
         return info;
     }
 }

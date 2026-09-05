@@ -15,4 +15,7 @@ public class NoticeDTO {
     private String noticeContent;
 
     private Integer noticeType = 2;
+
+    /** 发布状态：1=已发布，0=草稿（缺省视为已发布） */
+    private Integer status = 1;
 }

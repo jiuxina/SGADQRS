@@ -32,8 +32,7 @@ public class CompetitionDTO {
 
     private String location;
     private Integer maxMembers = 1;
-    private Integer maxTeams;
     private String awards;
     private String attachments;
-    private Integer status = 0;
+    private Integer status = 2;
 }

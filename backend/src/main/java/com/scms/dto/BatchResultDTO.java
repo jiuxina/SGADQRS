@@ -13,6 +13,7 @@ public class BatchResultDTO {
     @Data
     public static class Item {
         private Long studentId;
+        private Long teamId;
         private BigDecimal score;
         private Integer ranking;
         private Integer awardLevel;

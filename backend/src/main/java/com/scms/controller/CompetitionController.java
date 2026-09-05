@@ -55,15 +55,6 @@ public class CompetitionController {
         return competitionService.updateCompetition(dto);
     }
 
-    @Operation(summary = "审核竞赛")
-    @PutMapping("/{id}/audit")
-    @PreAuthorize("hasRole('ADMIN')")
-    public Result<?> audit(@PathVariable Long id,
-                           @RequestParam Integer status,
-                           @RequestParam(required = false) String remark) {
-        return competitionService.auditCompetition(id, status, remark);
-    }
-
     @Operation(summary = "删除竞赛")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")

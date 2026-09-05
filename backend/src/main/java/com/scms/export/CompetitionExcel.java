@@ -43,10 +43,6 @@ public class CompetitionExcel {
     @ColumnWidth(15)
     private String location;
 
-    @ExcelProperty("最大队伍数")
-    @ColumnWidth(12)
-    private Integer maxTeams;
-
     @ExcelProperty("每队人数")
     @ColumnWidth(10)
     private Integer maxMembers;

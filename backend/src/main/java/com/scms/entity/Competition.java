@@ -28,7 +28,6 @@ public class Competition {
     private LocalDateTime competitionEnd;
     private String location;
     private Integer maxMembers;
-    private Integer maxTeams;
 
     /** 自定义奖项列表（JSON格式，原始存储） */
     @JsonIgnore

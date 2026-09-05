@@ -26,6 +26,7 @@ public class ResultService {
     private final CompetitionMapper competitionMapper;
     private final UserMapper userMapper;
     private final CompetitionTeamMapper teamMapper;
+    private final com.scms.service.NotificationService notificationService;
 
     public Result<?> listResults(int current, int size, Long competitionId, Long studentId,
                                   Integer awardLevel, Integer isPublished, Long publisherId, String keyword) {
@@ -58,7 +59,6 @@ public class ResultService {
     public Result<?> saveResult(ResultDTO dto) {
         CompetitionResult result = new CompetitionResult();
         result.setCompetitionId(dto.getCompetitionId());
-        result.setRegistrationId(dto.getRegistrationId());
         result.setStudentId(dto.getStudentId());
         result.setTeamId(dto.getTeamId());
         result.setScore(dto.getScore());
@@ -86,6 +86,7 @@ public class ResultService {
             CompetitionResult result = new CompetitionResult();
             result.setCompetitionId(dto.getCompetitionId());
             result.setStudentId(item.getStudentId());
+            result.setTeamId(item.getTeamId());
             result.setScore(item.getScore());
             result.setRanking(item.getRanking());
             result.setAwardLevel(item.getAwardLevel());
@@ -128,6 +129,17 @@ public class ResultService {
             r.setPublishTime(LocalDateTime.now());
             resultMapper.updateById(r);
         });
+
+        // 通知相关学生的获奖记录已可查看
+        Competition comp = competitionMapper.selectById(competitionId);
+        String compName = comp != null ? comp.getCompetitionName() : "竞赛";
+        java.util.Set<Long> notified = new java.util.HashSet<>();
+        for (CompetitionResult r : results) {
+            if (r.getStudentId() != null && notified.add(r.getStudentId())) {
+                notificationService.send(r.getStudentId(), "system", "成绩已发布",
+                        compName + " 的成绩已发布，快去查看你的获奖记录吧。", "user", r.getStudentId());
+            }
+        }
         return Result.success("发布成功，共发布 " + results.size() + " 条成绩", null);
     }
 

@@ -17,9 +17,6 @@ public class CompetitionTeamMember {
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime joinTime;
 
-    /** 状态：0-已退出 1-正常 2-待审核(有指导老师时) 3-已拒绝 */
-    private Integer status;
-
     /** 学生姓名（非数据库字段） */
     @TableField(exist = false)
     private String studentName;

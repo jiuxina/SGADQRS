@@ -14,10 +14,11 @@ public class User {
     private String username;
     private String password;
     private String realName;
+
+    /** 社区昵称（脱敏卡片展示用，空则回退 realName） */
+    private String nickname;
     private String avatar;
     private Integer gender;
-    private String phone;
-    private String email;
 
     /** 用户类型：1-学生 2-教师 3-管理员 */
     private Integer userType;
@@ -25,12 +26,15 @@ public class User {
     /** 状态：1-启用 0-禁用 */
     private Integer status;
 
-    /** 角色编码：admin/teacher/student */
-    private String role;
-
     private String deptName;
     private String majorName;
     private String className;
+
+    /** 个人简介 */
+    private String bio;
+
+    /** 技能标签(逗号分隔) */
+    private String skills;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
@@ -38,9 +42,7 @@ public class User {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
-    private LocalDateTime lastLoginTime;
-
-    /** 角色编码（非数据库字段，兼容前端） */
+    /** 角色编码（非数据库字段，由 userType 推导） */
     @TableField(exist = false)
     private String roleCode;
 }

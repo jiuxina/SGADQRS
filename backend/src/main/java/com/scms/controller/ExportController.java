@@ -30,17 +30,7 @@ public class ExportController {
         exportService.exportCompetitions(response, status, keyword);
     }
 
-    @Operation(summary = "导出报名列表")
-    @GetMapping("/registrations")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public void exportRegistrations(
-            @RequestParam(required = false) Long competitionId,
-            @RequestParam(required = false) Integer status,
-            HttpServletResponse response) throws IOException {
-        exportService.exportRegistrations(response, competitionId, status);
-    }
-
-    @Operation(summary = "导出团队列表")
+    @Operation(summary = "导出参赛队伍列表")
     @GetMapping("/teams")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void exportTeams(

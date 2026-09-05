@@ -3,12 +3,12 @@ package com.scms.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scms.common.Result;
 import com.scms.entity.Competition;
-import com.scms.entity.CompetitionRegistration;
 import com.scms.entity.CompetitionResult;
+import com.scms.entity.CompetitionTeam;
 import com.scms.entity.User;
 import com.scms.mapper.CompetitionMapper;
-import com.scms.mapper.CompetitionRegistrationMapper;
 import com.scms.mapper.CompetitionResultMapper;
+import com.scms.mapper.CompetitionTeamMapper;
 import com.scms.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class StatsService {
 
     private final CompetitionMapper competitionMapper;
-    private final CompetitionRegistrationMapper registrationMapper;
+    private final CompetitionTeamMapper teamMapper;
     private final CompetitionResultMapper resultMapper;
     private final UserMapper userMapper;
     private final UserService userService;
@@ -61,14 +61,15 @@ public class StatsService {
 
         // 竞赛状态分布（全量统计，用于仪表盘图表）
         Map<Integer, Long> competitionByStatus = new LinkedHashMap<>();
-        for (int s = 0; s <= 5; s++) {
+        for (int s = 0; s <= 4; s++) {
+            if (s == 1) continue;
             competitionByStatus.put(s, competitionMapper.selectCount(
                     new LambdaQueryWrapper<Competition>().eq(Competition::getStatus, s)));
         }
         stats.put("competitionByStatus", competitionByStatus);
 
-        // 报名统计
-        stats.put("totalRegistrations", registrationMapper.selectCount(null));
+        // 参赛队伍统计
+        stats.put("totalRegistrations", teamMapper.selectCount(null));
 
         // 获奖分布（按awardName动态统计）
         List<CompetitionResult> allResults = resultMapper.selectList(
@@ -175,9 +176,9 @@ public class StatsService {
             LocalDateTime start = month.atDay(1).atStartOfDay();
             LocalDateTime end = month.atEndOfMonth().atTime(23, 59, 59);
 
-            Long count = registrationMapper.selectCount(
-                    new LambdaQueryWrapper<CompetitionRegistration>()
-                            .between(CompetitionRegistration::getCreateTime, start, end)
+            Long count = teamMapper.selectCount(
+                    new LambdaQueryWrapper<CompetitionTeam>()
+                            .between(CompetitionTeam::getCreateTime, start, end)
             );
 
             Map<String, Object> item = new LinkedHashMap<>();
@@ -189,18 +190,16 @@ public class StatsService {
     }
 
     /**
-     * 获取竞赛热度排行（按报名人数）
+     * 获取竞赛热度排行（按参赛队伍数）
      */
     public List<Map<String, Object>> getCompetitionRankings() {
-        // 获取所有报名记录
-        List<CompetitionRegistration> registrations = registrationMapper.selectList(null);
-        if (registrations.isEmpty()) {
+        List<CompetitionTeam> teams = teamMapper.selectList(null);
+        if (teams.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // 统计各竞赛报名人数
-        Map<Long, Long> compCountMap = registrations.stream()
-                .collect(Collectors.groupingBy(CompetitionRegistration::getCompetitionId, Collectors.counting()));
+        Map<Long, Long> compCountMap = teams.stream()
+                .collect(Collectors.groupingBy(CompetitionTeam::getCompetitionId, Collectors.counting()));
 
         // 获取竞赛详情
         Set<Long> compIds = compCountMap.keySet();

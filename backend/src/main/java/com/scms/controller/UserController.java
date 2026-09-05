@@ -2,8 +2,10 @@ package com.scms.controller;
 
 import com.scms.common.Result;
 import com.scms.dto.BatchUserDTO;
+import com.scms.dto.ProfileDTO;
 import com.scms.dto.UserDTO;
 import com.scms.dto.UserStatsDTO;
+import com.scms.security.LoginUser;
 import com.scms.service.UserService;
 import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "用户管理")
@@ -41,6 +44,27 @@ public class UserController {
     @GetMapping("/{id}")
     public Result<?> getById(@PathVariable Long id) {
         return userService.getUserById(id);
+    }
+
+    @Operation(summary = "社区公开资料（未解锁仅脱敏卡）")
+    @GetMapping("/public/{id}")
+    public Result<?> publicProfile(@PathVariable Long id,
+                                   @AuthenticationPrincipal LoginUser loginUser) {
+        return userService.getPublicProfile(id, loginUser.getUserId(), "admin".equals(loginUser.getRoleCode()));
+    }
+
+    @Operation(summary = "本人更新社区资料")
+    @PutMapping("/profile")
+    public Result<?> updateProfile(@RequestBody ProfileDTO dto,
+                                   @AuthenticationPrincipal LoginUser loginUser) {
+        return userService.updateProfile(dto, loginUser.getUserId());
+    }
+
+    @Operation(summary = "本人修改密码")
+    @PutMapping("/password")
+    public Result<?> changePassword(@RequestBody java.util.Map<String, String> body,
+                                    @AuthenticationPrincipal LoginUser loginUser) {
+        return userService.changePassword(body.get("oldPassword"), body.get("newPassword"), loginUser.getUserId());
     }
 
     @Operation(summary = "创建用户")

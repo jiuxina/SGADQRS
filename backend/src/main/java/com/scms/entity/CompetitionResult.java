@@ -13,7 +13,6 @@ public class CompetitionResult {
     private Long id;
 
     private Long competitionId;
-    private Long registrationId;
     private Long studentId;
     private Long teamId;
     private BigDecimal score;
