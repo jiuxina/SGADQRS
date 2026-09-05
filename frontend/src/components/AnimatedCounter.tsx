@@ -58,7 +58,7 @@ export function AnimatedCounterGroup({
   items: Array<{ label: string; value: number; prefix?: string; suffix?: string; color?: string }>
 }) {
   return (
-    <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
       {items.map((item, index) => (
         <motion.div
           key={item.label}

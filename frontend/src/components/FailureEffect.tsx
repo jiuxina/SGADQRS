@@ -92,7 +92,7 @@ export default function FailureEffect({
 
             {/* 进度条 */}
             <div style={{
-              marginTop: '16px',
+              marginTop: '12px',
               height: '3px',
               borderRadius: '2px',
               background: 'rgba(0,0,0,0.06)',

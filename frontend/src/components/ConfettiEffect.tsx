@@ -195,7 +195,7 @@ export default function ConfettiEffect({
               transition={{ duration: 0.5, repeat: 2 }}
               style={{
                 fontSize: '64px',
-                marginBottom: '16px',
+                marginBottom: '12px',
               }}
             >
               <PartyPopper size={64} />

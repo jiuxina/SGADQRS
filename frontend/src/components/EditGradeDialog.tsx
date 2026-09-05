@@ -112,7 +112,7 @@ export function EditGradeContainer() {
             </button>
 
             {/* Icon */}
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '12px' }}>
               <Award size={16} strokeWidth={1.5} color="var(--text-secondary)" />
             </div>
 
@@ -127,13 +127,13 @@ export function EditGradeContainer() {
             {/* Message */}
             <div style={{
               fontSize: '14px', color: 'var(--text-secondary)',
-              textAlign: 'center', lineHeight: 1.6, marginBottom: '20px',
+              textAlign: 'center', lineHeight: 1.6, marginBottom: '14px',
             }}>
               编辑 {state.studentName} 的成绩信息
             </div>
 
             {/* Score Input */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '13px',
@@ -159,7 +159,7 @@ export function EditGradeContainer() {
             </div>
 
             {/* Ranking Input */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '13px',
@@ -183,7 +183,7 @@ export function EditGradeContainer() {
             </div>
 
             {/* Award Level Select */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '13px',
@@ -203,7 +203,7 @@ export function EditGradeContainer() {
                 <option value="">请选择奖项</option>
                 {(() => {
                   let list = state.awards
-                  if (typeof list === 'string') { try { list = JSON.parse(list) } catch { list = null } }
+                  if (typeof list === 'string') { try { list = JSON.parse(list) } catch { list = [] } }
                   return Array.isArray(list) && list.length > 0 ? (
                     list.map((award: { name: string; level: number }) => (
                       <option key={award.level} value={award.level}>{award.name}</option>
@@ -222,7 +222,7 @@ export function EditGradeContainer() {
             </div>
 
             {/* Remark Input */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '13px',

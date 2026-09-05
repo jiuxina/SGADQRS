@@ -74,14 +74,14 @@ export default function RejectReasonModal({
             </button>
 
             {/* Icon */}
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '12px' }}>
               <XCircle size={16} strokeWidth={1.5} color="var(--text-secondary)" />
             </div>
 
             {/* Title */}
             <div style={{
               fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)',
-              textAlign: 'center', marginBottom: '16px',
+              textAlign: 'center', marginBottom: '12px',
             }}>
               {title}
             </div>
@@ -104,7 +104,7 @@ export default function RejectReasonModal({
                 lineHeight: 1.5,
                 resize: 'vertical',
                 outline: 'none',
-                marginBottom: '20px',
+                marginBottom: '14px',
               }}
             />
 

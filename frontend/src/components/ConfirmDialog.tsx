@@ -110,7 +110,7 @@ export function ConfirmContainer() {
             </button>
 
             {/* Icon */}
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '12px' }}>
               <Icon size={16} strokeWidth={1.5} color="var(--text-secondary)" />
             </div>
 
@@ -127,7 +127,7 @@ export function ConfirmContainer() {
             {/* Message */}
             <div style={{
               fontSize: '14px', color: 'var(--text-secondary)',
-              textAlign: 'center', lineHeight: 1.6, marginBottom: '24px',
+              textAlign: 'center', lineHeight: 1.6, marginBottom: '16px',
             }}>
               {state.message}
             </div>

@@ -40,7 +40,7 @@ export default function NavBar({ title, subtitle, showBack = false, rightContent
             <div>
               <h1 style={{ fontSize: '20px', fontWeight: '600', color: 'var(--text-primary)', margin: 0, letterSpacing: '0.38px' }}>{title}</h1>
               {subtitle && (
-                <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', margin: '1px 0 0' }}>{subtitle}</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', margin: '1px 0 0' }}>{subtitle}</p>
               )}
             </div>
           )}

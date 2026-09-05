@@ -45,7 +45,7 @@ export function SkeletonCard({ width = '240px' }: { width?: string }) {
     <div
       style={{
         width,
-        padding: '16px',
+        padding: '12px',
         background: 'white',
         borderRadius: '12px',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',

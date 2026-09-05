@@ -11,21 +11,19 @@ import {
   LogOut,
   Compass,
   FileText,
-  Medal,
   Users,
   ScrollText,
   Megaphone,
-  Plus,
+  MessageSquare,
   Menu,
   X,
-  Award,
-  ClipboardList,
 } from 'lucide-react'
 import { useGlassShimmerContainer } from '../hooks/useAnimations'
 import { useAuthStore } from '../store/authStore'
 import { env } from '../config/env'
 import { useIsMobile } from '../hooks/useIsMobile'
 import PageTransition from './PageTransition'
+import NotificationBell from './NotificationBell'
 
 interface DesktopLayoutProps {
   children?: ReactNode
@@ -49,27 +47,23 @@ function getRoleFromPath(pathname: string): 'admin' | 'teacher' | 'student' {
 const navItemsByRole: Record<string, NavItem[]> = {
   admin: [
     { id: 'dashboard', label: '系统总览', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { id: 'competitions', label: '竞赛审核', icon: ClipboardCheck, path: '/admin/competitions' },
+    { id: 'competitions', label: '竞赛中心', icon: ClipboardCheck, path: '/admin/competitions' },
     { id: 'users', label: '用户管理', icon: Users, path: '/admin/users' },
-    { id: 'registrations', label: '报名监管', icon: ClipboardList, path: '/admin/registrations' },
-    { id: 'grades', label: '成绩管理', icon: Award, path: '/admin/grades' },
     { id: 'stats', label: '数据统计', icon: BarChart3, path: '/admin/stats' },
     { id: 'notices', label: '公告管理', icon: Megaphone, path: '/admin/notices' },
   ],
   teacher: [
-    { id: 'dashboard', label: '赛事管理', icon: LayoutDashboard, path: '/teacher/dashboard' },
+    { id: 'dashboard', label: '工作台', icon: LayoutDashboard, path: '/teacher/dashboard' },
     { id: 'competitions', label: '竞赛管理', icon: Trophy, path: '/teacher/competitions' },
-    { id: 'create', label: '发布竞赛', icon: Plus, path: '/teacher/competitions/create' },
     { id: 'teams', label: '团队管理', icon: Users, path: '/teacher/teams' },
     { id: 'grades', label: '成绩录入', icon: FileText, path: '/teacher/grades' },
   ],
   student: [
-    { id: 'dashboard', label: '竞赛总览', icon: Compass, path: '/student/dashboard' },
-    { id: 'competitions', label: '竞赛浏览', icon: Trophy, path: '/student/competitions' },
-    { id: 'registration', label: '我的报名', icon: FileText, path: '/student/registration' },
-    { id: 'teams', label: '我的团队', icon: Users, path: '/student/teams' },
-    { id: 'grades', label: '成绩查询', icon: Medal, path: '/student/grades' },
+    { id: 'dashboard', label: '概览', icon: Compass, path: '/student/dashboard' },
+    { id: 'competitions', label: '竞赛', icon: Trophy, path: '/student/competitions' },
+    { id: 'teams', label: '组队中心', icon: Users, path: '/student/teams' },
     { id: 'history', label: '参赛历史', icon: ScrollText, path: '/student/history' },
+    { id: 'notifications', label: '消息中心', icon: MessageSquare, path: '/student/notifications' },
   ],
 }
 
@@ -77,46 +71,46 @@ const navItemsByRole: Record<string, NavItem[]> = {
 const mobileTabItemsByRole: Record<string, NavItem[]> = {
   admin: [
     { id: 'dashboard', label: '总览', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { id: 'competitions', label: '审核', icon: ClipboardCheck, path: '/admin/competitions' },
-    { id: 'registrations', label: '报名', icon: ClipboardList, path: '/admin/registrations' },
+    { id: 'competitions', label: '竞赛', icon: ClipboardCheck, path: '/admin/competitions' },
     { id: 'users', label: '用户', icon: Users, path: '/admin/users' },
     { id: 'stats', label: '统计', icon: BarChart3, path: '/admin/stats' },
   ],
   teacher: [
-    { id: 'dashboard', label: '管理', icon: LayoutDashboard, path: '/teacher/dashboard' },
+    { id: 'dashboard', label: '工作台', icon: LayoutDashboard, path: '/teacher/dashboard' },
     { id: 'competitions', label: '竞赛', icon: Trophy, path: '/teacher/competitions' },
-    { id: 'create', label: '发布', icon: Plus, path: '/teacher/competitions/create' },
     { id: 'teams', label: '团队', icon: Users, path: '/teacher/teams' },
+    { id: 'grades', label: '成绩', icon: FileText, path: '/teacher/grades' },
   ],
   student: [
-    { id: 'dashboard', label: '总览', icon: Compass, path: '/student/dashboard' },
+    { id: 'dashboard', label: '概览', icon: Compass, path: '/student/dashboard' },
     { id: 'competitions', label: '竞赛', icon: Trophy, path: '/student/competitions' },
-    { id: 'registration', label: '报名', icon: FileText, path: '/student/registration' },
-    { id: 'teams', label: '团队', icon: Users, path: '/student/teams' },
-    { id: 'grades', label: '成绩', icon: Medal, path: '/student/grades' },
+    { id: 'teams', label: '组队', icon: Users, path: '/student/teams' },
+    { id: 'history', label: '历史', icon: ScrollText, path: '/student/history' },
+    { id: 'notifications', label: '消息', icon: MessageSquare, path: '/student/notifications' },
   ],
 }
 
 const titleMap: Record<string, string> = {
   '/profile': '个人中心',
   '/admin/dashboard': '系统总览',
-  '/admin/competitions': '竞赛审核',
+  '/admin/competitions': '竞赛中心',
+  '/admin/competitions|teams': '队伍审核',
+  '/admin/competitions|grades': '成绩管理',
   '/admin/users': '用户管理',
-  '/admin/registrations': '报名监管',
-  '/admin/grades': '成绩管理',
   '/admin/stats': '数据统计',
   '/admin/notices': '公告管理',
-  '/teacher/dashboard': '赛事管理',
+  '/teacher/dashboard': '工作台',
   '/teacher/competitions': '竞赛管理',
   '/teacher/competitions/create': '发布竞赛',
   '/teacher/teams': '团队管理',
   '/teacher/grades': '成绩录入',
-  '/student/dashboard': '竞赛总览',
-  '/student/competitions': '竞赛浏览',
-  '/student/registration': '我的报名',
-  '/student/teams': '我的团队',
-  '/student/grades': '成绩查询',
+  '/student/dashboard': '概览',
+  '/student/competitions': '竞赛',
+  '/student/teams': '组队中心',
+  '/student/teams|recruit': '招募广场',
   '/student/history': '参赛历史',
+  '/student/history|transcript': '成绩单',
+  '/student/notifications': '消息中心',
 }
 
 function positionTooltip(e: React.MouseEvent<HTMLElement>) {
@@ -151,8 +145,18 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
   const role = (user?.role as 'admin' | 'teacher' | 'student') || pathRole
   const navItems = navItemsByRole[role] || navItemsByRole.student
   const mobileTabs = mobileTabItemsByRole[role] || mobileTabItemsByRole.student
-  const activeId = navItems.find((item) => location.pathname === item.path)?.id || 'dashboard'
-  const pageTitle = title || titleMap[location.pathname] || '竞赛总览'
+  // 无匹配导航项（如 /profile、TA 的主页）时不高亮任何项，而非回退到「概览」
+  const activeId = navItems.find(
+    (item) => location.pathname === item.path || location.pathname.startsWith(item.path + '/')
+  )?.id
+  const activeTab = new URLSearchParams(location.search).get('tab')
+  const pageTitle = title
+    || (activeTab && titleMap[`${location.pathname}|${activeTab}`])
+    || titleMap[location.pathname]
+    || (/^\/(admin|teacher)\/competitions\/\d+$/.test(location.pathname) ? '竞赛详情' : null)
+    || (/^\/(admin|teacher)\/competitions\/\d+\/edit$/.test(location.pathname) ? '编辑竞赛' : null)
+    || (/^\/(student|teacher)\/teams\/detail\/\d+$|^\/admin\/competitions\/team\/\d+$/.test(location.pathname) ? '队伍详情' : null)
+    || (/^\/student\/u\/\d+$/.test(location.pathname) ? 'TA 的主页' : '概览')
 
   const handleLogout = () => {
     logout()
@@ -235,7 +239,7 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
               {pageTitle}
             </motion.span>
           </AnimatePresence>
-          <button className="mobile-menu-btn" onClick={() => navigate('/profile')} aria-label="通知">
+          <button className="mobile-menu-btn" onClick={() => role === 'student' ? navigate('/student/notifications') : navigate('/profile')} aria-label="通知">
             <Bell size={20} strokeWidth={1.8} />
           </button>
         </header>
@@ -461,9 +465,13 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                 onKeyDown={handleSearch}
               />
             </div>
-            <button className="header-action-btn" title="通知" onClick={() => navigate('/profile')}>
-              <Bell strokeWidth={1.5} />
-            </button>
+            {role === 'student' ? (
+              <NotificationBell />
+            ) : (
+              <button className="header-action-btn" title="通知" onClick={() => navigate('/profile')}>
+                <Bell strokeWidth={1.5} />
+              </button>
+            )}
           </div>
         </header>
 

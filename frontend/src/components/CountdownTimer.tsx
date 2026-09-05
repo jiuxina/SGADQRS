@@ -90,7 +90,7 @@ export default function CountdownTimer({ deadline, style }: CountdownTimerProps)
         display: 'flex',
         alignItems: 'center',
         gap: '4px',
-        fontSize: '11px',
+        fontSize: '12px',
         color: isUrgent ? '#f59e0b' : 'var(--text-tertiary)',
         fontWeight: '500',
       }}>
@@ -141,7 +141,7 @@ function TimeBlock({ value, label, isUrgent }: { value: number; label: string; i
         </motion.span>
       </AnimatePresence>
       <span style={{
-        fontSize: '9px',
+        fontSize: '10px',
         color: 'var(--text-tertiary)',
         marginTop: '2px',
       }}>

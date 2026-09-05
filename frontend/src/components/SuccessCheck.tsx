@@ -74,7 +74,7 @@ export function SuccessOverlay({ visible, onComplete }: { visible: boolean; onCo
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
               style={{
-                marginTop: '16px',
+                marginTop: '12px',
                 fontSize: '18px',
                 fontWeight: '600',
                 color: '#1a1a1a',

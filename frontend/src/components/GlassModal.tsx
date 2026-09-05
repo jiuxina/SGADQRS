@@ -30,7 +30,7 @@ export default function GlassModal({ open, onClose, title, maxWidth = '520px', c
             className="glass-card glass-card-vertical glass-card-static"
             style={{
               width: '90%', maxWidth, maxHeight: '85vh', overflow: 'auto',
-              padding: '24px', position: 'relative',
+              padding: '16px', position: 'relative',
             }}
             initial={{ opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -39,7 +39,7 @@ export default function GlassModal({ open, onClose, title, maxWidth = '520px', c
             onClick={(e) => e.stopPropagation()}
           >
             {title && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
                 <button
                   onClick={onClose}

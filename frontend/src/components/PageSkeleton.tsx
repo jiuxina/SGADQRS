@@ -52,7 +52,7 @@ export function DashboardSkeleton() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="metric-card" style={{ padding: '14px' }}>
+        <div key={i} className="metric-card" style={{ padding: '12px' }}>
           <Bar width="60%" height="12px" />
           <div style={{ marginTop: '10px' }}><Bar width="40%" height="24px" borderRadius="8px" /></div>
         </div>
@@ -81,14 +81,14 @@ export function TableSkeleton() {
   return (
     <div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0' }}>
       {/* Header row */}
-      <div style={{ display: 'flex', gap: '16px', padding: '12px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+      <div style={{ display: 'flex', gap: '12px', padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <Bar width="80px" height="12px" />
         <Bar width="120px" height="12px" />
         <Bar width="100px" height="12px" />
         <Bar width="60px" height="12px" />
       </div>
       {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} style={{ display: 'flex', gap: '16px', padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+        <div key={i} style={{ display: 'flex', gap: '12px', padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
           <Bar width="80px" height="13px" />
           <Bar width="120px" height="13px" />
           <Bar width="100px" height="13px" />
