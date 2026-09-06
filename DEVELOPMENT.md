@@ -9,7 +9,7 @@
 
 SCMS 是一个面向高校的学生竞赛信息管理平台，采用前后端分离架构。系统支持三种角色：管理员、教师、学生，覆盖竞赛发布、报名审核、团队组建、成绩录入、数据统计、Excel 导出等完整业务流程。
 
-数据库从初始 15 表精简至 7 表，前端以 iOS 26 Liquid Glass 玻璃态设计语言为核心视觉风格。
+数据库从初始 15 表精简至 7 表；2026-09-05「赛友 TeamUp」社区化改造（经用户确认）新增 recruit_post/community_request 两表、sys_notice 并入 sys_notification；同日「Lean 精简」删除 competition_registration（报名与队伍合一）及多处死字段，现为 8 表。前端以 iOS 26 Liquid Glass 玻璃态设计语言为核心视觉风格。
 
 ### 1.1 系统角色与核心能力
 
@@ -72,7 +72,7 @@ docker start mysql-scms
 docker exec -i mysql-scms mysql -u root -proot < backend/sql/init.sql
 ```
 
-init.sql 脚本是幂等的（使用 `CREATE DATABASE IF NOT EXISTS` 和 `CREATE TABLE IF NOT EXISTS`），可以安全地多次执行。脚本包含：建库语句（utf8mb4 字符集）、7 张表的 DDL、8 个用户（1 管理员 + 2 教师 + 5 学生，密码统一 123456 的 BCrypt 哈希）、7 个竞赛（含完整描述、规则、奖项 JSON）、6 条报名记录、3 个团队 + 4 条成员关系、3 条成绩记录、3 条系统公告。
+init.sql 脚本是幂等的（使用 `CREATE DATABASE IF NOT EXISTS` 和 `CREATE TABLE IF NOT EXISTS`），可以安全地多次执行。脚本包含：建库语句（utf8mb4 字符集）、8 张表的 DDL、8 个用户（1 管理员 + 2 教师 + 5 学生，密码统一 123456 的 BCrypt 哈希，学生含昵称/简介/技能标签）、7 个竞赛（含完整描述、规则、奖项 JSON）、6 条报名记录、4 个团队 + 5 条成员关系、3 条成绩记录、3 条招募/求组帖、3 条社区请求、7 条通知（含 3 条全员公告）。**已有旧库请执行 `backend/sql/upgrade-teamup.sql` 增量升级**（start.bat 检测到旧库缺 recruit_post 表时会自动执行）。
 
 ### 2.4 启动项目
 
@@ -180,7 +180,7 @@ CREATE TABLE `sys_user` (
 );
 ```
 
-设计说明：`user_type` 是角色的权威字段，认证时以它为准做 switch 映射。`role` 是辅助冗余字段，前端路由守卫使用。`dept_name`/`major_name`/`class_name` 存储纯文本而非外键引用，因为系统不需要组织结构的层级管理。**注意：当前 `password` 字段没有标注 `@JsonIgnore`，这意味着在返回用户列表或用户详情时密码哈希会包含在 JSON 响应中。** 这是一个安全隐患，建议尽快添加 `@JsonIgnore` 注解。`roleCode` 是 `@TableField(exist = false)` 虚拟字段，不映射到数据库列，用于前端兼容。
+设计说明：`user_type` 是角色的唯一权威字段，认证/授权时以它做 switch 映射推导角色编码（roleCode），`role` 冗余列已于 TeamUp 改造中删除。`dept_name`/`major_name`/`class_name` 存储纯文本而非外键引用，因为系统不需要组织结构的层级管理。**注意：当前 `password` 字段没有标注 `@JsonIgnore`，这意味着在返回用户列表或用户详情时密码哈希会包含在 JSON 响应中。** 这是一个安全隐患，建议尽快添加 `@JsonIgnore` 注解。`roleCode` 是 `@TableField(exist = false)` 虚拟字段，不映射到数据库列，用于前端兼容。
 
 #### 表 2: competition（竞赛信息表）
 
