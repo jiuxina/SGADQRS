@@ -32,16 +32,6 @@ if not errorlevel 1 (
     echo [--] Frontend not running
 )
 
-:: Stop animation demo window
-echo [3/3] Stopping animation demo...
-tasklist /fi "windowtitle eq Animation Demo" 2>nul | find /i "cmd.exe" >nul
-if not errorlevel 1 (
-    taskkill /fi "windowtitle eq Animation Demo" /t /f >nul 2>&1
-    echo [OK] Animation demo stopped
-) else (
-    echo [--] Animation demo not running
-)
-
 :: Cleanup: kill processes on ports
 echo.
 echo [CLEANUP] Checking ports...
@@ -52,15 +42,9 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8080 " ^| findstr "LISTENIN
     taskkill /pid %%a /f >nul 2>&1
 )
 
-:: Kill process on port 5174 (frontend)
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5174 " ^| findstr "LISTENING" 2^>nul') do (
-    echo [CLEANUP] Killing port 5174 process: %%a
-    taskkill /pid %%a /f >nul 2>&1
-)
-
-:: Kill process on port 3001 (animation demo)
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3001 " ^| findstr "LISTENING" 2^>nul') do (
-    echo [CLEANUP] Killing port 3001 process: %%a
+:: Kill process on port 3000 (frontend)
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000 " ^| findstr "LISTENING" 2^>nul') do (
+    echo [CLEANUP] Killing port 3000 process: %%a
     taskkill /pid %%a /f >nul 2>&1
 )
 

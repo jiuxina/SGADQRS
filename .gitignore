@@ -1,3 +1,18 @@
 /.playwright-mcp
 /.omo
-/frontend-animation-demo
+/.zcode
+/.codebuddy
+
+# 日志（任意层级）
+*.log
+*.log.*
+
+# 构建产物
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# 测试 / 截图输出
+frontend/test-results/
+frontend/shots-*/
+frontend/playwright-report/

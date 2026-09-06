@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-title SCMS Startup
+title TeamUp Startup
 
 echo.
 echo ========================================
@@ -12,7 +12,6 @@ echo.
 set "ROOT_DIR=%~dp0"
 set "BACKEND_DIR=%ROOT_DIR%backend"
 set "FRONTEND_DIR=%ROOT_DIR%frontend"
-set "ANIM_DIR=%ROOT_DIR%frontend-animation-demo"
 
 echo [INFO] Project: %ROOT_DIR%
 echo.
@@ -76,6 +75,16 @@ if errorlevel 1 (
     )
 ) else (
     echo [OK] Database scms exists
+
+    :: 旧库自动升级：缺少社区表(recruit_post)时执行 TeamUp 升级脚本
+    mysql -u root -proot -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='scms' AND table_name='recruit_post';" 2>nul | findstr "0" >nul
+    if not errorlevel 1 (
+        if exist "%BACKEND_DIR%\sql\upgrade-teamup.sql" (
+            echo [INFO] Upgrading schema for TeamUp community...
+            mysql -u root -proot scms < "%BACKEND_DIR%\sql\upgrade-teamup.sql" >nul 2>&1
+            echo [OK] Schema upgraded
+        )
+    )
 )
 
 :skip_db
@@ -119,34 +128,24 @@ if not exist "%FRONTEND_DIR%\node_modules" (
     )
 )
 
-echo [INFO] Starting frontend (port 5174)...
+echo [INFO] Starting frontend (port 3000)...
 start "SCMS Frontend" /D "%FRONTEND_DIR%" cmd /k "npm run dev"
 echo [OK] Frontend window opened
-
-:: ===== Start Animation Demo =====
-if exist "%ANIM_DIR%\package.json" (
-    echo [INFO] Starting animation demo (port 3001)...
-    start "Animation Demo" /D "%ANIM_DIR%" cmd /k "npm run dev"
-    echo [OK] Animation demo window opened
-) else (
-    echo [WARN] Animation demo not found, skipping
-)
 
 echo [INFO] Waiting 5 seconds...
 timeout /t 5 /nobreak >nul
 
 :: ===== Open Browser =====
 echo [INFO] Opening browser...
-start http://localhost:5174
+start http://localhost:3000
 
 echo.
 echo ========================================
 echo   All services started!
 echo ========================================
 echo.
-echo   Frontend:       http://localhost:5174
+echo   Frontend:       http://localhost:3000
 echo   Backend:        http://localhost:8080/api
-echo   Animation Demo: http://localhost:3001
 echo.
 echo   Accounts:
 echo     Admin:   admin / 123456
