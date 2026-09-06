@@ -29,20 +29,30 @@ export const registrationStatusBadge: Record<number, { cls: string; label: strin
   2: { cls: 'fail', label: '已拒绝' },
 }
 
+// 参赛队伍状态映射
+export const teamStatusBadge: Record<number, { cls: string; label: string }> = {
+  0: { cls: 'pending', label: '组建中' },
+  1: { cls: 'reviewing', label: '待审核' },
+  2: { cls: 'pass', label: '已通过' },
+  3: { cls: 'fail', label: '已拒绝' },
+}
+
 /**
  * 获取状态徽章
  * @param status 状态码
- * @param type 映射类型：'competition'(管理员/教师竞赛)、'student-competition'(学生竞赛)、'registration'(报名)
+ * @param type 映射类型：'competition'(管理员/教师竞赛)、'student-competition'(学生竞赛)、'team'(参赛队伍)
  */
 export function getStatusBadge(
   status: number,
-  type: 'competition' | 'student-competition' | 'registration' = 'competition',
+  type: 'competition' | 'student-competition' | 'registration' | 'team' = 'competition',
 ): { cls: string; label: string } {
   const map =
     type === 'competition'
       ? competitionStatusBadge
       : type === 'student-competition'
         ? studentCompetitionStatusBadge
-        : registrationStatusBadge
+        : type === 'team'
+          ? teamStatusBadge
+          : registrationStatusBadge
   return map[status] ?? { cls: 'pending', label: '未知' }
 }

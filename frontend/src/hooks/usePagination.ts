@@ -1,9 +1,10 @@
 import { useState, useCallback, useMemo } from 'react'
+import { PAGE_SIZE } from '../config/constants'
 
 interface UsePaginationOptions {
   /** 初始页码，默认 1 */
   defaultPage?: number
-  /** 初始每页条数，默认 10 */
+  /** 初始每页条数，默认 PAGE_SIZE.DEFAULT */
   defaultPageSize?: number
 }
 
@@ -35,7 +36,7 @@ interface UsePaginationReturn {
 }
 
 export function usePagination(options: UsePaginationOptions = {}): UsePaginationReturn {
-  const { defaultPage = 1, defaultPageSize = 10 } = options
+  const { defaultPage = 1, defaultPageSize = PAGE_SIZE.DEFAULT } = options
 
   const [current, setCurrentRaw] = useState(defaultPage)
   const [pageSize, setPageSizeRaw] = useState(defaultPageSize)
