@@ -52,12 +52,12 @@ export default function AdminStats() {
       ['总竞赛', String((stats?.totalCompetitions as number) || 0)],
       ['已发布', String((stats?.publishedCompetitions as number) || 0)],
       ['进行中', String((stats?.ongoingCompetitions as number) || 0)],
-      ['总报名', String((stats?.totalRegistrations as number) || 0)],
+      ['参赛队伍', String((stats?.totalRegistrations as number) || 0)],
       ['学生数', String((stats?.totalStudents as number) || 0)],
       ['教师数', String((stats?.totalTeachers as number) || 0)],
       ['获奖数', String(Object.values(awardDistribution).reduce((s, v) => s + v, 0))],
       [],
-      ['报名趋势'],
+      ['组队趋势'],
       ['月份', '人数'],
       ...enrollmentTrends.map(t => [t.month, String(t.count)]),
       [],
@@ -84,7 +84,7 @@ export default function AdminStats() {
   return (
     <>
       {/* 日期筛选 + 导出 */}
-      <motion.div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginBottom: '16px' }}
+      <motion.div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginBottom: '12px' }}
         variants={instant} initial="hidden" animate="visible">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <label style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>开始日期</label>
@@ -103,33 +103,33 @@ export default function AdminStats() {
         </button>
       </motion.div>
       {/* 指标卡片 */}
-      <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}
+      <motion.div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}
         variants={instant} initial="hidden" animate="visible">
         {[
           { label: '总用户', value: (stats?.totalUsers as number) || 0 },
           { label: '总竞赛', value: (stats?.totalCompetitions as number) || 0 },
           { label: '已发布', value: (stats?.publishedCompetitions as number) || 0 },
           { label: '进行中', value: (stats?.ongoingCompetitions as number) || 0 },
-          { label: '总报名', value: (stats?.totalRegistrations as number) || 0 },
+          { label: '参赛队伍', value: (stats?.totalRegistrations as number) || 0 },
           { label: '学生数', value: (stats?.totalStudents as number) || 0 },
           { label: '教师数', value: (stats?.totalTeachers as number) || 0 },
           { label: '获奖数', value: Object.values(awardDistribution).reduce((s, v) => s + v, 0) },
         ].map((item) => (
-          <div key={item.label} className="metric-card" style={{ padding: '16px' }}>
+          <div key={item.label} className="metric-card" style={{ padding: '12px' }}>
             <div style={{ marginBottom: '10px' }}><span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.label}</span></div>
             <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.value}</div>
           </div>
         ))}
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginBottom: '12px' }}>
         {/* 报名趋势折线图 */}
-        <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '20px' }}
+        <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '14px' }}
           variants={fadeSlideUp} initial="hidden" animate="visible">
-          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>报名趋势（近6个月）</div>
+          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>组队趋势（近6个月）</div>
           <div style={{ position: 'relative', height: '180px', paddingLeft: '32px', paddingBottom: '28px' }}>
             {/* Y轴标签 */}
-            <div style={{ position: 'absolute', left: 0, top: 0, bottom: '28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: '28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-secondary)' }}>
               <span>{maxTrendCount}</span>
               <span>{Math.round(maxTrendCount / 2)}</span>
               <span>0</span>
@@ -161,7 +161,7 @@ export default function AdminStats() {
             {/* X轴标签 */}
             <div style={{ position: 'absolute', left: '32px', right: 0, bottom: 0, display: 'flex' }}>
               {enrollmentTrends.map(trend => (
-                <div key={trend.month} style={{ flex: 1, textAlign: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                <div key={trend.month} style={{ flex: 1, textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
                   {trend.month.slice(5)}月
                 </div>
               ))}
@@ -170,17 +170,17 @@ export default function AdminStats() {
         </motion.div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
         {/* 竞赛热度排行 */}
-        <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '20px' }}
+        <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '14px' }}
           variants={fadeSlideUp} initial="hidden" animate="visible">
-          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>竞赛热度排行</div>
+          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>竞赛热度排行</div>
           {competitionRankings.length > 0 ? (
             competitionRankings.map((comp, i) => (
               <div key={comp.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                 <span style={{
                   width: '20px', height: '20px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '11px', fontWeight: '700', flexShrink: 0,
+                  fontSize: '12px', fontWeight: '700', flexShrink: 0,
                   background: i < 3 ? ['#f59e0b', '#94a3b8', '#cd7f32'][i] : 'rgba(0,0,0,0.06)',
                   color: i < 3 ? 'white' : 'var(--text-secondary)'
                 }}>{i + 1}</span>
@@ -197,9 +197,9 @@ export default function AdminStats() {
         </motion.div>
 
         {/* 获奖分布 */}
-        <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '20px' }}
+        <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '14px' }}
           variants={fadeSlideUp} initial="hidden" animate="visible">
-          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>获奖分布</div>
+          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>获奖分布</div>
           {Object.entries(awardDistribution).map(([name, count]) => (
             <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
               <span style={{ fontSize: '13px', color: 'var(--text-primary)', flex: 1 }}>{name}</span>

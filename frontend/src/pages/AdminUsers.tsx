@@ -320,7 +320,7 @@ export default function AdminUsers() {
   return (
     <>
       <motion.div
-        style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}
+        style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '16px' }}
         variants={fadeInList}
         initial="hidden"
         animate="visible"
@@ -330,7 +330,7 @@ export default function AdminUsers() {
           { label: '学生数', value: stats.studentCount, footer: '在校学生账号' },
           { label: '教师数', value: stats.teacherCount, footer: '教师账号' },
         ].map((item) => (
-          <div key={item.label} className="metric-card" style={{ padding: '16px' }}>
+          <div key={item.label} className="metric-card" style={{ padding: '12px' }}>
             <div style={{ marginBottom: '10px' }}>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.label}</span>
             </div>
@@ -477,7 +477,7 @@ export default function AdminUsers() {
                     <td>
                       <span
                         className={`glass-badge ${user.userType === 3 ? 'reviewing' : user.userType === 2 ? 'pass' : 'pending'}`}
-                        style={{ fontSize: '11px', padding: '2px 8px' }}
+                        style={{ fontSize: '12px', padding: '2px 8px' }}
                       >
                         {roleLabelMap[user.userType]}
                       </span>
@@ -486,7 +486,7 @@ export default function AdminUsers() {
                     <td>
                       <span
                         className={`glass-badge ${user.gender === 1 ? 'pass' : user.gender === 2 ? 'pending' : ''}`}
-                        style={{ fontSize: '11px', padding: '2px 8px' }}
+                        style={{ fontSize: '12px', padding: '2px 8px' }}
                       >
                         {user.gender === 1 ? '男' : user.gender === 2 ? '女' : '-'}
                       </span>
@@ -496,12 +496,12 @@ export default function AdminUsers() {
                     <td>
                       <span
                         className={`glass-badge ${user.status === 1 ? 'pass' : 'reviewing'}`}
-                        style={{ fontSize: '11px', padding: '2px 8px' }}
+                        style={{ fontSize: '12px', padding: '2px 8px' }}
                       >
                         {user.status === 1 ? '启用' : '禁用'}
                       </span>
                     </td>
-                    <td style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>{formatDate((user as unknown as Record<string, unknown>).lastLoginTime as string ?? null)}</td>
+                    <td style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>{formatDate((user as unknown as Record<string, unknown>).lastLoginTime as string ?? null)}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         <button className="text-btn blue" style={{ fontSize: '12px' }}
@@ -547,7 +547,7 @@ export default function AdminUsers() {
 
       {/* Create User Modal */}
       <GlassModal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="新增用户">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
             <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
               用户名 <span style={{ color: 'var(--error)' }}>*</span>
@@ -600,7 +600,7 @@ export default function AdminUsers() {
           </div>
           <div>
             <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>性别</label>
-            <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
               {[{ value: '1', label: '男' }, { value: '2', label: '女' }, { value: '0', label: '未知' }].map((opt) => (
                 <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}>
                   <input
@@ -650,7 +650,7 @@ export default function AdminUsers() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '14px' }}>
           <button className="btn ghost" onClick={() => setShowCreateModal(false)}>取消</button>
           <button className="btn ghost" onClick={handleCreate} disabled={creating} style={{ color: 'var(--accent)' }}>
             {creating ? '创建中...' : '创建'}
@@ -661,11 +661,11 @@ export default function AdminUsers() {
       {/* Edit Modal */}
       <GlassModal open={!!editingUser} onClose={() => setEditingUser(null)} title="编辑用户">
 
-              <div style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-tertiary)', marginBottom: '16px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
                   {editingUser?.username}
                 </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>真实姓名</label>
                   <input
@@ -690,7 +690,7 @@ export default function AdminUsers() {
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>性别</label>
-                  <div style={{ display: 'flex', gap: '16px' }}>
+                  <div style={{ display: 'flex', gap: '12px' }}>
                     {[{ value: '1', label: '男' }, { value: '2', label: '女' }, { value: '0', label: '未知' }].map((opt) => (
                       <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}>
                         <input
@@ -769,14 +769,14 @@ export default function AdminUsers() {
                     >
                       重置密码
                     </button>
-                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
                       密码将被重置为默认密码
                     </span>
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '14px' }}>
                 <button className="btn ghost" onClick={() => setEditingUser(null)}>取消</button>
                 <button className="btn ghost" onClick={handleSave} disabled={saving} style={{ color: 'var(--accent)' }}>
                   {saving ? '保存中...' : '保存'}

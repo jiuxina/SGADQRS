@@ -60,7 +60,7 @@ export default function StudentGrades() {
   return (
     <>
       {/* Section header */}
-      <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.05 }} style={{ marginTop: '16px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.05 }} style={{ marginTop: '12px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
           成绩明细
           <span style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
@@ -87,7 +87,7 @@ export default function StudentGrades() {
         style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-          gap: '16px',
+          gap: '12px',
         }}
       >
         {results.map((result) => {
@@ -95,7 +95,7 @@ export default function StudentGrades() {
             <div
               key={result.id}
               className="glass-card glass-card-vertical glass-card-static"
-              style={{ padding: '18px', cursor: 'pointer' }}
+              style={{ padding: '12px', cursor: 'pointer' }}
               onClick={() => navigate(`/student/competitions/${result.competitionId}`)}
             >
               {/* Top: Name + status badge */}
@@ -105,9 +105,9 @@ export default function StudentGrades() {
                     {result.competitionName || '-'}
                   </span>
                   {result.isPublished === 1 ? (
-                    <span className="glass-badge pass" style={{ fontSize: '11px', padding: '2px 8px', flexShrink: 0 }}>已发布</span>
+                    <span className="glass-badge pass" style={{ fontSize: '12px', padding: '2px 8px', flexShrink: 0 }}>已发布</span>
                   ) : (
-                    <span className="glass-badge pending" style={{ fontSize: '11px', padding: '2px 8px', flexShrink: 0 }}>待公布</span>
+                    <span className="glass-badge pending" style={{ fontSize: '12px', padding: '2px 8px', flexShrink: 0 }}>待公布</span>
                   )}
                 </div>
               </div>
@@ -116,7 +116,7 @@ export default function StudentGrades() {
               {(result.score !== null || result.ranking !== null) && (
                 <div style={{
                   display: 'flex',
-                  gap: '16px',
+                  gap: '12px',
                   marginBottom: '12px',
                   padding: '10px 14px',
                   borderRadius: '12px',
@@ -124,7 +124,7 @@ export default function StudentGrades() {
                 }}>
                   {result.score !== null && (
                     <div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>分数</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>分数</div>
                       <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px', lineHeight: 1 }}>
                         {result.score}
                       </div>
@@ -132,7 +132,7 @@ export default function StudentGrades() {
                   )}
                   {result.ranking !== null && (
                     <div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>排名</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>排名</div>
                       <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px', lineHeight: 1 }}>
                         {result.ranking}
                       </div>

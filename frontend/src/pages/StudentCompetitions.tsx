@@ -14,13 +14,11 @@ import ListMeta from '../components/ListMeta'
 import EmptyState from '../components/EmptyState'
 import { ListSkeleton, LoadingBar } from '../components/PageSkeleton'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
-import RegistrationModal from '../components/RegistrationModal'
+import EntryModal from '../components/EntryModal'
 import { competitionApi } from '../api'
-import { useAuthStore } from '../store/authStore'
 import type { CompetitionItem } from '../api/types'
 import CountdownTimer from '../components/CountdownTimer'
 import ConfettiEffect from '../components/ConfettiEffect'
-import FailureEffect from '../components/FailureEffect'
 import { PAGE_SIZE } from '../config/constants'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { formatDate, resolveCoverUrl } from '../utils/format'
@@ -39,7 +37,6 @@ const statusFilterLabels: Record<string, string> = {
 }
 
 export default function StudentCompetitions() {
-  const user = useAuthStore((s) => s.user)
   const [searchQuery, setSearchQuery] = useState('')
   const debouncedSearch = useDebounce(searchQuery, 300)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -50,8 +47,6 @@ export default function StudentCompetitions() {
 
   // 特效状态
   const [showConfetti, setShowConfetti] = useState(false)
-  const [showFailure, setShowFailure] = useState(false)
-  const [failureMessage, setFailureMessage] = useState('')
   const navigate = useNavigate()
   const [registeringComp, setRegisteringComp] = useState<CompetitionItem | null>(null)
   const isMobile = useIsMobile()
@@ -100,7 +95,7 @@ export default function StudentCompetitions() {
   return (
     <>
       {/* Search bar */}
-      <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" style={{ marginBottom: '16px' }}>
+      <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" style={{ marginBottom: '12px' }}>
         <div className="search-wrap" style={{ maxWidth: '100%' }}>
           <Search strokeWidth={1.5} />
           <input
@@ -129,7 +124,7 @@ export default function StudentCompetitions() {
       </motion.div>
 
       {/* Results count */}
-      <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.12 }} style={{ marginBottom: '14px' }}>
+      <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.12 }} style={{ marginBottom: '12px' }}>
         <ListMeta count={total} unit="个" />
       </motion.div>
 
@@ -145,15 +140,17 @@ export default function StudentCompetitions() {
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-            gap: '16px',
+            gap: '12px',
           }}
         >
           {competitions.map((comp) => (
             <motion.div
               key={comp.id}
               variants={staggerItem}
-              className="glass-card glass-card-vertical glass-card-static"
-              style={{ padding: '18px' }}
+              className="glass-card glass-card-vertical"
+              title="查看竞赛详情"
+              onClick={() => navigate(`/student/competitions/${comp.id}`)}
+              style={{ padding: '12px', cursor: 'pointer' }}
             >
               {/* Cover Image */}
               {resolveCoverUrl(comp.coverImage) ? (
@@ -187,7 +184,7 @@ export default function StudentCompetitions() {
                   <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                     <span
                       className={`glass-badge ${comp.status === 2 ? 'pass' : comp.status === 3 ? 'reviewing' : 'pending'}`}
-                      style={{ fontSize: '11px', padding: '2px 8px' }}
+                      style={{ fontSize: '12px', padding: '2px 8px' }}
                     >
                       {getStatusBadge(comp.status, 'student-competition').label}
                     </span>
@@ -229,8 +226,7 @@ export default function StudentCompetitions() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
                   <Users size={12} strokeWidth={1.5} />
-                  已报名 {comp.registrationCount}
-                  {comp.maxTeams ? ` / ${comp.maxTeams} 队` : ' 人'}
+                  参赛队伍 {comp.registrationCount} 队
                   <span style={{ marginLeft: '8px' }}>每队 {comp.maxMembers} 人</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
@@ -255,17 +251,17 @@ export default function StudentCompetitions() {
 
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
-                <button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }} onClick={() => navigate(`/student/competitions/${comp.id}`)}>
+                <button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); navigate(`/student/competitions/${comp.id}`) }}>
                   查看详情
                 </button>
                 {comp.status === 2 && (
                   comp.hasRegistered ? (
                     <button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px', color: 'var(--text-tertiary)' }} disabled>
-                      已报名
+                      已参赛
                     </button>
                   ) : (
-<button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }} onClick={() => setRegisteringComp(comp)}>
-                        立即报名
+<button className="btn ghost" style={{ flex: 1, height: '32px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); setRegisteringComp(comp) }}>
+                        去组队 / 报名
                       </button>
                   )
                 )}
@@ -296,27 +292,16 @@ export default function StudentCompetitions() {
       />
 
       {/* 失败特效 */}
-      <FailureEffect
-        show={showFailure}
-        message={failureMessage}
-        onComplete={() => setShowFailure(false)}
-        duration={2500}
-      />
 
-      {/* 报名确认模态框 */}
-      <RegistrationModal
+      {/* 参赛组队模态框 */}
+      <EntryModal
         open={!!registeringComp}
         onClose={() => setRegisteringComp(null)}
-        competitionId={registeringComp?.id ?? null}
-        competitionName={registeringComp?.competitionName ?? ''}
+        competition={registeringComp ? { id: registeringComp.id, competitionName: registeringComp.competitionName, maxMembers: registeringComp.maxMembers } : null}
         onSuccess={() => {
           setShowConfetti(true)
           setRegisteringComp(null)
           loadData()
-        }}
-        onFail={(message) => {
-          setFailureMessage(message)
-          setShowFailure(true)
         }}
       />
     </>

@@ -18,9 +18,9 @@ import { resolveCoverUrl } from '../utils/format'
 interface FormData {
   name: string
   organizer: string
-  category: string
-  eligibility: string
-  contactInfo: string
+  category?: string
+  eligibility?: string
+  contactInfo?: string
   description: string
   rules: string
   registrationStart: string
@@ -29,7 +29,6 @@ interface FormData {
   competitionEnd: string
   location: string
   maxMembers: string
-  maxTeams: string
 }
 
 interface AwardItem {
@@ -71,7 +70,6 @@ export default function TeacherCompetitionCreate() {
     competitionEnd: '',
     location: '',
     maxMembers: '5',
-    maxTeams: '',
   })
   const [awards, setAwards] = useState<AwardItem[]>([])
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
@@ -99,9 +97,6 @@ export default function TeacherCompetitionCreate() {
         setForm({
           name: comp.competitionName ?? '',
           organizer: comp.organizer ?? '',
-          category: comp.category ?? '',
-          eligibility: comp.eligibility ?? '',
-          contactInfo: comp.contactInfo ?? '',
           description: comp.description ?? '',
           rules: comp.rules ?? '',
           registrationStart: extractDate(comp.registrationStart),
@@ -110,7 +105,6 @@ export default function TeacherCompetitionCreate() {
           competitionEnd: extractDate(comp.competitionEnd),
           location: comp.location ?? '',
           maxMembers: String(comp.maxMembers ?? 5),
-          maxTeams: comp.maxTeams != null ? String(comp.maxTeams) : '',
         })
         if (comp.awards) setAwards(comp.awards)
         if (comp.coverImage) setCoverImage(comp.coverImage)
@@ -222,10 +216,9 @@ export default function TeacherCompetitionCreate() {
         competitionEnd: form.competitionEnd + ' 23:59:59',
         location: form.location,
         maxMembers: Number(form.maxMembers) || 1,
-        maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
         awards: awards.length > 0 ? JSON.stringify(awards) : undefined,
         attachments: attachments.length > 0 ? JSON.stringify(attachments) : undefined,
-        status: 0,
+        status: 0, // 草稿：仅发布者/管理员可见，不进入学生端
       }
       if (isEdit) {
         await competitionApi.update(payload)
@@ -259,7 +252,6 @@ export default function TeacherCompetitionCreate() {
         competitionEnd: form.competitionEnd + ' 23:59:59',
         location: form.location,
         maxMembers: Number(form.maxMembers) || 1,
-        maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
         awards: awards.length > 0 ? JSON.stringify(awards) : undefined,
         attachments: attachments.length > 0 ? JSON.stringify(attachments) : undefined,
         status: 1,
@@ -279,10 +271,10 @@ export default function TeacherCompetitionCreate() {
   }
 
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '6px' }
-  const errorStyle: React.CSSProperties = { fontSize: '11px', color: 'var(--danger)', marginTop: '4px' }
-  const fieldGroupStyle: React.CSSProperties = { marginBottom: '20px' }
+  const errorStyle: React.CSSProperties = { fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }
+  const fieldGroupStyle: React.CSSProperties = { marginBottom: '14px' }
   const textareaStyle: React.CSSProperties = {
-    width: '100%', minHeight: '100px', padding: '12px 14px', borderRadius: '12px',
+    width: '100%', minHeight: '100px', padding: '10px 12px', borderRadius: '12px',
     border: '1px solid rgba(255, 255, 255, 0.55)', background: 'rgba(255, 255, 255, 0.32)',
     backdropFilter: 'blur(18px) saturate(1.5)', WebkitBackdropFilter: 'blur(18px) saturate(1.5)',
     boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(255, 255, 255, 0.35)',
@@ -290,7 +282,7 @@ export default function TeacherCompetitionCreate() {
   }
   return (
     <>
-      <motion.div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
+      <motion.div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
         <button className="btn ghost" onClick={() => navigate(-1)} style={{ width: '36px', height: '36px', padding: 0 }}>
           <ArrowLeft size={16} strokeWidth={1.5} />
         </button>
@@ -369,20 +361,20 @@ export default function TeacherCompetitionCreate() {
                   <>
                     <Upload size={24} strokeWidth={1.5} style={{ color: 'var(--accent)', opacity: 0.6 }} />
                     <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>点击上传封面图</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', opacity: 0.6 }}>支持 JPG / PNG，建议 16:9</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', opacity: 0.6 }}>支持 JPG / PNG，建议 16:9</span>
                   </>
                 )}
               </div>
             )}
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '14px' }}>
             <label style={labelStyle}>主办单位 <span style={{ color: 'var(--danger)' }}>*</span></label>
             <input className="glass-input" placeholder="请输入主办单位" value={form.organizer} onChange={(e) => updateField('organizer', e.target.value)} />
             {errors.organizer && <div style={errorStyle}>{errors.organizer}</div>}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '14px', marginBottom: '14px' }}>
             <div>
               <label style={labelStyle}>竞赛分类</label>
               <select
@@ -479,9 +471,9 @@ export default function TeacherCompetitionCreate() {
             </button>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '14px' }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '12px' }}>时间安排</div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={{ ...labelStyle, fontSize: '12px', color: 'var(--text-secondary)' }}>报名开始时间 <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <input className="glass-input" type="date" value={form.registrationStart} onChange={(e) => updateField('registrationStart', e.target.value)} />
@@ -505,7 +497,7 @@ export default function TeacherCompetitionCreate() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: '20px', marginBottom: '28px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: '14px', marginBottom: '28px' }}>
             <div>
               <label style={labelStyle}>竞赛地点</label>
               <input className="glass-input" placeholder="请输入竞赛地点" value={form.location} onChange={(e) => updateField('location', e.target.value)} />
@@ -513,10 +505,6 @@ export default function TeacherCompetitionCreate() {
             <div>
               <label style={labelStyle}>每队最大人数</label>
               <input className="glass-input" type="number" min={1} max={20} value={form.maxMembers} onChange={(e) => updateField('maxMembers', e.target.value)} />
-            </div>
-            <div>
-              <label style={{ ...labelStyle, color: 'var(--text-secondary)' }}>最大报名队伍数</label>
-              <input className="glass-input" type="number" min={0} placeholder="不限" value={form.maxTeams} onChange={(e) => updateField('maxTeams', e.target.value)} />
             </div>
           </div>
 
@@ -550,7 +538,7 @@ export default function TeacherCompetitionCreate() {
                           {att.fileName}
                         </span>
                         {att.fileSize > 0 && (
-                          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', flexShrink: 0 }}>
                             {(att.fileSize / 1024).toFixed(1)} KB
                           </span>
                         )}

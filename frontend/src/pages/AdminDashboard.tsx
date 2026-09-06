@@ -10,24 +10,24 @@ import { DashboardSkeleton } from '../components/PageSkeleton'
 import QuickActions from '../components/QuickActions'
 import UpcomingReminders from '../components/UpcomingReminders'
 import { staggerContainer, staggerItem } from '../motion/variants'
-import { competitionApi, statsApi } from '../api'
-import type { CompetitionItem } from '../api/types'
+import { statsApi, registrationApi } from '../api'
+import type { TeamItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/toastUtils'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
-  const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
+  const [pendingTeams, setPendingTeams] = useState<TeamItem[]>([])
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
-      competitionApi.list({ current: 1, size: PAGE_SIZE.LARGE }),
       statsApi.admin(),
-    ]).then(([compResult, statsResult]) => {
-      setCompetitions(compResult.records)
+      registrationApi.teamList({ current: 1, size: PAGE_SIZE.LARGE, status: 1 }),
+    ]).then(([statsResult, teamResult]) => {
       setStats(statsResult as Record<string, unknown>)
+      setPendingTeams(teamResult.records)
     }).catch((e) => { toast.error('加载仪表盘数据失败'); console.error(e) }).finally(() => setLoading(false))
   }, [])
 
@@ -44,13 +44,13 @@ export default function AdminDashboard() {
   const total = Object.values((stats?.competitionByStatus as Record<string, number>) || {}).reduce((a, b) => a + b, 0)
   const maxCount = Math.max(...statusGroups.map((g) => g.count), 1)
 
-  const pendingList = competitions.filter((c) => c.status === 1)
+  const pendingList = pendingTeams
   const totalUsers = (stats?.totalUsers as number) || 0
   const activeUsers = (stats?.totalStudents as number) || 0
   const disabledUsers = (stats?.disabledUsers as number) || 0
 
   const quickActions = [
-    { icon: ClipboardCheck, label: '审核竞赛', path: '/admin/competitions' },
+    { icon: ClipboardCheck, label: '竞赛管理', path: '/admin/competitions' },
     { icon: Users, label: '用户管理', path: '/admin/users' },
     { icon: BarChart3, label: '数据统计', path: '/admin/stats' },
   ]
@@ -63,33 +63,33 @@ export default function AdminDashboard() {
         {/* 竞赛状态分布 */}
         <motion.div className="bento-card bento-lg" variants={staggerItem} style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="bento-label">竞赛状态分布</div>
-          <div className="bento-sub" style={{ marginBottom: '16px' }}>共 {total} 项竞赛</div>
-          <div className="bento-bars" style={{ flex: 1, alignItems: 'flex-end', gap: '20px', paddingBottom: '4px' }}>
+          <div className="bento-sub" style={{ marginBottom: '12px' }}>共 {total} 项竞赛</div>
+          <div className="bento-bars" style={{ flex: 1, alignItems: 'flex-end', gap: '14px', paddingBottom: '4px' }}>
             {statusGroups.map((g) => (
               <div key={g.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-                <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)' }}>{g.count}</span>
+                <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>{g.count}</span>
                 <div className="bento-bar" style={{ width: '100%', maxWidth: '44px', height: `${Math.max((g.count / maxCount) * 100, 8)}%`, background: g.color, borderRadius: '6px 6px 2px 2px' }} />
-                <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>{g.label}</span>
-                <span style={{ fontSize: '9px', color: 'var(--text-tertiary)' }}>{total > 0 ? Math.round((g.count / total) * 100) : 0}%</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{g.label}</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>{total > 0 ? Math.round((g.count / total) * 100) : 0}%</span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* 待审核 */}
+        {/* 待审核队伍 */}
         <motion.div className="bento-card bento-tall" variants={staggerItem} style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="bento-label">待审核</div>
+          <div className="bento-label">待审核队伍</div>
           <div className="bento-value" style={{ marginBottom: '10px' }}>{pendingList.length}</div>
           {pendingList.length === 0 ? (
-            <div className="bento-sub">暂无待审核竞赛</div>
+            <div className="bento-sub">暂无待审核队伍</div>
           ) : (
             <div className="bento-dots" style={{ flex: 1, gap: '10px' }}>
-              {pendingList.map((c) => (
-                <div key={c.id} className="bento-dot-row" style={{ gap: '8px', cursor: 'pointer' }} onClick={() => navigate('/admin/competitions')}>
+              {pendingList.map((t) => (
+                <div key={t.id} className="bento-dot-row" style={{ gap: '8px', cursor: 'pointer' }} onClick={() => navigate('/admin/competitions?tab=teams')}>
                   <span style={{ fontSize: '12px', color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.competitionName}
+                    {t.teamName}
                   </span>
-                  <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '500', flexShrink: 0 }}>待审</span>
+                  <span style={{ fontSize: '12px', color: 'var(--warning)', fontWeight: '500', flexShrink: 0 }}>待审核</span>
                 </div>
               ))}
             </div>
@@ -102,10 +102,10 @@ export default function AdminDashboard() {
           <div className="bento-value">{totalUsers}</div>
           <div className="bento-dots" style={{ marginTop: '10px', gap: '6px' }}>
             <div className="bento-dot-row" style={{ gap: '6px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>活跃 {activeUsers}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>活跃 {activeUsers}</span>
             </div>
             <div className="bento-dot-row" style={{ gap: '6px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>禁用 {disabledUsers}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>禁用 {disabledUsers}</span>
             </div>
           </div>
         </motion.div>

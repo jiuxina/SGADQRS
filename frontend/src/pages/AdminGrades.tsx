@@ -15,12 +15,12 @@ import ListMeta from '../components/ListMeta'
 import Pagination from '../components/Pagination'
 import { TableSkeleton, LoadingBar } from '../components/PageSkeleton'
 
-export default function AdminGrades() {
+export default function AdminGrades({ presetCompetitionId }: { presetCompetitionId?: number }) {
   const [searchQuery, setSearchQuery] = useState('')
   const debouncedSearch = useDebounce(searchQuery, 300)
   const [results, setResults] = useState<ResultItem[]>([])
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
-  const [selectedCompId, setSelectedCompId] = useState<number | null>(null)
+  const [selectedCompId, setSelectedCompId] = useState<number | null>(presetCompetitionId ?? null)
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const pagination = usePagination()
@@ -142,7 +142,7 @@ export default function AdminGrades() {
     <>
       {/* Header bar */}
       <motion.div
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}
         variants={fadeSlideUp}
         initial="hidden"
         animate="visible"
@@ -183,7 +183,8 @@ export default function AdminGrades() {
       </motion.div>
 
       {/* Competition selector */}
-      <motion.div style={{ marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }} variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.05 }}>
+      <motion.div style={{ marginBottom: '12px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }} variants={fadeSlideUp} initial="hidden" animate="visible" transition={{ delay: 0.05 }}>
+        {!presetCompetitionId && (
         <select
           value={selectedCompId ?? ''}
           onChange={(e) => setSelectedCompId(e.target.value ? Number(e.target.value) : null)}
@@ -197,6 +198,7 @@ export default function AdminGrades() {
             <option key={c.id} value={c.id}>{c.competitionName}</option>
           ))}
         </select>
+        )}
       </motion.div>
 
       {/* Results table */}
@@ -245,13 +247,13 @@ export default function AdminGrades() {
                     </td>
                     <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                       <div>{item.studentName || '-'}</div>
-                      {item.teamName && <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{item.teamName}</div>}
+                      {item.teamName && <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{item.teamName}</div>}
                     </td>
                     <td style={{ fontWeight: '600' }}>{item.score ?? '-'}</td>
                     <td>{item.ranking ?? '-'}</td>
                     <td>
                       {item.awardName ? (
-                        <span className="glass-badge reviewing" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                        <span className="glass-badge reviewing" style={{ fontSize: '12px', padding: '2px 8px' }}>
                           {item.awardName}
                         </span>
                       ) : (

@@ -11,20 +11,21 @@ import {
   Award,
   Download,
   CheckCircle,
+  Megaphone,
+  Plus,
 } from 'lucide-react'
-import { competitionApi } from '../api'
-import EmptyState from '../components/EmptyState'
-import { useAuthStore } from '../store/authStore'
-import type { CompetitionItem } from '../api/types'
+import { competitionApi, recruitApi } from '../api'
+import type { CompetitionItem, RecruitPostItem } from '../api/types'
 import { fadeSlideUp } from '../motion/variants'
 import { ListSkeleton } from '../components/PageSkeleton'
-import RegistrationModal from '../components/RegistrationModal'
+import EntryModal from '../components/EntryModal'
 import CountdownTimer from '../components/CountdownTimer'
 import ConfettiEffect from '../components/ConfettiEffect'
-import FailureEffect from '../components/FailureEffect'
+import UserCardMini from '../components/UserCardMini'
+import RecruitPostModal from '../components/RecruitPostModal'
+import RecruitDetailModal from '../components/RecruitDetailModal'
 import { formatDate, resolveCoverUrl, formatFileSize } from '../utils/format'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { toast } from '../components/toastUtils'
 import { getStatusBadge } from '../utils/statusBadge'
 
 // Error Boundary to catch rendering errors
@@ -55,7 +56,7 @@ class CompetitionDetailErrorBoundary extends Component<
       return (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)' }}>
           <p style={{ fontSize: '14px', marginBottom: '12px' }}>页面加载出错</p>
-          <p style={{ fontSize: '12px', marginBottom: '16px', color: 'var(--text-tertiary)' }}>
+          <p style={{ fontSize: '12px', marginBottom: '12px', color: 'var(--text-tertiary)' }}>
             {this.state.error?.message || '未知错误'}
           </p>
           <button className="btn ghost" onClick={this.props.onBack}>返回列表</button>
@@ -69,7 +70,6 @@ class CompetitionDetailErrorBoundary extends Component<
 function StudentCompetitionDetailInner() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const user = useAuthStore((s) => s.user)
   const isMobile = useIsMobile()
 
   const [comp, setComp] = useState<CompetitionItem | null>(null)
@@ -79,10 +79,23 @@ function StudentCompetitionDetailInner() {
   // Registration modal state
   const [showRegisterModal, setShowRegisterModal] = useState(false)
 
+  // 组队招募
+  const [recruitPosts, setRecruitPosts] = useState<RecruitPostItem[]>([])
+  const [showRecruitModal, setShowRecruitModal] = useState(false)
+  const [recruitDetailId, setRecruitDetailId] = useState<number | null>(null)
+
   // Effects
   const [showConfetti, setShowConfetti] = useState(false)
-  const [showFailure, setShowFailure] = useState(false)
-  const [failureMessage, setFailureMessage] = useState('')
+
+  const loadRecruitPosts = useCallback(async () => {
+    if (!id) return
+    try {
+      const res = await recruitApi.list({ current: 1, size: 20, competitionId: Number(id), status: 1 })
+      setRecruitPosts(res.records)
+    } catch {
+      setRecruitPosts([])
+    }
+  }, [id])
 
   const loadCompetition = useCallback(async () => {
     if (!id) {
@@ -108,7 +121,7 @@ function StudentCompetitionDetailInner() {
           try { data.awards = JSON.parse(data.awards) } catch { data.awards = null }
         }
         if (typeof data.attachments === 'string') {
-          try { data.attachments = JSON.parse(data.attachments) } catch { data.attachments = null }
+          try { data.attachments = JSON.parse(data.attachments) } catch { data.attachments = [] }
         }
         setComp(data)
       }
@@ -122,7 +135,8 @@ function StudentCompetitionDetailInner() {
 
   useEffect(() => {
     loadCompetition()
-  }, [loadCompetition])
+    loadRecruitPosts()
+  }, [loadCompetition, loadRecruitPosts])
 
   if (loading) {
     return (
@@ -154,7 +168,7 @@ function StudentCompetitionDetailInner() {
         {/* Cover + Title Header */}
         {resolveCoverUrl(comp.coverImage) ? (
           <div style={{
-            display: 'flex', gap: '24px', marginBottom: '24px',
+            display: 'flex', gap: '16px', marginBottom: '16px',
             alignItems: isMobile ? 'stretch' : 'center',
             flexDirection: isMobile ? 'column' : 'row',
           }}>
@@ -190,7 +204,7 @@ function StudentCompetitionDetailInner() {
             </div>
           </div>
         ) : (
-          <div style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
               <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
                 {comp.competitionName}
@@ -212,7 +226,7 @@ function StudentCompetitionDetailInner() {
 
         {/* Countdown - only for registering status */}
         {comp.status === 2 && !comp.hasRegistered && (
-          <div style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '16px' }}>
             <CountdownTimer deadline={comp.registrationEnd} startDate={comp.registrationStart} />
           </div>
         )}
@@ -221,12 +235,12 @@ function StudentCompetitionDetailInner() {
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-          gap: '16px', marginBottom: '24px',
+          gap: '12px', marginBottom: '16px',
         }}>
-          <InfoCard icon={<Calendar size={16} strokeWidth={1.5} />} label="报名时间" value={`${formatDate(comp.registrationStart)} ~ ${formatDate(comp.registrationEnd)}`} />
+          <InfoCard icon={<Calendar size={16} strokeWidth={1.5} />} label="组队时间" value={`${formatDate(comp.registrationStart)} ~ ${formatDate(comp.registrationEnd)}`} />
           <InfoCard icon={<Clock size={16} strokeWidth={1.5} />} label="比赛时间" value={`${formatDate(comp.competitionStart)} ~ ${formatDate(comp.competitionEnd)}`} />
           <InfoCard icon={<MapPin size={16} strokeWidth={1.5} />} label="比赛地点" value={comp.location || '待定'} />
-          <InfoCard icon={<Users size={16} strokeWidth={1.5} />} label="报名情况" value={`已报名 ${comp.registrationCount}${comp.maxTeams ? ` / ${comp.maxTeams} 队` : ' 人'}，每队 ${comp.maxMembers} 人`} />
+          <InfoCard icon={<Users size={16} strokeWidth={1.5} />} label="参赛情况" value={`参赛队伍 ${comp.registrationCount} 队，每队 ${comp.maxMembers} 人`} />
         </div>
 
         {/* Description */}
@@ -271,6 +285,64 @@ function StudentCompetitionDetailInner() {
           </Section>
         )}
 
+        {/* 组队招募 */}
+        <Section
+          title="组队招募"
+          icon={<Megaphone size={16} strokeWidth={1.5} />}
+          action={
+            <button
+              className="btn ghost"
+              style={{ height: '28px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+              onClick={() => setShowRecruitModal(true)}
+            >
+              <Plus size={13} strokeWidth={2} />
+              发布
+            </button>
+          }
+        >
+          {recruitPosts.length === 0 ? (
+            <div style={{
+              padding: '12px', borderRadius: '12px', textAlign: 'center',
+              background: 'var(--bg-secondary)', border: '1px dashed var(--border-color)',
+              fontSize: '12px', color: 'var(--text-tertiary)',
+            }}>
+              该竞赛下还没有组队帖 —— 发布一条招募，或去招募广场看看求组的同学
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {recruitPosts.map((post) => (
+                <div
+                  key={post.id}
+                  onClick={() => setRecruitDetailId(post.id)}
+                  style={{
+                    display: 'flex', gap: '12px', alignItems: 'center', padding: '10px 12px',
+                    borderRadius: '12px', background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)', cursor: 'pointer', flexWrap: 'wrap',
+                  }}
+                >
+                  <span style={{
+                    fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '999px', flexShrink: 0,
+                    background: post.type === 1 ? 'rgba(0,122,255,0.12)' : 'rgba(255,149,0,0.14)',
+                    color: post.type === 1 ? 'var(--accent)' : '#ff9500',
+                  }}>
+                    {post.type === 1 ? '📢 招募' : '🙋 求组'}
+                  </span>
+                  <div style={{ flex: 1, minWidth: '160px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{post.title}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                      {post.type === 1 && post.team ? `已有 ${post.team.currentMembers} 人 · ` : ''}
+                      {post.deadline ? `截止 ${formatDate(post.deadline)}` : ''}
+                    </div>
+                  </div>
+                  <div style={{ width: '190px', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); setRecruitDetailId(post.id) }}>
+                    <UserCardMini card={post.author} compact />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Section>
+
         {/* Attachments */}
         {comp.attachments && comp.attachments.length > 0 && (
           <Section title="竞赛附件" icon={<Download size={16} strokeWidth={1.5} />}>
@@ -309,14 +381,14 @@ function StudentCompetitionDetailInner() {
             }}>
               <CheckCircle size={18} strokeWidth={1.5} style={{ color: 'var(--success)' }} />
               <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '500' }}>
-                你已报名此竞赛
+                你已在该竞赛的参赛队伍中
               </span>
             </div>
           </Section>
         )}
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '12px', marginTop: '32px', marginBottom: '40px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '20px', marginBottom: '40px', justifyContent: 'center' }}>
           <button
             className="btn ghost"
             style={{ height: '40px', fontSize: '14px', padding: '0 24px' }}
@@ -330,32 +402,39 @@ function StudentCompetitionDetailInner() {
               style={{ height: '40px', fontSize: '14px', padding: '0 24px' }}
               onClick={() => setShowRegisterModal(true)}
             >
-              立即报名
+              去组队 / 报名
             </button>
           )}
         </div>
       </motion.div>
 
-      {/* Registration Modal */}
-      <RegistrationModal
+      {/* Entry Modal */}
+      <EntryModal
         open={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
-        competitionId={comp?.id ?? null}
-        competitionName={comp?.competitionName ?? ''}
+        competition={comp ? { id: comp.id, competitionName: comp.competitionName, maxMembers: comp.maxMembers } : null}
         onSuccess={() => {
           setShowConfetti(true)
           setShowRegisterModal(false)
           loadCompetition()
         }}
-        onFail={(message) => {
-          setFailureMessage(message)
-          setShowFailure(true)
-        }}
+      />
+
+      {/* 组队招募弹窗 */}
+      <RecruitPostModal
+        open={showRecruitModal}
+        onClose={() => setShowRecruitModal(false)}
+        onSaved={loadRecruitPosts}
+        fixedCompetitionId={comp?.id}
+      />
+      <RecruitDetailModal
+        postId={recruitDetailId}
+        onClose={() => setRecruitDetailId(null)}
+        onChanged={loadRecruitPosts}
       />
 
       {/* Effects */}
       <ConfettiEffect show={showConfetti} onComplete={() => setShowConfetti(false)} duration={3000} />
-      <FailureEffect show={showFailure} message={failureMessage} onComplete={() => setShowFailure(false)} duration={2500} />
     </>
   )
 }
@@ -363,7 +442,7 @@ function StudentCompetitionDetailInner() {
 /** Page header with back button */
 function PageHeader({ onBack }: { onBack: () => void }) {
   return (
-    <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" style={{ marginBottom: '20px' }}>
+    <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" style={{ marginBottom: '14px' }}>
       <button
         onClick={onBack}
         className="icon-btn"
@@ -397,16 +476,17 @@ function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 /** Section wrapper */
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Section({ title, icon, action, children }: { title: string; icon: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" style={{ marginBottom: '24px' }}>
+    <motion.div variants={fadeSlideUp} initial="hidden" animate="visible" style={{ marginBottom: '16px' }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: '8px',
-        marginBottom: '14px', paddingBottom: '10px',
+        marginBottom: '12px', paddingBottom: '10px',
         borderBottom: '1px solid var(--border-color)',
       }}>
         <span style={{ color: 'var(--accent)' }}>{icon}</span>
-        <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{title}</h2>
+        <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', margin: 0, flex: 1 }}>{title}</h2>
+        {action}
       </div>
       {children}
     </motion.div>

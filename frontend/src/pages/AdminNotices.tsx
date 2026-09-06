@@ -15,15 +15,21 @@ import { useDebounce } from '../hooks/useDebounce'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 import { LoadingBar } from '../components/PageSkeleton'
+import PageTabs, { usePageTab } from '../components/PageTabs'
 
-type FilterType = 'all' | 'notice' | 'announcement' | 'published' | 'draft'
+type NoticeTab = 'all' | 'notice' | 'announcement'
+type StatusFilter = 'all' | 1 | 0
 
-const filterOptions: { key: FilterType; label: string }[] = [
+const NOTICE_TABS: { key: NoticeTab; label: string }[] = [
   { key: 'all', label: '全部' },
   { key: 'notice', label: '通知' },
   { key: 'announcement', label: '公告' },
-  { key: 'published', label: '已发布' },
-  { key: 'draft', label: '草稿' },
+]
+
+const statusOptions: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: '全部状态' },
+  { key: 1, label: '已发布' },
+  { key: 0, label: '草稿' },
 ]
 
 /* ── Rich Text Editor ── */
@@ -88,7 +94,8 @@ function RichTextEditor({ content, onChange }: { content: string; onChange: (htm
 
 /* ── Page Component ── */
 export default function AdminNotices() {
-  const [filter, setFilter] = useState<FilterType>('all')
+  const [noticeTab, setNoticeTab] = usePageTab(NOTICE_TABS)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const debouncedSearch = useDebounce(searchQuery, 300)
   const [showModal, setShowModal] = useState(false)
@@ -104,13 +111,12 @@ export default function AdminNotices() {
 
   const buildParams = useCallback(() => {
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize }
-    if (filter === 'notice') params.noticeType = 1
-    else if (filter === 'announcement') params.noticeType = 2
-    else     if (filter === 'published') params.status = 1
-    else if (filter === 'draft') params.status = 0
+    if (noticeTab === 'notice') params.noticeType = 1
+    else if (noticeTab === 'announcement') params.noticeType = 2
+    if (statusFilter !== 'all') params.status = statusFilter
     if (debouncedSearch) params.keyword = debouncedSearch
     return params
-  }, [filter, pagination.current, pagination.pageSize, debouncedSearch])
+  }, [noticeTab, statusFilter, pagination.current, pagination.pageSize, debouncedSearch])
 
   const fetchData = useCallback(async () => {
     const params = buildParams()
@@ -137,7 +143,7 @@ export default function AdminNotices() {
   }, [fetchData])
 
   // 筛选条件变化时重置到第1页
-  useEffect(() => { pagination.resetPage() }, [filter, debouncedSearch])
+  useEffect(() => { pagination.resetPage() }, [noticeTab, statusFilter, debouncedSearch])
 
   const handleSave = async (status: 0 | 1 = 1) => {
     if (!newTitle.trim()) return
@@ -217,15 +223,18 @@ export default function AdminNotices() {
       `}</style>
       {/* Header row */}
       <motion.div
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}
         variants={fadeSlideUp}
         initial="hidden"
         animate="visible"
       >
         <ListMeta count={total} />
-        {filter !== 'all' && (
+        {(noticeTab !== 'all' || statusFilter !== 'all') && (
           <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            ({filterOptions.find((o) => o.key === filter)?.label})
+            ({[
+              NOTICE_TABS.find((o) => o.key === noticeTab)?.label,
+              statusFilter !== 'all' ? statusOptions.find((o) => o.key === statusFilter)?.label : null,
+            ].filter(Boolean).join(' · ')})
           </span>
         )}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -251,15 +260,16 @@ export default function AdminNotices() {
 
       {/* Filter chips */}
       <motion.div
-        style={{ marginBottom: '16px' }}
+        style={{ marginBottom: '12px' }}
         variants={fadeSlideUp}
         initial="hidden"
         animate="visible"
         transition={{ delay: 0.05 }}
       >
+        <PageTabs tabs={NOTICE_TABS} active={noticeTab} onChange={setNoticeTab} />
         <div className="chip-row">
-          {filterOptions.map((opt) => (
-            <button key={opt.key} className={`chip ${filter === opt.key ? 'active' : ''}`} onClick={() => setFilter(opt.key)}>
+          {statusOptions.map((opt) => (
+            <button key={String(opt.key)} className={`chip ${statusFilter === opt.key ? 'active' : ''}`} onClick={() => setStatusFilter(opt.key)}>
               {opt.label}
             </button>
           ))}
@@ -293,7 +303,7 @@ export default function AdminNotices() {
                 {sorted.map((notice) => (
                   <tr key={notice.id}>
                     <td>
-                      {notice.isTop && (
+                      {notice.isTop === 1 && (
                         <Pin size={13} strokeWidth={1.5} color="var(--warning)" style={{ transform: 'rotate(45deg)' }} />
                       )}
                     </td>
@@ -301,12 +311,12 @@ export default function AdminNotices() {
                       {notice.noticeTitle}
                     </td>
                     <td>
-                      <span className={`glass-badge ${notice.noticeType === 2 ? 'reviewing' : 'pending'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                      <span className={`glass-badge ${notice.noticeType === 2 ? 'reviewing' : 'pending'}`} style={{ fontSize: '12px', padding: '2px 8px' }}>
                         {notice.noticeType === 1 ? '通知' : '公告'}
                       </span>
                     </td>
                     <td>
-                      <span className={`glass-badge ${notice.status === 1 ? 'pass' : 'pending'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                      <span className={`glass-badge ${notice.status === 1 ? 'pass' : 'pending'}`} style={{ fontSize: '12px', padding: '2px 8px' }}>
                         {notice.status === 1 ? '已发布' : '草稿'}
                       </span>
                     </td>
@@ -386,7 +396,7 @@ export default function AdminNotices() {
           >
             <motion.div
               className="glass-card glass-card-vertical glass-card-static"
-              style={{ width: isMobile ? 'calc(100vw - 32px)' : '480px', padding: '24px', position: 'relative' }}
+              style={{ width: isMobile ? 'calc(100vw - 32px)' : '480px', padding: '16px', position: 'relative' }}
               variants={panelSlideIn}
               initial="initial"
               animate="animate"
@@ -409,12 +419,12 @@ export default function AdminNotices() {
                 <X size={16} strokeWidth={1.5} />
               </button>
 
-              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '20px' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '14px' }}>
                 {editingId ? '编辑通知/公告' : '发布新通知/公告'}
               </div>
 
               {/* Type selector */}
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '12px' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>类型</div>
                 <div className="chip-row">
                   <button
@@ -433,7 +443,7 @@ export default function AdminNotices() {
               </div>
 
               {/* Title input */}
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '12px' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>标题</div>
                 <input
                   className="glass-input"
@@ -445,7 +455,7 @@ export default function AdminNotices() {
               </div>
 
               {/* Content — rich text editor */}
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '14px' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>内容</div>
                 <RichTextEditor
                   key={editingId ?? 'new'}

@@ -80,23 +80,19 @@ export default function LoginPage() {
 
         {/* Skewed text block — radial diagonal clip from center */}
         <div className="login-skew-block anim-up d1">
-          <div className="login-skew-label">SCMS</div>
+          <div className="login-skew-label">TEAMUP</div>
           <h1 className="login-title-skew">
-            <span className="cut-ul">学</span>
-            <span className="cut-top">生</span>
-            <span className="cut-top">竞</span>
-            <span className="cut-ur">赛</span>
+            <span className="cut-ul">赛</span>
+            <span className="cut-ur">友</span>
           </h1>
           <h1 className="login-title-skew login-title-line2">
-            <span className="cut-l">信</span>
-            <span className="cut-ul">息</span>
-            <span className="cut-ur">管</span>
-            <span className="cut-r">理</span>
-            <span className="cut-r">系</span>
-            <span className="cut-r">统</span>
+            <span className="cut-l">组</span>
+            <span className="cut-ul">队</span>
+            <span className="cut-ur">社</span>
+            <span className="cut-r">区</span>
           </h1>
           <p className="login-subtitle-skew">
-            Student Competition Information Management System
+            TeamUp · 找队友、看战绩、一起打比赛
           </p>
         </div>
       </div>
@@ -107,7 +103,7 @@ export default function LoginPage() {
           <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px', textAlign: 'center' }}>
             登录
           </div>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', textAlign: 'center' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', textAlign: 'center' }}>
             请选择身份并输入账号密码
           </div>
 
@@ -125,7 +121,7 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
                 账号

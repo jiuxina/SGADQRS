@@ -17,12 +17,13 @@ import { ListSkeleton } from '../components/PageSkeleton'
 import { staggerContainer, staggerItem } from '../motion/variants'
 import { registrationApi, resultApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import type { RegistrationItem, ResultItem } from '../api/types'
-import { RegistrationStatus, REGISTRATION_STATUS_LABEL } from '../config/constants'
+import type { TeamItem, ResultItem } from '../api/types'
 import { formatDate } from '../utils/format'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import PageTabs, { usePageTab } from '../components/PageTabs'
+import StudentGrades from './StudentGrades'
 import { toast } from '../components/toastUtils'
 
 // ===== Types =====
@@ -30,27 +31,27 @@ import { toast } from '../components/toastUtils'
 interface TimelineEntry {
   competitionId: number
   competitionName: string
-  registration?: RegistrationItem
+  team?: TeamItem
   result?: ResultItem
 }
 
-type LifecycleStage = 'registered' | 'approved' | 'rejected' | 'participating' | 'scored' | 'awarded'
+type LifecycleStage = 'registered' | 'submitted' | 'rejected' | 'participating' | 'scored' | 'awarded'
 
 // ===== Helpers =====
 
 function getStage(entry: TimelineEntry): LifecycleStage {
   if (entry.result?.awardLevel) return 'awarded'
   if (entry.result?.score !== null && entry.result?.score !== undefined) return 'scored'
-  if (entry.registration?.status === RegistrationStatus.APPROVED && !entry.result) return 'participating'
-  if (entry.registration?.status === RegistrationStatus.APPROVED) return 'approved'
-  if (entry.registration?.status === RegistrationStatus.REJECTED) return 'rejected'
+  if (entry.team?.status === 2 && !entry.result) return 'participating'
+  if (entry.team?.status === 1) return 'submitted'
+  if (entry.team?.status === 3) return 'rejected'
   return 'registered'
 }
 
 function getStageLabel(stage: LifecycleStage): string {
   switch (stage) {
     case 'registered': return '已报名'
-    case 'approved': return '已通过'
+    case 'submitted': return '待审核'
     case 'rejected': return '已拒绝'
     case 'participating': return '参赛中'
     case 'scored': return '已有成绩'
@@ -61,7 +62,7 @@ function getStageLabel(stage: LifecycleStage): string {
 function getStageIcon(stage: LifecycleStage) {
   switch (stage) {
     case 'registered': return FileText
-    case 'approved': return CheckCircle2
+    case 'submitted': return CheckCircle2
     case 'rejected': return XCircle
     case 'participating': return Timer
     case 'scored': return BarChart3
@@ -72,7 +73,7 @@ function getStageIcon(stage: LifecycleStage) {
 function getStageColor(stage: LifecycleStage): string {
   switch (stage) {
     case 'registered': return 'var(--text-tertiary)'
-    case 'approved': return '#16a34a'
+    case 'submitted': return '#16a34a'
     case 'rejected': return 'var(--text-tertiary)'
     case 'participating': return '#2563eb'
     case 'scored': return 'var(--accent)'
@@ -85,8 +86,7 @@ function getEntryDate(entry: TimelineEntry): string {
   const dates = [
     entry.result?.publishTime,
     entry.result?.createTime,
-    entry.registration?.auditTime,
-    entry.registration?.createTime,
+    entry.team?.createTime,
   ].filter(Boolean) as string[]
   return dates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] || ''
 }
@@ -94,7 +94,7 @@ function getEntryDate(entry: TimelineEntry): string {
 // ===== Sub-components =====
 
 function StageTimeline({ stage }: { stage: LifecycleStage }) {
-  const stages: LifecycleStage[] = ['registered', 'approved', 'scored', 'awarded']
+  const stages: LifecycleStage[] = ['registered', 'participating', 'scored', 'awarded']
   const currentIdx = stages.indexOf(stage === 'rejected' ? 'registered' : stage)
 
   return (
@@ -150,7 +150,7 @@ function TimelineCard({ entry }: { entry: TimelineEntry }) {
     <motion.div
       variants={staggerItem}
       className="glass-card glass-card-vertical glass-card-static"
-      style={{ padding: '16px', cursor: 'pointer' }}
+      style={{ padding: '12px', cursor: 'pointer' }}
       onClick={() => setExpanded(!expanded)}
     >
       {/* Header */}
@@ -179,10 +179,10 @@ function TimelineCard({ entry }: { entry: TimelineEntry }) {
 
       {/* Quick summary */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
-        {entry.registration?.createTime && (
+        {entry.team?.createTime && (
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
             <Calendar size={11} strokeWidth={1.5} />
-            报名 {formatDate(entry.registration.createTime)}
+            组队 {formatDate(entry.team.createTime)}
           </span>
         )}
         {entry.result?.score !== null && entry.result?.score !== undefined && (
@@ -210,22 +210,19 @@ function TimelineCard({ entry }: { entry: TimelineEntry }) {
             style={{ overflow: 'hidden' }}
           >
             <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', marginTop: '10px', paddingTop: '10px' }}>
-              {/* Registration details */}
-              {entry.registration && (
+              {/* Team details */}
+              {entry.team && (
                 <div style={{ marginBottom: '10px' }}>
                   <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                    报名信息
+                    参赛队伍
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
-                    <span>状态：{REGISTRATION_STATUS_LABEL[entry.registration.status as RegistrationStatus] || '未知'}</span>
-                    {entry.registration.teamName && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Users size={11} strokeWidth={1.5} />
-                        团队：{entry.registration.teamName}
-                      </span>
-                    )}
-                    {entry.registration.remark && <span>备注：{entry.registration.remark}</span>}
-                    {entry.registration.auditTime && <span>审核时间：{formatDate(entry.registration.auditTime)}</span>}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <Users size={11} strokeWidth={1.5} />
+                      队伍：{entry.team.teamName}
+                    </span>
+                    <span>队伍状态：{{ 0: '组建中', 1: '待审核', 2: '已通过', 3: '未通过' }[entry.team.status] || '未知'}</span>
+                    <span>成员 {entry.team.members?.length ?? 0} 人</span>
                   </div>
                 </div>
               )}
@@ -252,7 +249,7 @@ function TimelineCard({ entry }: { entry: TimelineEntry }) {
               )}
 
               {/* No result yet */}
-              {!entry.result && entry.registration?.status === RegistrationStatus.APPROVED && (
+              {!entry.result && entry.team?.status === 2 && (
                 <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
                   成绩尚未公布
                 </div>
@@ -267,27 +264,33 @@ function TimelineCard({ entry }: { entry: TimelineEntry }) {
 
 // ===== Main Component =====
 
+const HISTORY_TABS = [
+  { key: 'timeline', label: '参赛时间线' },
+  { key: 'transcript', label: '成绩单' },
+]
+
 export default function StudentHistory() {
   const user = useAuthStore((s) => s.user)
-  const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
+  const [teams, setTeams] = useState<TeamItem[]>([])
   const [results, setResults] = useState<ResultItem[]>([])
   const [loading, setLoading] = useState(true)
   const isMobile = useIsMobile()
   const pagination = usePagination()
+  const [pageTab, setPageTab] = usePageTab(HISTORY_TABS)
 
   const fetchData = useCallback(async () => {
     if (!user) return null
-    const [regRes, resultRes] = await Promise.all([
-      registrationApi.list({ current: 1, size: 200, studentId: user.id }),
+    const [teamRes, resultRes] = await Promise.all([
+      registrationApi.teamList({ current: 1, size: 200 }),
       resultApi.list({ current: 1, size: 200, studentId: user.id }),
     ])
-    return { registrations: regRes.records, results: resultRes.records }
+    return { teams: teamRes.records, results: resultRes.records }
   }, [user])
 
   useEffect(() => {
     fetchData().then(data => {
       if (!data) return
-      setRegistrations(data.registrations)
+      setTeams(data.teams)
       setResults(data.results)
     }).catch(err => {
       toast.error('加载历史数据失败')
@@ -299,17 +302,17 @@ export default function StudentHistory() {
   const timelineEntries = useMemo(() => {
     const entryMap = new Map<number, TimelineEntry>()
 
-    // Add registrations
-    for (const reg of registrations) {
-      const cid = reg.competitionId
+    // Add teams（我在该竞赛的参赛队伍）
+    for (const team of teams) {
+      const cid = team.competitionId
       if (!entryMap.has(cid)) {
         entryMap.set(cid, {
           competitionId: cid,
-          competitionName: reg.competitionName || `竞赛#${cid}`,
-          registration: reg,
+          competitionName: team.competitionName || `竞赛#${cid}`,
+          team,
         })
       } else {
-        entryMap.get(cid)!.registration = reg
+        entryMap.get(cid)!.team = team
       }
     }
 
@@ -333,7 +336,7 @@ export default function StudentHistory() {
       const dateB = getEntryDate(b)
       return new Date(dateB).getTime() - new Date(dateA).getTime()
     })
-  }, [registrations, results])
+  }, [teams, results])
 
   // 更新分页总数
   useEffect(() => {
@@ -350,8 +353,17 @@ export default function StudentHistory() {
   const totalCompetitions = timelineEntries.length
   const awardedCount = timelineEntries.filter((e) => e.result?.awardLevel).length
   const approvedCount = timelineEntries.filter(
-    (e) => e.registration?.status === RegistrationStatus.APPROVED
+    (e) => e.team?.status === 2
   ).length
+
+  if (pageTab === 'transcript') {
+    return (
+      <>
+        <PageTabs tabs={HISTORY_TABS} active={pageTab} onChange={setPageTab} />
+        <StudentGrades />
+      </>
+    )
+  }
 
   if (loading && timelineEntries.length === 0) {
     return <ListSkeleton />
@@ -359,6 +371,8 @@ export default function StudentHistory() {
 
   return (
     <>
+      <PageTabs tabs={HISTORY_TABS} active={pageTab} onChange={setPageTab} />
+
       {/* Summary metric cards */}
       <motion.div
         style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: '10px' }}
@@ -366,7 +380,7 @@ export default function StudentHistory() {
         initial="hidden"
         animate="visible"
       >
-        <motion.div variants={staggerItem} className="metric-card" style={{ padding: '12px 14px' }}>
+        <motion.div variants={staggerItem} className="metric-card" style={{ padding: '10px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <FileText size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>参赛总数</span>
@@ -376,7 +390,7 @@ export default function StudentHistory() {
           </div>
         </motion.div>
 
-        <motion.div variants={staggerItem} className="metric-card" style={{ padding: '12px 14px' }}>
+        <motion.div variants={staggerItem} className="metric-card" style={{ padding: '10px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <CheckCircle2 size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>通过审核</span>
@@ -386,7 +400,7 @@ export default function StudentHistory() {
           </div>
         </motion.div>
 
-        <motion.div variants={staggerItem} className="metric-card" style={{ padding: '12px 14px' }}>
+        <motion.div variants={staggerItem} className="metric-card" style={{ padding: '10px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <Trophy size={15} strokeWidth={1.5} color="var(--text-tertiary)" />
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>获奖次数</span>
@@ -402,7 +416,7 @@ export default function StudentHistory() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 22 }}
-        style={{ marginTop: '16px', marginBottom: '14px' }}
+        style={{ marginTop: '12px', marginBottom: '12px' }}
       >
         <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
           参赛时间线

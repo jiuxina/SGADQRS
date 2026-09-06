@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Trophy, Users, FileText, Clock } from 'lucide-react'
+import { Trophy, Users, FileText } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../motion/variants'
 import QuickActions from '../components/QuickActions'
 import UpcomingReminders from '../components/UpcomingReminders'
@@ -28,7 +28,6 @@ export default function TeacherDashboard() {
     { icon: Trophy, label: '竞赛管理', path: '/teacher/competitions' },
     { icon: Users, label: '团队管理', path: '/teacher/teams' },
     { icon: FileText, label: '成绩录入', path: '/teacher/grades' },
-    { icon: Clock, label: '消息通知', path: '/teacher/messages' },
   ]
 
   return (

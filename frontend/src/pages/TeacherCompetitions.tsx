@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { UserCheck, UserX, ImageIcon, ExternalLink } from 'lucide-react'
+import { ImageIcon, Plus } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
-import ListMeta from '../components/ListMeta'
 import { ListSkeleton, LoadingBar } from '../components/PageSkeleton'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
-import GlassModal from '../components/GlassModal'
-import { competitionApi, registrationApi } from '../api'
+import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import type { CompetitionItem, CompetitionDTO, RegistrationItem } from '../api/types'
+import type { CompetitionItem } from '../api/types'
 import { toast } from '../components/toastUtils'
 import { confirmDialog } from '../components/confirmDialogUtils'
 import { resolveCoverUrl } from '../utils/format'
@@ -24,13 +22,6 @@ export default function TeacherCompetitions() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all')
   const pagination = usePagination()
-  const regPagination = usePagination()
-  const [managingComp, setManagingComp] = useState<CompetitionItem | null>(null)
-  const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
-  const [regLoading, setRegLoading] = useState(false)
-  const [rejectingRegId, setRejectingRegId] = useState<number | null>(null)
-  const [rejectRemark, setRejectRemark] = useState('')
-  const [selectedRegIds, setSelectedRegIds] = useState<number[]>([])
   const fetchData = useCallback(async () => {
     if (!user) return null
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize, publisherId: user.id }
@@ -68,88 +59,13 @@ export default function TeacherCompetitions() {
     catch (err) { toast.error(err instanceof Error ? err.message : '删除失败') }
   }
 
-  const handleSubmitReview = async (id: number) => {
-    try {
-      await competitionApi.update({ id, status: 1 } as CompetitionDTO)
-      loadData()
-      toast.success('已提交审核')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '提交失败')
-    }
-  }
-
-  const fetchRegistrations = useCallback(async (compId: number) => {
-    setRegLoading(true)
-    try {
-      const result = await registrationApi.list({ current: regPagination.current, size: regPagination.pageSize, competitionId: compId })
-      setRegistrations(result.records)
-      regPagination.setTotal(result.total)
-    } catch (err) {
-      toast.error('加载报名列表失败')
-      console.error('加载报名列表失败:', err)
-      setRegistrations([])
-    } finally {
-      setRegLoading(false)
-    }
-  }, [regPagination.current, regPagination.pageSize])
-
-  const openManage = (comp: CompetitionItem) => {
-    setManagingComp(comp)
-    setSelectedRegIds([])
-    setRegistrations([])
-    regPagination.resetPage()
-  }
-
-  useEffect(() => {
-    if (!managingComp) return
-    fetchRegistrations(managingComp.id)
-  }, [managingComp?.id, regPagination.current, regPagination.pageSize])
-
-  const handleAuditReg = async (id: number, status: number, auditRemark?: string) => {
-    try {
-      await registrationApi.audit(id, { status, auditRemark })
-      setRejectingRegId(null)
-      setRejectRemark('')
-      if (managingComp) fetchRegistrations(managingComp.id)
-      loadData()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '审核失败')
-    }
-  }
-
-  const toggleSelectAll = useCallback(() => {
-    const pendingIds = registrations.filter(r => r.status === 0).map(r => r.id)
-    if (selectedRegIds.length === pendingIds.length && pendingIds.length > 0) {
-      setSelectedRegIds([])
-    } else {
-      setSelectedRegIds(pendingIds)
-    }
-  }, [registrations, selectedRegIds])
-
-  const toggleSelectReg = (id: number) => {
-    setSelectedRegIds(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id])
-  }
-
-  const handleBatchAudit = async (status: number) => {
-    if (selectedRegIds.length === 0) return
-    try {
-      await registrationApi.batchAudit({ ids: selectedRegIds, status })
-      setSelectedRegIds([])
-      toast.success(status === 1 ? '批量审核通过' : '已批量拒绝')
-      if (managingComp) fetchRegistrations(managingComp.id)
-      loadData()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '批量审核失败')
-    }
-  }
-
   const formatShortDate = (dateStr: string) => dateStr ? dateStr.slice(5, 10) : '-'
 
   if (loading && competitions.length === 0) return <ListSkeleton />
 
   return (
     <>
-      <motion.div style={{ marginBottom: '16px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
+      <motion.div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
         <div className="chip-row">
           {[{ key: 'all', label: '全部' }, { key: 0, label: '草稿' }, { key: 2, label: '已发布' }, { key: 3, label: '进行中' }, { key: 4, label: '已结束' }].map((opt) => (
             <button key={String(opt.key)} className={`chip ${statusFilter === opt.key ? 'active' : ''}`}
@@ -158,6 +74,14 @@ export default function TeacherCompetitions() {
             </button>
           ))}
         </div>
+        <button
+          className="btn primary filled-primary"
+          style={{ height: '32px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}
+          onClick={() => navigate('/teacher/competitions/create')}
+        >
+          <Plus size={14} strokeWidth={1.5} />
+          发布竞赛
+        </button>
       </motion.div>
 
       <motion.div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '0' }}
@@ -167,7 +91,7 @@ export default function TeacherCompetitions() {
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: '60px' }}>封面</th><th>竞赛名称</th><th>报名时间</th><th>报名人数</th><th>状态</th><th style={{ width: '120px' }}>操作</th>
+                <th style={{ width: '60px' }}>封面</th><th>竞赛名称</th><th>组队时间</th><th>参赛队伍</th><th>状态</th><th style={{ width: '120px' }}>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -201,20 +125,12 @@ export default function TeacherCompetitions() {
                     </td>
                     <td><span style={{ fontWeight: '600' }}>{comp.registrationCount}</span></td>
                     <td>
-                      <span className={`glass-badge ${badge.cls}`} style={{ fontSize: '11px', padding: '2px 8px' }}>{badge.label}</span>
+                      <span className={`glass-badge ${badge.cls}`} style={{ fontSize: '12px', padding: '2px 8px' }}>{badge.label}</span>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        <button className="text-btn blue" style={{ fontSize: '12px' }} onClick={() => openManage(comp)}>管理</button>
-                        {(comp.status === 0 || comp.status === 5) && (
-                          <button className="text-btn" style={{ fontSize: '12px', color: 'var(--accent)' }} onClick={() => navigate(`/teacher/competitions/${comp.id}/edit`)}>编辑</button>
-                        )}
-                        {comp.status === 0 && (
-                          <button className="text-btn" style={{ fontSize: '12px', color: 'var(--success)' }} onClick={() => handleSubmitReview(comp.id)}>提交审核</button>
-                        )}
-                        {comp.status === 5 && (
-                          <button className="text-btn" style={{ fontSize: '12px', color: 'var(--success)' }} onClick={() => handleSubmitReview(comp.id)}>修改后重新提交</button>
-                        )}
+                        <button className="text-btn blue" style={{ fontSize: '12px' }} onClick={() => navigate(`/teacher/competitions/${comp.id}`)}>管理</button>
+                        <button className="text-btn" style={{ fontSize: '12px', color: 'var(--accent)' }} onClick={() => navigate(`/teacher/competitions/${comp.id}/edit`)}>编辑</button>
                         <button className="text-btn" style={{ fontSize: '12px', color: 'var(--danger)' }} onClick={() => handleDelete(comp.id)}>删除</button>
                       </div>
                     </td>
@@ -237,158 +153,6 @@ export default function TeacherCompetitions() {
         onPageChange={pagination.setCurrent}
         onPageSizeChange={pagination.setPageSize}
       />
-
-      {/* Manage Modal */}
-      <GlassModal open={!!managingComp} onClose={() => setManagingComp(null)} maxWidth="600px">
-
-              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px', paddingRight: '24px' }}>
-                {managingComp?.competitionName}
-              </div>
-              <ListMeta count={regPagination.total} unit="条报名记录" />
-
-              {registrations.filter(r => r.status === 0).length > 0 && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px',
-                  padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: '8px',
-                }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                    <input type="checkbox"
-                      checked={selectedRegIds.length > 0 && selectedRegIds.length === registrations.filter(r => r.status === 0).length}
-                      onChange={toggleSelectAll}
-                      style={{ accentColor: 'var(--accent)' }}
-                    />
-                    全选
-                  </label>
-                  <div style={{ flex: 1 }} />
-                  <button className="text-btn blue" style={{ fontSize: '12px', opacity: selectedRegIds.length === 0 ? 0.4 : 1 }}
-                    disabled={selectedRegIds.length === 0} onClick={() => handleBatchAudit(1)}>
-                    批量通过
-                  </button>
-                  <button className="text-btn danger" style={{ fontSize: '12px', opacity: selectedRegIds.length === 0 ? 0.4 : 1 }}
-                    disabled={selectedRegIds.length === 0} onClick={() => handleBatchAudit(2)}>
-                    批量拒绝
-                  </button>
-                </div>
-              )}
-
-              {regLoading ? (
-                <ListSkeleton />
-              ) : registrations.length === 0 ? (
-                <EmptyState text="暂无报名记录" />
-              ) : (
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '36px' }}></th>
-                      <th>学生姓名</th>
-                      <th>队伍</th>
-                      <th>联系电话</th>
-                      <th>附件</th>
-                      <th>报名时间</th>
-                      <th>状态</th>
-                      <th style={{ width: '130px' }}>操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {registrations.map((reg) => {
-                      const badge = getStatusBadge(reg.status, 'registration')
-                      return (
-                        <tr key={reg.id}>
-                          <td style={{ textAlign: 'center' }}>
-                            {reg.status === 0 ? (
-                              <input type="checkbox"
-                                checked={selectedRegIds.includes(reg.id)}
-                                onChange={() => toggleSelectReg(reg.id)}
-                                style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
-                              />
-                            ) : null}
-                          </td>
-                          <td style={{ fontWeight: '600' }}>{reg.studentName || '-'}</td>
-                          <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
-                            {reg.teamName || <span style={{ color: 'var(--text-tertiary)' }}>个人</span>}
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{reg.contactPhone || '-'}</td>
-                          <td style={{ fontSize: '12px' }}>
-                            {reg.attachmentUrl ? (
-                              <a href={reg.attachmentUrl} target="_blank" rel="noopener noreferrer"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: 'var(--accent)', textDecoration: 'none' }}>
-                                <ExternalLink size={11} strokeWidth={1.5} /> 查看
-                              </a>
-                            ) : (
-                              <span style={{ color: 'var(--text-tertiary)' }}>-</span>
-                            )}
-                          </td>
-                          <td style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>{reg.createTime?.slice(0, 10) || '-'}</td>
-                          <td>
-                            <span className={`glass-badge ${badge.cls}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
-                              {badge.label}
-                            </span>
-                          </td>
-                          <td>
-                            {reg.status === 0 ? (
-                              rejectingRegId === reg.id ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <input
-                                    type="text"
-                                    value={rejectRemark}
-                                    onChange={e => setRejectRemark(e.target.value)}
-                                    placeholder="审核备注（可选）"
-                                    style={{
-                                      padding: '4px 8px', fontSize: '11px', borderRadius: '6px',
-                                      border: '1px solid var(--border-color, #e0e0e0)',
-                                      background: 'var(--bg-secondary, #f5f5f5)',
-                                      color: 'var(--text-primary)', outline: 'none', width: '130px',
-                                      boxSizing: 'border-box',
-                                    }}
-                                  />
-                                  <div style={{ display: 'flex', gap: '4px' }}>
-                                    <button className="text-btn danger" style={{ fontSize: '11px' }}
-                                      onClick={() => handleAuditReg(reg.id, 2, rejectRemark || undefined)}>
-                                      确认拒绝
-                                    </button>
-                                    <button className="text-btn" style={{ fontSize: '11px' }}
-                                      onClick={() => { setRejectingRegId(null); setRejectRemark('') }}>
-                                      取消
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div style={{ display: 'flex', gap: '6px' }}>
-                                  <button className="text-btn blue" style={{ fontSize: '11px' }}
-                                    onClick={() => handleAuditReg(reg.id, 1)}>
-                                    通过
-                                  </button>
-                                  <button className="text-btn danger" style={{ fontSize: '11px' }}
-                                    onClick={() => { setRejectingRegId(reg.id); setRejectRemark('') }}>
-                                    拒绝
-                                  </button>
-                                </div>
-                              )
-                            ) : reg.status === 1 ? (
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--success)' }}>
-                                <UserCheck size={12} /> 已通过
-                              </span>
-                            ) : (
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--danger)' }}>
-                                <UserX size={12} /> 已拒绝
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              )}
-              <Pagination
-                current={regPagination.current}
-                totalPages={regPagination.totalPages}
-                pageSize={regPagination.pageSize}
-                total={regPagination.total}
-                onPageChange={regPagination.setCurrent}
-                onPageSizeChange={regPagination.setPageSize}
-              />
-      </GlassModal>
 
     </>
   )

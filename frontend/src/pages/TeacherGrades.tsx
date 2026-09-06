@@ -4,8 +4,9 @@ import EmptyState from '../components/EmptyState'
 import { TableSkeleton } from '../components/PageSkeleton'
 import { fadeInList, fadeSlideUp } from '../motion/variants'
 import { competitionApi, resultApi, registrationApi } from '../api'
+import type { ParticipantRow } from '../api/modules/registration'
 import { useAuthStore } from '../store/authStore'
-import type { CompetitionItem, ResultItem, RegistrationItem } from '../api/types'
+import type { CompetitionItem, ResultItem } from '../api/types'
 import { PAGE_SIZE } from '../config/constants'
 import { toast } from '../components/toastUtils'
 import { confirmDialog } from '../components/confirmDialogUtils'
@@ -46,8 +47,8 @@ function ScoreDistChart({ results }: { results: ResultItem[] }) {
   for (let i = 0; i < yTickCount; i++) yTicks.push(Math.round((maxCount * i) / (yTickCount - 1)))
 
   return (
-    <div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '18px', marginTop: '16px' }}>
-      <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '14px' }}>
+    <div className="glass-card glass-card-vertical glass-card-static" style={{ padding: '12px', marginTop: '12px' }}>
+      <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '12px' }}>
         成绩分布
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
@@ -91,10 +92,10 @@ function ScoreDistChart({ results }: { results: ResultItem[] }) {
   )
 }
 
-export default function TeacherGrades() {
+export default function TeacherGrades({ presetCompetitionId }: { presetCompetitionId?: number }) {
   const user = useAuthStore((s) => s.user)
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
-  const [selectedComp, setSelectedComp] = useState<number | null>(null)
+  const [selectedComp, setSelectedComp] = useState<number | null>(presetCompetitionId ?? null)
   const [results, setResults] = useState<ResultItem[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<{ avgScore: string; maxScore: string; minScore: string; totalCount: number }>({ avgScore: '--', maxScore: '--', minScore: '--', totalCount: 0 })
@@ -103,8 +104,8 @@ export default function TeacherGrades() {
   // 批量录入相关状态
   const [batchModalOpen, setBatchModalOpen] = useState(false)
   const [batchLoading, setBatchLoading] = useState(false)
-  const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
-  const [batchRows, setBatchRows] = useState<Array<{ studentId: number; studentName: string; score: string; ranking: string; awardLevel: string }>>([])
+  const [participants, setParticipants] = useState<ParticipantRow[]>([])
+  const [batchRows, setBatchRows] = useState<Array<{ studentId: number; teamId: number | null; studentName: string; score: string; ranking: string; awardLevel: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -166,19 +167,20 @@ export default function TeacherGrades() {
     setBatchModalOpen(true)
     setBatchLoading(true)
     try {
-      // 获取该竞赛已审核通过的报名列表
-      const res = await registrationApi.list({ current: 1, size: PAGE_SIZE.LARGE, competitionId: selectedComp, status: 1 })
-      setRegistrations(res.records)
-      // 初始化行为每个已报名学生一行
-      setBatchRows(res.records.map(r => ({
+      // 获取该竞赛已通过队伍的全部参赛成员
+      const rows = await registrationApi.participants(selectedComp)
+      setParticipants(rows)
+      // 初始化行为每个参赛学生一行
+      setBatchRows(rows.map(r => ({
         studentId: r.studentId,
+        teamId: r.teamId,
         studentName: r.studentName || `学生${r.studentId}`,
         score: '',
         ranking: '',
         awardLevel: '',
       })))
     } catch (err) {
-      toast.error('加载报名列表失败')
+      toast.error('加载参赛名单失败')
       console.error('加载报名列表失败:', err)
     } finally {
       setBatchLoading(false)
@@ -197,7 +199,7 @@ export default function TeacherGrades() {
 
   // 添加空行
   const addBatchRow = () => {
-    setBatchRows(prev => [...prev, { studentId: 0, studentName: '', score: '', ranking: '', awardLevel: '' }])
+    setBatchRows(prev => [...prev, { studentId: 0, teamId: null, studentName: '', score: '', ranking: '', awardLevel: '' }])
   }
 
   // CSV导入
@@ -230,10 +232,11 @@ export default function TeacherGrades() {
       const newRows = lines.slice(1).map(line => {
         const cols = parseLine(line)
         const studentId = Number(cols[studentIdIdx]) || 0
-        const reg = registrations.find(r => r.studentId === studentId)
+        const part = participants.find(r => r.studentId === studentId)
         return {
           studentId,
-          studentName: reg?.studentName || `学生${studentId}`,
+          teamId: part?.teamId ?? null,
+          studentName: part?.studentName || `学生${studentId}`,
           score: cols[scoreIdx] || '',
           ranking: rankingIdx >= 0 ? cols[rankingIdx] || '' : '',
           awardLevel: awardIdx >= 0 ? cols[awardIdx] || '' : '',
@@ -268,6 +271,7 @@ export default function TeacherGrades() {
         competitionId: selectedComp,
         results: validRows.map(r => ({
           studentId: r.studentId,
+          teamId: r.teamId ?? undefined,
           score: Number(r.score),
           ranking: r.ranking ? Number(r.ranking) : null,
           awardLevel: r.awardLevel ? Number(r.awardLevel) : null,
@@ -288,8 +292,9 @@ export default function TeacherGrades() {
 
   return (
     <>
-      <motion.div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}
+      <motion.div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}
         variants={fadeSlideUp} initial="hidden" animate="visible">
+        {!presetCompetitionId && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-secondary)' }}>选择竞赛：</span>
           <select
@@ -299,6 +304,7 @@ export default function TeacherGrades() {
             {competitions.map((c) => <option key={c.id} value={c.id}>{c.competitionName}</option>)}
           </select>
         </div>
+        )}
         <div style={{ display: 'flex', gap: '8px' }}>
           <button className="btn ghost" style={{ gap: '6px' }} onClick={handleOpenBatch} disabled={!selectedComp}>
             <Upload size={14} /> 批量录入
@@ -315,17 +321,17 @@ export default function TeacherGrades() {
             variants={fadeInList}
             initial="hidden"
             animate="visible"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '12px' }}
           >
-            <div className="metric-card" style={{ padding: '12px 14px' }}>
+            <div className="metric-card" style={{ padding: '10px 12px' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>平均分</div>
               <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{stats.avgScore}</div>
             </div>
-            <div className="metric-card" style={{ padding: '12px 14px' }}>
+            <div className="metric-card" style={{ padding: '10px 12px' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>最高分</div>
               <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{stats.maxScore}</div>
             </div>
-            <div className="metric-card" style={{ padding: '12px 14px' }}>
+            <div className="metric-card" style={{ padding: '10px 12px' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>最低分</div>
               <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{stats.minScore}</div>
             </div>
@@ -353,7 +359,7 @@ export default function TeacherGrades() {
                   <td>{r.awardName ? <span style={{ fontWeight: '600', color: 'var(--accent)' }}>{r.awardName}</span> : '-'}</td>
                   <td style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>{r.remark || '-'}</td>
                   <td>
-                    <span className={`glass-badge ${r.isPublished === 1 ? 'pass' : 'pending'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                    <span className={`glass-badge ${r.isPublished === 1 ? 'pass' : 'pending'}`} style={{ fontSize: '12px', padding: '2px 8px' }}>
                       {r.isPublished === 1 ? '已发布' : '待发布'}
                     </span>
                   </td>
@@ -398,7 +404,7 @@ export default function TeacherGrades() {
 
       {/* 批量录入弹窗 */}
       <GlassModal open={batchModalOpen} onClose={() => setBatchModalOpen(false)} title="批量录入成绩" maxWidth="900px">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* 操作栏 */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
