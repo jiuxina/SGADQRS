@@ -113,7 +113,6 @@ export default function StudentTeams() {
 
   // 更换指导老师
   const [teacherModalTeam, setTeacherModalTeam] = useState<TeamItem | null>(null)
-  const [teacherOptions, setTeacherOptions] = useState<UserItem[]>([])
   const [teacherSelection, setTeacherSelection] = useState('')
   const [changingTeacher, setChangingTeacher] = useState(false)
 
@@ -242,7 +241,7 @@ export default function StudentTeams() {
     setTeacherSelection(team.teacherId ? String(team.teacherId) : '')
     try {
       const res = await userApi.list({ current: 1, size: 100, userType: 2 })
-      setTeacherOptions(res.records)
+      setTeachers(res.records)
     } catch {
       setTeachers([])
     }
@@ -397,14 +396,14 @@ export default function StudentTeams() {
 
                       {user?.id === team.leaderId && (
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
-                          {team.status === 0 && (
+                          {(team.status === 0 || team.status === 3) && (
                             <button
                               className="btn primary filled-primary"
                               style={{ height: '26px', fontSize: '12px', padding: '0 10px' }}
                               disabled={actingId === team.id}
                               onClick={(e) => { e.stopPropagation(); handleSubmitTeam(team) }}
                             >
-                              {actingId === team.id ? '提交中...' : '提交审核'}
+                              {actingId === team.id ? '提交中...' : team.status === 3 ? '重新提交审核' : '提交审核'}
                             </button>
                           )}
                           <button
@@ -414,7 +413,7 @@ export default function StudentTeams() {
                           >
                             指导老师
                           </button>
-                          {(team.status === 0 || team.status === 1) && (
+                          {(team.status === 0 || team.status === 1 || team.status === 3) && (
                             <button
                               className="btn ghost"
                               style={{ height: '26px', fontSize: '12px', padding: '0 10px', color: 'var(--danger)' }}
@@ -569,7 +568,7 @@ export default function StudentTeams() {
                     style={{ width: '100%', marginBottom: 0 }}
                   >
                     <option value="">不指定（可选）</option>
-                    {teacherOptions.map((t) => (
+                    {teachers.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.realName}{t.deptName ? ` - ${t.deptName}` : ''}
                       </option>

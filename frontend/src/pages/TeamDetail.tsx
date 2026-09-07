@@ -224,20 +224,20 @@ export default function TeamDetail() {
 
         {isLeader && (
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '14px' }}>
-            {team.status === 0 && (
+            {(team.status === 0 || team.status === 3) && (
               <button
                 className="btn primary filled-primary"
                 style={{ height: '30px', fontSize: '12px' }}
                 disabled={acting}
                 onClick={handleSubmit}
               >
-                {acting ? '提交中...' : '提交审核'}
+                {acting ? '提交中...' : team.status === 3 ? '重新提交审核' : '提交审核'}
               </button>
             )}
             <button className="btn ghost" style={{ height: '30px', fontSize: '12px' }} onClick={openTeacherModal}>
               指导老师
             </button>
-            {(team.status === 0 || team.status === 1) && (
+            {(team.status === 0 || team.status === 1 || team.status === 3) && (
               <button
                 className="btn ghost"
                 style={{ height: '30px', fontSize: '12px', color: 'var(--danger)' }}
