@@ -3,6 +3,7 @@ package com.scms.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
+import com.scms.common.Pages;
 import com.scms.common.Result;
 import com.scms.dto.NoticeDTO;
 import com.scms.entity.Notification;
@@ -23,7 +24,7 @@ public class SystemService {
     // ===== 公告管理（公告即 sys_notification 中 user_id=0 的行，兼容旧 /notice 接口形状） =====
 
     public Result<?> listNotices(int current, int size, Integer noticeType, Integer status) {
-        Page<Notification> page = new Page<>(current, size);
+        Page<Notification> page = Pages.of(current, size);
         LambdaQueryWrapper<Notification> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Notification::getUserId, 0L);
         // 旧 noticeType：1-通知 2-公告
@@ -34,7 +35,7 @@ public class SystemService {
         wrapper.orderByDesc(Notification::getIsTop).orderByDesc(Notification::getCreateTime);
         Page<Notification> result = notificationMapper.selectPage(page, wrapper);
 
-        Page<Map<String, Object>> mapped = new Page<>(current, size);
+        Page<Map<String, Object>> mapped = Pages.of(current, size);
         mapped.setTotal(result.getTotal());
         mapped.setRecords(result.getRecords().stream().map(SystemService::toLegacyNotice).toList());
         return Result.success(new PageResult<>(mapped));

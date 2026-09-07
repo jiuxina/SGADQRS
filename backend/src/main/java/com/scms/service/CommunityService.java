@@ -3,6 +3,7 @@ package com.scms.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
+import com.scms.common.Pages;
 import com.scms.common.Result;
 import com.scms.dto.CommunityRequestDTO;
 import com.scms.entity.*;
@@ -175,7 +176,7 @@ public class CommunityService {
 
     /** 收到的请求（待处理优先展示） */
     public Result<?> received(int current, int size, Integer type, Integer status, Long meId) {
-        Page<CommunityRequest> page = new Page<>(current, size);
+        Page<CommunityRequest> page = Pages.of(current, size);
         LambdaQueryWrapper<CommunityRequest> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CommunityRequest::getToUserId, meId);
         if (type != null) wrapper.eq(CommunityRequest::getType, type);
@@ -188,7 +189,7 @@ public class CommunityService {
 
     /** 我发出的请求 */
     public Result<?> sent(int current, int size, Integer type, Integer status, Long meId) {
-        Page<CommunityRequest> page = new Page<>(current, size);
+        Page<CommunityRequest> page = Pages.of(current, size);
         LambdaQueryWrapper<CommunityRequest> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CommunityRequest::getFromUserId, meId);
         if (type != null) wrapper.eq(CommunityRequest::getType, type);

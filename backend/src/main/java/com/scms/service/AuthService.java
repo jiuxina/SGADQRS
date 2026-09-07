@@ -35,6 +35,11 @@ public class AuthService {
             return Result.error("账号或密码错误");
         }
 
+        // 边界：被禁用的账号不允许登录
+        if (user.getStatus() != null && user.getStatus() != 1) {
+            return Result.error("账号已被禁用，请联系管理员");
+        }
+
         // 根据 userType 映射角色
         String roleCode = switch (user.getUserType()) {
             case 3 -> "admin";

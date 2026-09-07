@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Tag(name = "文件上传")
@@ -24,6 +25,12 @@ import java.util.UUID;
 @RequestMapping("/file")
 @RequiredArgsConstructor
 public class FileController {
+
+    /** 边界：扩展名白名单——图片（不含可携带脚本的 svg）+ 常用文档/压缩包 */
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
+            "jpg", "jpeg", "png", "gif", "webp", "bmp", "ico",
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "md", "zip"
+    );
 
     @Value("${file.upload-path:./uploads/}")
     private String uploadPath;
@@ -35,18 +42,23 @@ public class FileController {
             return Result.error("请选择文件");
         }
 
+        String originalFilename = file.getOriginalFilename();
+        String ext = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            ext = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+        }
+        // 边界：拒绝无扩展名与白名单之外的文件，防止上传 html/svg 等可执行内容形成存储型 XSS
+        if (ext.isBlank() || !ALLOWED_EXTENSIONS.contains(ext)) {
+            return Result.error("不支持的文件类型，仅允许图片、PDF、Office 文档、文本与 zip");
+        }
+
         try {
             String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
             String dir = uploadPath + datePath;
             File dirFile = new File(dir);
             if (!dirFile.exists()) dirFile.mkdirs();
 
-            String originalFilename = file.getOriginalFilename();
-            String ext = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                ext = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String newFilename = UUID.randomUUID().toString().replace("-", "") + ext;
+            String newFilename = UUID.randomUUID().toString().replace("-", "") + "." + ext;
 
             Path filePath = Paths.get(dir, newFilename);
             Files.write(filePath, file.getBytes());

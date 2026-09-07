@@ -3,15 +3,20 @@ package com.scms.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
+import com.scms.common.Pages;
 import com.scms.common.Result;
 import com.scms.dto.CompetitionDTO;
 import com.scms.entity.Competition;
 import com.scms.entity.CompetitionTeam;
 import com.scms.entity.CompetitionTeamMember;
+import com.scms.entity.CompetitionResult;
+import com.scms.entity.RecruitPost;
 import com.scms.entity.User;
 import com.scms.mapper.CompetitionMapper;
+import com.scms.mapper.CompetitionResultMapper;
 import com.scms.mapper.CompetitionTeamMapper;
 import com.scms.mapper.CompetitionTeamMemberMapper;
+import com.scms.mapper.RecruitPostMapper;
 import com.scms.mapper.UserMapper;
 import com.scms.security.LoginUser;
 import lombok.RequiredArgsConstructor;
@@ -29,11 +34,13 @@ public class CompetitionService {
     private final CompetitionMapper competitionMapper;
     private final CompetitionTeamMapper teamMapper;
     private final CompetitionTeamMemberMapper teamMemberMapper;
+    private final RecruitPostMapper recruitPostMapper;
+    private final CompetitionResultMapper resultMapper;
     private final UserMapper userMapper;
 
     public Result<?> listCompetitions(int current, int size, String keyword,
                                        Integer status, Long publisherId, Long currentUserId) {
-        Page<Competition> page = new Page<>(current, size);
+        Page<Competition> page = Pages.of(current, size);
         LambdaQueryWrapper<Competition> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             wrapper.like(Competition::getCompetitionName, keyword);
@@ -95,6 +102,8 @@ public class CompetitionService {
 
     @Transactional
     public Result<?> createCompetition(CompetitionDTO dto, Long publisherId) {
+        Result<?> valid = validateCompetition(dto);
+        if (valid != null) return valid;
         Competition comp = new Competition();
         comp.setCompetitionName(dto.getCompetitionName());
         comp.setOrganizer(dto.getOrganizer());
@@ -116,10 +125,36 @@ public class CompetitionService {
         return Result.success("创建成功", comp);
     }
 
+    /** 边界校验：各阶段起止顺序、每队人数范围；通过返回 null，否则返回错误 */
+    private Result<?> validateCompetition(CompetitionDTO dto) {
+        if (dto.getRegistrationStart() != null && dto.getRegistrationEnd() != null
+                && dto.getRegistrationEnd().isBefore(dto.getRegistrationStart())) {
+            return Result.error("报名截止时间不能早于报名开始时间");
+        }
+        if (dto.getCompetitionStart() != null && dto.getCompetitionEnd() != null
+                && dto.getCompetitionEnd().isBefore(dto.getCompetitionStart())) {
+            return Result.error("比赛结束时间不能早于比赛开始时间");
+        }
+        if (dto.getRegistrationEnd() != null && dto.getCompetitionStart() != null
+                && dto.getCompetitionStart().isBefore(dto.getRegistrationEnd())) {
+            return Result.error("比赛开始时间不能早于报名截止时间");
+        }
+        if (dto.getMaxMembers() != null && (dto.getMaxMembers() < 1 || dto.getMaxMembers() > 99)) {
+            return Result.error("每队人数须在 1 ~ 99 之间");
+        }
+        return null;
+    }
+
     @Transactional
-    public Result<?> updateCompetition(CompetitionDTO dto) {
+    public Result<?> updateCompetition(CompetitionDTO dto, Long userId, String role) {
         Competition comp = competitionMapper.selectById(dto.getId());
         if (comp == null) return Result.error("竞赛不存在");
+        // 边界：教师只能编辑自己发布的竞赛，管理员不限
+        if ("teacher".equals(role) && !userId.equals(comp.getPublisherId())) {
+            return Result.error("只能编辑自己发布的竞赛");
+        }
+        Result<?> valid = validateCompetition(dto);
+        if (valid != null) return valid;
 
         if (StringUtils.hasText(dto.getCompetitionName())) comp.setCompetitionName(dto.getCompetitionName());
         if (dto.getOrganizer() != null) comp.setOrganizer(dto.getOrganizer());
@@ -141,8 +176,14 @@ public class CompetitionService {
     }
 
     @Transactional
-    public Result<?> deleteCompetition(Long id) {
-        // 级联删除参赛队伍与成员
+    public Result<?> deleteCompetition(Long id, Long userId, String role) {
+        Competition comp = competitionMapper.selectById(id);
+        if (comp == null) return Result.error("竞赛不存在");
+        // 边界：教师只能删除自己发布的竞赛，管理员不限
+        if ("teacher".equals(role) && !userId.equals(comp.getPublisherId())) {
+            return Result.error("只能删除自己发布的竞赛");
+        }
+        // 级联清理：队伍成员、队伍、招募帖、成绩记录，避免孤儿数据
         List<CompetitionTeam> teams = teamMapper.selectList(
                 new LambdaQueryWrapper<CompetitionTeam>().eq(CompetitionTeam::getCompetitionId, id));
         for (CompetitionTeam team : teams) {
@@ -150,6 +191,8 @@ public class CompetitionService {
                     .eq(CompetitionTeamMember::getTeamId, team.getId()));
         }
         teamMapper.delete(new LambdaQueryWrapper<CompetitionTeam>().eq(CompetitionTeam::getCompetitionId, id));
+        recruitPostMapper.delete(new LambdaQueryWrapper<RecruitPost>().eq(RecruitPost::getCompetitionId, id));
+        resultMapper.delete(new LambdaQueryWrapper<CompetitionResult>().eq(CompetitionResult::getCompetitionId, id));
         competitionMapper.deleteById(id);
         return Result.success("删除成功", null);
     }

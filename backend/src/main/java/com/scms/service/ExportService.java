@@ -38,10 +38,13 @@ public class ExportService {
     private final UserMapper userMapper;
 
     // ===== 竞赛导出 =====
-    public void exportCompetitions(HttpServletResponse response, Integer status, String keyword) throws IOException {
+    public void exportCompetitions(HttpServletResponse response, Integer status, String keyword,
+                                   Long publisherId) throws IOException {
         LambdaQueryWrapper<Competition> wrapper = new LambdaQueryWrapper<>();
         if (status != null) wrapper.eq(Competition::getStatus, status);
         if (keyword != null && !keyword.isBlank()) wrapper.like(Competition::getCompetitionName, keyword);
+        // 边界：教师只能导出自己发布的竞赛
+        if (publisherId != null) wrapper.eq(Competition::getPublisherId, publisherId);
         wrapper.orderByDesc(Competition::getCreateTime);
 
         List<Competition> list = competitionMapper.selectList(wrapper);
@@ -70,10 +73,15 @@ public class ExportService {
     }
 
     // ===== 团队导出 =====
-    public void exportTeams(HttpServletResponse response, Long competitionId, Integer status) throws IOException {
+    public void exportTeams(HttpServletResponse response, Long competitionId, Integer status,
+                            Long publisherId) throws IOException {
         LambdaQueryWrapper<CompetitionTeam> wrapper = new LambdaQueryWrapper<>();
         if (competitionId != null) wrapper.eq(CompetitionTeam::getCompetitionId, competitionId);
         if (status != null) wrapper.eq(CompetitionTeam::getStatus, status);
+        // 边界：教师只能导出自己发布竞赛的队伍
+        if (publisherId != null) {
+            wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
+        }
         wrapper.orderByDesc(CompetitionTeam::getCreateTime);
 
         List<CompetitionTeam> list = teamMapper.selectList(wrapper);
@@ -99,11 +107,16 @@ public class ExportService {
     }
 
     // ===== 成绩导出 =====
-    public void exportResults(HttpServletResponse response, Long competitionId, Integer awardLevel, Integer isPublished) throws IOException {
+    public void exportResults(HttpServletResponse response, Long competitionId, Integer awardLevel, Integer isPublished,
+                              Long publisherId) throws IOException {
         LambdaQueryWrapper<CompetitionResult> wrapper = new LambdaQueryWrapper<>();
         if (competitionId != null) wrapper.eq(CompetitionResult::getCompetitionId, competitionId);
         if (awardLevel != null) wrapper.eq(CompetitionResult::getAwardLevel, awardLevel);
         if (isPublished != null) wrapper.eq(CompetitionResult::getIsPublished, isPublished);
+        // 边界：教师只能导出自己发布竞赛的成绩
+        if (publisherId != null) {
+            wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
+        }
         wrapper.orderByDesc(CompetitionResult::getCreateTime);
 
         List<CompetitionResult> list = resultMapper.selectList(wrapper);

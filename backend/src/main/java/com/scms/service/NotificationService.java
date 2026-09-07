@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
+import com.scms.common.Pages;
 import com.scms.common.Result;
 import com.scms.entity.Notification;
 import com.scms.mapper.NotificationMapper;
@@ -35,7 +36,7 @@ public class NotificationService {
 
     /** 我的收件箱（公告在 announcements 接口单独拉取） */
     public Result<?> list(int current, int size, Boolean unreadOnly, Long meId) {
-        Page<Notification> page = new Page<>(current, size);
+        Page<Notification> page = Pages.of(current, size);
         LambdaQueryWrapper<Notification> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Notification::getUserId, meId);
         if (Boolean.TRUE.equals(unreadOnly)) wrapper.eq(Notification::getIsRead, 0);
@@ -45,7 +46,7 @@ public class NotificationService {
 
     /** 全员公告 */
     public Result<?> announcements(int current, int size) {
-        Page<Notification> page = new Page<>(current, size);
+        Page<Notification> page = Pages.of(current, size);
         LambdaQueryWrapper<Notification> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Notification::getUserId, 0L);
         wrapper.eq(Notification::getType, "announcement");

@@ -23,6 +23,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException("用户不存在: " + username);
         }
+        // 边界：被禁用的账号即使持有未过期 token 也立即失效
+        if (user.getStatus() != null && user.getStatus() != 1) {
+            throw new UsernameNotFoundException("账号已被禁用: " + username);
+        }
 
         // 根据 userType 映射角色
         String roleCode = switch (user.getUserType()) {

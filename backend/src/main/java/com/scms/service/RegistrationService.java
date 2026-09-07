@@ -3,6 +3,7 @@ package com.scms.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
+import com.scms.common.Pages;
 import com.scms.common.Result;
 import com.scms.dto.TeamDTO;
 import com.scms.entity.*;
@@ -34,7 +35,7 @@ public class RegistrationService {
     private final NotificationService notificationService;
 
     public Result<?> listTeams(int current, int size, Long competitionId, Integer status, Long publisherId, Long teacherId, Long memberId) {
-        Page<CompetitionTeam> page = new Page<>(current, size);
+        Page<CompetitionTeam> page = Pages.of(current, size);
         LambdaQueryWrapper<CompetitionTeam> wrapper = new LambdaQueryWrapper<>();
         if (competitionId != null) wrapper.eq(CompetitionTeam::getCompetitionId, competitionId);
         if (status != null) wrapper.eq(CompetitionTeam::getStatus, status);
@@ -85,6 +86,11 @@ public class RegistrationService {
         Competition comp = competitionMapper.selectById(dto.getCompetitionId());
         if (comp == null) return Result.error("竞赛不存在");
         if (comp.getStatus() != 2 && comp.getStatus() != 3) return Result.error("该竞赛当前不可参赛");
+        // 边界：同一学生同一竞赛只能有一支队伍（建队或入队均算）
+        Long joined = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
+                .eq(CompetitionTeamMember::getStudentId, leaderId)
+                .apply("team_id IN (SELECT id FROM competition_team WHERE competition_id = {0})", dto.getCompetitionId()));
+        if (joined != null && joined > 0) return Result.error("你已参加了该竞赛的队伍，不可重复报名");
 
         CompetitionTeam team = new CompetitionTeam();
         team.setCompetitionId(dto.getCompetitionId());
@@ -161,6 +167,8 @@ public class RegistrationService {
         CompetitionTeam team = teamMapper.selectById(id);
         if (team == null) return Result.error("队伍不存在");
         if (status == null || (status != 2 && status != 3)) return Result.error("无效的审核状态");
+        // 边界：仅"待审核(1)"的队伍可审核，防止重复审核/审核组建中的队伍
+        if (team.getStatus() == null || team.getStatus() != 1) return Result.error("该队伍当前状态不可审核（仅待审核状态可审核）");
         team.setStatus(status);
         teamMapper.updateById(team);
 
@@ -205,6 +213,12 @@ public class RegistrationService {
                         .eq(CompetitionTeamMember::getStudentId, studentId)
         );
         if (count > 0) return Result.error("您已在该团队中");
+        // 边界：同一学生同一竞赛只能有一支队伍
+        Long joinedOther = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
+                .eq(CompetitionTeamMember::getStudentId, studentId)
+                .ne(CompetitionTeamMember::getTeamId, teamId)
+                .apply("team_id IN (SELECT id FROM competition_team WHERE competition_id = {0})", team.getCompetitionId()));
+        if (joinedOther != null && joinedOther > 0) return Result.error("该同学已参加了此竞赛的其他队伍");
 
         CompetitionTeamMember member = new CompetitionTeamMember();
         member.setTeamId(teamId);

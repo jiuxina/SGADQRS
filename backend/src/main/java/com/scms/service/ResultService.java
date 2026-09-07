@@ -3,6 +3,7 @@ package com.scms.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
+import com.scms.common.Pages;
 import com.scms.common.Result;
 import com.scms.dto.BatchResultDTO;
 import com.scms.dto.ResultDTO;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -30,7 +32,7 @@ public class ResultService {
 
     public Result<?> listResults(int current, int size, Long competitionId, Long studentId,
                                   Integer awardLevel, Integer isPublished, Long publisherId, String keyword) {
-        Page<CompetitionResult> page = new Page<>(current, size);
+        Page<CompetitionResult> page = Pages.of(current, size);
         LambdaQueryWrapper<CompetitionResult> wrapper = new LambdaQueryWrapper<>();
         if (competitionId != null) wrapper.eq(CompetitionResult::getCompetitionId, competitionId);
         if (studentId != null) wrapper.eq(CompetitionResult::getStudentId, studentId);
@@ -55,8 +57,36 @@ public class ResultService {
         return Result.success(new PageResult<>(result));
     }
 
+    /** 边界校验：竞赛存在、分数/名次范围、同竞赛同人（或同队）不重复录入；通过返回 null */
+    private Result<?> validateResult(Long competitionId, Long studentId, Long teamId,
+                                     BigDecimal score, Integer ranking, Long excludeId) {
+        if (competitionId == null) return Result.error("请指定竞赛");
+        if (competitionMapper.selectById(competitionId) == null) return Result.error("竞赛不存在");
+        if (score != null && score.compareTo(BigDecimal.ZERO) < 0) return Result.error("分数不能为负数");
+        if (score != null && score.compareTo(BigDecimal.valueOf(100000)) > 0) return Result.error("分数超出合理范围");
+        if (ranking != null && ranking < 1) return Result.error("名次不能小于 1");
+        if (studentId == null && teamId == null) return Result.error("请指定获奖学生或队伍");
+        long dup;
+        if (studentId != null) {
+            dup = resultMapper.selectCount(new LambdaQueryWrapper<CompetitionResult>()
+                    .eq(CompetitionResult::getCompetitionId, competitionId)
+                    .eq(CompetitionResult::getStudentId, studentId)
+                    .ne(excludeId != null, CompetitionResult::getId, excludeId));
+        } else {
+            dup = resultMapper.selectCount(new LambdaQueryWrapper<CompetitionResult>()
+                    .eq(CompetitionResult::getCompetitionId, competitionId)
+                    .eq(CompetitionResult::getTeamId, teamId)
+                    .ne(excludeId != null, CompetitionResult::getId, excludeId));
+        }
+        if (dup > 0) return Result.error("该竞赛下已存在相同学生/队伍的成绩记录，请直接编辑原记录");
+        return null;
+    }
+
     @Transactional
     public Result<?> saveResult(ResultDTO dto) {
+        Result<?> invalid = validateResult(dto.getCompetitionId(), dto.getStudentId(), dto.getTeamId(),
+                dto.getScore(), dto.getRanking(), null);
+        if (invalid != null) return invalid;
         CompetitionResult result = new CompetitionResult();
         result.setCompetitionId(dto.getCompetitionId());
         result.setStudentId(dto.getStudentId());
@@ -83,6 +113,9 @@ public class ResultService {
 
         List<CompetitionResult> saved = new ArrayList<>();
         for (BatchResultDTO.Item item : dto.getResults()) {
+            Result<?> invalid = validateResult(dto.getCompetitionId(), item.getStudentId(), item.getTeamId(),
+                    item.getScore(), item.getRanking(), null);
+            if (invalid != null) return invalid;
             CompetitionResult result = new CompetitionResult();
             result.setCompetitionId(dto.getCompetitionId());
             result.setStudentId(item.getStudentId());
@@ -102,6 +135,8 @@ public class ResultService {
     public Result<?> updateResult(ResultDTO dto) {
         CompetitionResult result = resultMapper.selectById(dto.getId());
         if (result == null) return Result.error("成绩记录不存在");
+        if (dto.getScore() != null && (dto.getScore().compareTo(BigDecimal.ZERO) < 0 || dto.getScore().compareTo(BigDecimal.valueOf(100000)) > 0)) return Result.error("分数超出合理范围");
+        if (dto.getRanking() != null && dto.getRanking() < 1) return Result.error("名次不能小于 1");
 
         if (dto.getScore() != null) result.setScore(dto.getScore());
         if (dto.getRanking() != null) result.setRanking(dto.getRanking());
@@ -124,6 +159,9 @@ public class ResultService {
                         .eq(CompetitionResult::getCompetitionId, competitionId)
                         .eq(CompetitionResult::getIsPublished, 0)
         );
+        if (results.isEmpty()) {
+            return Result.success("暂无未发布的成绩，无需重复发布", null);
+        }
         results.forEach(r -> {
             r.setIsPublished(1);
             r.setPublishTime(LocalDateTime.now());

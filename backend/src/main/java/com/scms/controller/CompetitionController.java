@@ -48,18 +48,20 @@ public class CompetitionController {
         return competitionService.createCompetition(dto, loginUser.getUserId());
     }
 
-    @Operation(summary = "更新竞赛")
+    @Operation(summary = "更新竞赛（教师仅限本人发布的竞赛）")
     @PutMapping
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public Result<?> update(@RequestBody CompetitionDTO dto) {
-        return competitionService.updateCompetition(dto);
+    public Result<?> update(@RequestBody CompetitionDTO dto,
+                            @AuthenticationPrincipal LoginUser loginUser) {
+        return competitionService.updateCompetition(dto, loginUser.getUserId(), loginUser.getRoleCode());
     }
 
-    @Operation(summary = "删除竞赛")
+    @Operation(summary = "删除竞赛（教师仅限本人发布的竞赛，级联清理队伍/招募帖/成绩）")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public Result<?> delete(@PathVariable Long id) {
-        return competitionService.deleteCompetition(id);
+    public Result<?> delete(@PathVariable Long id,
+                            @AuthenticationPrincipal LoginUser loginUser) {
+        return competitionService.deleteCompetition(id, loginUser.getUserId(), loginUser.getRoleCode());
     }
 
     @Operation(summary = "仪表盘统计")

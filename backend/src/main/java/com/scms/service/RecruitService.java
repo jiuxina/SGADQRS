@@ -3,6 +3,7 @@ package com.scms.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
+import com.scms.common.Pages;
 import com.scms.common.Result;
 import com.scms.dto.RecruitPostDTO;
 import com.scms.entity.*;
@@ -76,7 +77,7 @@ public class RecruitService {
 
     public Result<?> list(int current, int size, Long competitionId, Integer type, Integer status,
                           String keyword, Long meId) {
-        Page<RecruitPost> page = new Page<>(current, size);
+        Page<RecruitPost> page = Pages.of(current, size);
         LambdaQueryWrapper<RecruitPost> wrapper = new LambdaQueryWrapper<>();
         if (competitionId != null) wrapper.eq(RecruitPost::getCompetitionId, competitionId);
         if (type != null) wrapper.eq(RecruitPost::getType, type);

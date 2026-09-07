@@ -3,6 +3,7 @@ package com.scms.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scms.common.PageResult;
+import com.scms.common.Pages;
 import com.scms.common.Result;
 import com.scms.dto.ProfileDTO;
 import com.scms.dto.UserDTO;
@@ -37,7 +38,7 @@ public class UserService {
     private final CompetitionMapper competitionMapper;
 
     public Result<?> listUsers(int current, int size, String keyword, Integer userType) {
-        Page<User> page = new Page<>(current, size);
+        Page<User> page = Pages.of(current, size);
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             wrapper.and(w -> w.like(User::getUsername, keyword)

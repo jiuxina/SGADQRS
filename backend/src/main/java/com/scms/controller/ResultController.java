@@ -20,7 +20,7 @@ public class ResultController {
 
     private final ResultService resultService;
 
-    @Operation(summary = "成绩列表")
+    @Operation(summary = "成绩列表（学生仅可见已发布的成绩）")
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") int current,
                           @RequestParam(defaultValue = "10") int size,
@@ -30,7 +30,13 @@ public class ResultController {
                           @RequestParam(required = false) Integer isPublished,
                           @RequestParam(required = false) String keyword,
                           @AuthenticationPrincipal LoginUser loginUser) {
-        Long publisherId = "teacher".equals(loginUser.getRoleCode()) ? loginUser.getUserId() : null;
+        // 边界：教师只能看自己发布竞赛的成绩；学生强制只看已发布成绩，防止越权拉取未发布数据
+        Long publisherId = null;
+        if ("teacher".equals(loginUser.getRoleCode())) {
+            publisherId = loginUser.getUserId();
+        } else if ("student".equals(loginUser.getRoleCode())) {
+            isPublished = 1;
+        }
         return resultService.listResults(current, size, competitionId, studentId, awardLevel, isPublished, publisherId, keyword);
     }
 

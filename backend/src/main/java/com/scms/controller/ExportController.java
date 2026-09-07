@@ -20,35 +20,41 @@ public class ExportController {
 
     private final ExportService exportService;
 
-    @Operation(summary = "导出竞赛列表")
+    @Operation(summary = "导出竞赛列表（教师仅限本人发布的）")
     @GetMapping("/competitions")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void exportCompetitions(
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String keyword,
+            @AuthenticationPrincipal LoginUser loginUser,
             HttpServletResponse response) throws IOException {
-        exportService.exportCompetitions(response, status, keyword);
+        Long publisherId = "teacher".equals(loginUser.getRoleCode()) ? loginUser.getUserId() : null;
+        exportService.exportCompetitions(response, status, keyword, publisherId);
     }
 
-    @Operation(summary = "导出参赛队伍列表")
+    @Operation(summary = "导出参赛队伍列表（教师仅限本人发布的竞赛）")
     @GetMapping("/teams")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void exportTeams(
             @RequestParam(required = false) Long competitionId,
             @RequestParam(required = false) Integer status,
+            @AuthenticationPrincipal LoginUser loginUser,
             HttpServletResponse response) throws IOException {
-        exportService.exportTeams(response, competitionId, status);
+        Long publisherId = "teacher".equals(loginUser.getRoleCode()) ? loginUser.getUserId() : null;
+        exportService.exportTeams(response, competitionId, status, publisherId);
     }
 
-    @Operation(summary = "导出成绩列表")
+    @Operation(summary = "导出成绩列表（教师仅限本人发布的竞赛）")
     @GetMapping("/results")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void exportResults(
             @RequestParam(required = false) Long competitionId,
             @RequestParam(required = false) Integer awardLevel,
             @RequestParam(required = false) Integer isPublished,
+            @AuthenticationPrincipal LoginUser loginUser,
             HttpServletResponse response) throws IOException {
-        exportService.exportResults(response, competitionId, awardLevel, isPublished);
+        Long publisherId = "teacher".equals(loginUser.getRoleCode()) ? loginUser.getUserId() : null;
+        exportService.exportResults(response, competitionId, awardLevel, isPublished, publisherId);
     }
 
     @Operation(summary = "导出学生成绩单")
