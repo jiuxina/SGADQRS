@@ -62,6 +62,9 @@ public class AuthService {
     }
 
     public Result<?> register(LoginDTO dto) {
+        // 边界：与改密/建用户一致的最低强度与列宽限制，防弱口令与 DB 约束 500
+        if (dto.getUsername() == null || dto.getUsername().length() > 50) return Result.error("用户名不能超过 50 字");
+        if (dto.getPassword() == null || dto.getPassword().length() < 6) return Result.error("密码至少6位");
         // 检查用户名是否已存在
         User existing = userMapper.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername())

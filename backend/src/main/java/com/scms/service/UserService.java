@@ -132,6 +132,13 @@ public class UserService {
 
     @Transactional
     public Result<?> createUser(UserDTO dto) {
+        // 边界：userType 为库表 NOT NULL 列；长度与列宽一致；密码给出最低强度 —— 全部结构化报错，勿落到 DB 约束 500
+        if (dto.getUserType() == null || (dto.getUserType() != 1 && dto.getUserType() != 2 && dto.getUserType() != 3)) {
+            return Result.error("用户类型不能为空");
+        }
+        if (dto.getUsername() != null && dto.getUsername().length() > 50) return Result.error("用户名不能超过 50 字");
+        if (dto.getRealName() != null && dto.getRealName().length() > 50) return Result.error("姓名不能超过 50 字");
+        if (dto.getPassword() != null && dto.getPassword().length() < 6) return Result.error("密码至少6位");
         User existing = userMapper.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername())
         );
@@ -174,6 +181,7 @@ public class UserService {
 
     @Transactional
     public Result<?> deleteUser(Long id) {
+        if (id == null || userMapper.selectById(id) == null) return Result.error("用户不存在");
         userMapper.deleteById(id);
         return Result.success("删除成功", null);
     }
@@ -189,6 +197,8 @@ public class UserService {
     public Result<?> toggleUserStatus(Long id, Integer status) {
         User user = userMapper.selectById(id);
         if (user == null) return Result.error("用户不存在");
+        // 边界：status 缺失/非法直接拆箱 NPE 变 500，须结构化拒绝
+        if (status == null || (status != 0 && status != 1)) return Result.error("状态参数无效");
         user.setStatus(status);
         userMapper.updateById(user);
         return Result.success(status == 1 ? "启用成功" : "禁用成功", null);

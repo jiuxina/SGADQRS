@@ -1,6 +1,7 @@
 package com.scms.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -12,6 +13,8 @@ public class User {
     private Long id;
 
     private String username;
+    /** 边界：密码哈希绝不随实体序列化外发（任何查询接口均不回显） */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String realName;
 
