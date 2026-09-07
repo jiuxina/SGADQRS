@@ -116,7 +116,7 @@ public class CompetitionService {
         comp.setCompetitionStart(dto.getCompetitionStart());
         comp.setCompetitionEnd(dto.getCompetitionEnd());
         comp.setLocation(dto.getLocation());
-        comp.setMaxMembers(dto.getMaxMembers());
+        comp.setMaxMembers(dto.getMaxMembers() != null ? dto.getMaxMembers() : 1);
         comp.setAwards(dto.getAwards());
         comp.setAttachments(dto.getAttachments());
         // 发布即生效：未显式指定状态时直接发布
@@ -125,8 +125,11 @@ public class CompetitionService {
         return Result.success("创建成功", comp);
     }
 
-    /** 边界校验：各阶段起止顺序、每队人数范围；通过返回 null，否则返回错误 */
+    /** 边界校验：各阶段起止顺序、每队人数范围、字段长度（与列宽一致，防 DB 约束 500）；通过返回 null，否则返回错误 */
     private Result<?> validateCompetition(CompetitionDTO dto) {
+        if (dto.getCompetitionName() != null && dto.getCompetitionName().length() > 100) return Result.error("竞赛名称不能超过 100 字");
+        if (dto.getOrganizer() != null && dto.getOrganizer().length() > 100) return Result.error("主办方不能超过 100 字");
+        if (dto.getLocation() != null && dto.getLocation().length() > 200) return Result.error("地点不能超过 200 字");
         if (dto.getRegistrationStart() != null && dto.getRegistrationEnd() != null
                 && dto.getRegistrationEnd().isBefore(dto.getRegistrationStart())) {
             return Result.error("报名截止时间不能早于报名开始时间");

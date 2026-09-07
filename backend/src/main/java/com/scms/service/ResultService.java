@@ -66,6 +66,9 @@ public class ResultService {
         if (score != null && score.compareTo(BigDecimal.valueOf(100000)) > 0) return Result.error("分数超出合理范围");
         if (ranking != null && ranking < 1) return Result.error("名次不能小于 1");
         if (studentId == null && teamId == null) return Result.error("请指定获奖学生或队伍");
+        // 边界：学生/队伍必须真实存在，防止孤儿成绩与发布时向不存在用户发通知
+        if (studentId != null && userMapper.selectById(studentId) == null) return Result.error("学生不存在");
+        if (teamId != null && teamMapper.selectById(teamId) == null) return Result.error("团队不存在");
         long dup;
         if (studentId != null) {
             dup = resultMapper.selectCount(new LambdaQueryWrapper<CompetitionResult>()
@@ -154,6 +157,9 @@ public class ResultService {
 
     @Transactional
     public Result<?> publishResults(Long competitionId) {
+        // 边界：发布必须针对真实存在的竞赛，防止对不存在 id 静默返回"暂无"
+        if (competitionId == null) return Result.error("请指定竞赛");
+        if (competitionMapper.selectById(competitionId) == null) return Result.error("竞赛不存在");
         List<CompetitionResult> results = resultMapper.selectList(
                 new LambdaQueryWrapper<CompetitionResult>()
                         .eq(CompetitionResult::getCompetitionId, competitionId)

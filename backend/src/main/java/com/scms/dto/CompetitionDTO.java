@@ -32,8 +32,9 @@ public class CompetitionDTO {
     private LocalDateTime competitionEnd;
 
     private String location;
-    private Integer maxMembers = 1;
+    // 不能给默认值：PUT 省略字段时 Jackson 保留初始值，会把库中值静默重置
+    private Integer maxMembers;
     private String awards;
     private String attachments;
-    private Integer status = 2;
+    private Integer status;
 }
