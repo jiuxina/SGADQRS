@@ -20,7 +20,7 @@ import java.util.Map;
 
 /**
  * 参赛队伍（参赛单位）服务：报名与队伍合一。
- * 审核链：队长建队(0组建中) → 提交审核(1) → 管理员审(2通过/3拒绝)；单人赛=1人队，创建即提交。
+ * 审核链：队长建队(0组建中) → 提交审核(1) → 管理员审(2通过/3拒绝)，被驳回(3)可修改后重新提交(1)；单人赛=1人队，创建即提交。
  * 指导老师由队长指定，老师只读不审批。
  */
 @Service
@@ -86,6 +86,16 @@ public class RegistrationService {
         Competition comp = competitionMapper.selectById(dto.getCompetitionId());
         if (comp == null) return Result.error("竞赛不存在");
         if (comp.getStatus() != 2 && comp.getStatus() != 3) return Result.error("该竞赛当前不可参赛");
+        // 边界：字段长度与库表一致，防止超长直接撞 DB 约束变 500
+        if (dto.getTeamName() != null && dto.getTeamName().length() > 50) return Result.error("团队名称不能超过 50 字");
+        if (dto.getTeamSlogan() != null && dto.getTeamSlogan().length() > 200) return Result.error("团队口号不能超过 200 字");
+        // 边界：指导老师须存在且为教师（与 changeTeacher 校验一致）
+        if (dto.getTeacherId() != null) {
+            User teacher = userMapper.selectById(dto.getTeacherId());
+            if (teacher == null || teacher.getUserType() == null || teacher.getUserType() != 2) {
+                return Result.error("指导老师不存在");
+            }
+        }
         // 边界：同一学生同一竞赛只能有一支队伍（建队或入队均算）
         Long joined = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
                 .eq(CompetitionTeamMember::getStudentId, leaderId)
@@ -110,13 +120,14 @@ public class RegistrationService {
         return Result.success(solo ? "报名成功" : "创建队伍成功", team);
     }
 
-    /** 队长提交审核（0组建中 → 1已提交） */
+    /** 队长提交审核（0组建中/3已拒绝 → 1待审核；被驳回后可修改再重新提交） */
     @Transactional
     public Result<?> submitTeam(Long teamId, Long leaderId) {
         CompetitionTeam team = teamMapper.selectById(teamId);
         if (team == null) return Result.error("队伍不存在");
         if (!leaderId.equals(team.getLeaderId())) return Result.error("只有队长可以提交审核");
-        if (team.getStatus() != 0) return Result.error("当前状态不可提交");
+        Integer st = team.getStatus();
+        if (st == null || (st != 0 && st != 3)) return Result.error("当前状态不可提交");
         team.setStatus(1);
         teamMapper.updateById(team);
         return Result.success("已提交审核", null);
@@ -140,14 +151,14 @@ public class RegistrationService {
     }
 
     /** 管理员审核参赛队伍（1已提交 → 2通过/3拒绝） */
-    /** 解散队伍：队长本人操作，仅限组建中(0)/待审核(1)；成员清空、关联招募帖一并下架 */
+    /** 解散队伍：队长本人操作，组建中(0)/待审核(1)/已拒绝(3)可解散；已通过(2)需联系管理员 */
     @Transactional
     public Result<?> disbandTeam(Long id, Long meId) {
         CompetitionTeam team = teamMapper.selectById(id);
         if (team == null) return Result.error("队伍不存在");
         if (!meId.equals(team.getLeaderId())) return Result.error("只有队长可以解散队伍");
-        if (team.getStatus() != null && team.getStatus() >= 2) {
-            return Result.error("已通过/已拒绝的队伍不能解散，如有需要请联系管理员");
+        if (team.getStatus() != null && team.getStatus() == 2) {
+            return Result.error("已通过审核的队伍不能解散，如有需要请联系管理员");
         }
         // 下架关联招募帖（status 1 招募中 → 0 已关闭）
         recruitPostMapper.selectList(new LambdaQueryWrapper<RecruitPost>()
@@ -191,17 +202,20 @@ public class RegistrationService {
 
     /**
      * 将学生加入队伍（社区申请/邀请同意后走此入口）：校验容量与防重，成员直接生效。
+     * 边界：对队伍行加悲观锁（FOR UPDATE），容量检查与插入串行化，防并发同意导致超员；须在事务内调用。
      */
     @Transactional
     public Result<?> addMemberToTeam(Long teamId, Long studentId) {
-        CompetitionTeam team = teamMapper.selectById(teamId);
+        CompetitionTeam team = teamMapper.selectByIdForUpdate(teamId);
         if (team == null) return Result.error("团队不存在");
         Competition comp = competitionMapper.selectById(team.getCompetitionId());
         if (comp == null) return Result.error("所属竞赛不存在");
 
+        // 当前读(FOR UPDATE)：REPEATABLE READ 下普通 count 走事务旧快照，拿锁后仍看不见并发已提交的插入
         long activeCount = teamMemberMapper.selectCount(
                 new LambdaQueryWrapper<CompetitionTeamMember>()
                         .eq(CompetitionTeamMember::getTeamId, teamId)
+                        .last("for update")
         );
         if (comp.getMaxMembers() != null && activeCount >= comp.getMaxMembers()) {
             return Result.error("队伍人数已满");
