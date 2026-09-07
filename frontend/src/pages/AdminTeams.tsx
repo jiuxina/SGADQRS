@@ -34,7 +34,7 @@ export default function AdminTeams({ presetCompetitionId }: { presetCompetitionI
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [current, setCurrent] = useState(1)
-  const pageSize = 20
+  const [pageSize, setPageSize] = useState(20)
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [compFilter, setCompFilter] = useState<number | ''>(presetCompetitionId ?? '')
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined)
@@ -56,7 +56,7 @@ export default function AdminTeams({ presetCompetitionId }: { presetCompetitionI
     } finally {
       setLoading(false)
     }
-  }, [current, compFilter, statusFilter])
+  }, [current, pageSize, compFilter, statusFilter])
 
   useEffect(() => {
     load()
@@ -246,7 +246,7 @@ export default function AdminTeams({ presetCompetitionId }: { presetCompetitionI
         pageSize={pageSize}
         total={total}
         onPageChange={setCurrent}
-        onPageSizeChange={() => {}}
+        onPageSizeChange={(s) => { setPageSize(s); setCurrent(1) }}
       />
 
       {teams.length === 0 && !loading && (
