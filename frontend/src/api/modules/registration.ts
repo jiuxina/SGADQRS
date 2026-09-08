@@ -10,7 +10,7 @@ export interface ParticipantRow {
 
 export const registrationApi = {
   /** 参赛队伍列表：学生=我所在的队伍；教师=我指导的队伍；管理员=全部 */
-  teamList: (params: { current?: number; size?: number; competitionId?: number; status?: number; teacherId?: number }) =>
+  teamList: (params: { current?: number; size?: number; competitionId?: number; status?: number; teacherId?: number; keyword?: string }) =>
     request.get<PageResult<TeamItem>>('/registration/teams', { params }),
 
   /** 参赛队伍详情（队员、指导老师/竞赛发布教师、管理员可见） */
