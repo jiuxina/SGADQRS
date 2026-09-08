@@ -492,6 +492,30 @@ cd frontend && npm run build
 
 ## 更新日志
 
+### 2026-09-09 全面边界与容错测试（新增 `backend/boundary_full.py`，233 断言 0 失败）
+
+覆盖：匿名/篡改 token/禁用后旧 token、角色越权矩阵、分页钳制(1/200)、日期与人数边界、队伍状态机全链、招募/社区申请/邀请全守卫、成绩范围与存在性、上传白名单与路径穿越、XSS 原文存取（前端 React 转义兜底）、种子完整性快照校验。发现并修复：
+
+1. **用户接口泄露密码哈希（P1 安全）**：`GET /user/{id}`、`POST /user` 等返回实体时含 bcrypt `password` → `User` 实体字段加 `@JsonProperty(Access.WRITE_ONLY)`（全局无 `@RequestBody User`，安全）。
+2. **并发同意入队超员（P1 数据完整性）**：3 人队剩 1 席并发处理两申请均成功（4/3）。修复两步：`CompetitionTeamMapper.selectByIdForUpdate` 对队伍行加锁 + **成员数 count 也必须 `FOR UPDATE` 当前读**——只加行锁不够，REPEATABLE READ 下事务旧快照看不见并发已提交的插入（本轮第一次修复即因此未生效，套件抓出）。
+3. **4xx 语义缺失（容错）**：残缺 JSON、缺必填参数、类型不匹配、方法不支持、上传缺 part/超 10MB 全部走兜底 500 → `GlobalExceptionHandler` 增补 `HttpMessageNotReadable/MissingServletRequestParameter/MethodArgumentTypeMismatch/405/413` 处理器（统一 Result 信封）。
+4. **服务层校验补全**：`validateResult` 补学生/队伍存在性（防孤儿成绩+发布时向不存在用户发通知）；`publishResults` 补竞赛存在性；`createTeam` 补 teacherId 合法性与队名/口号长度（与 `changeTeacher` 对齐）；`register` 补密码≥6 位与用户名长度；`createUser` 补 userType 合法值/长度/密码强度（防 DB 约束 500）；`deleteUser` 补存在性；`toggleUserStatus` 补 status 判空（防拆箱 NPE）；`validateCompetition` 补名称/主办方/地点长度。
+5. **`backend/boundary_test.sh` 标记废弃**：直接运行会污染演示数据（B2c 把竞赛3 上限重置为 1——即数据漂移来源；B13 真实发布种子成绩）。边界测试一律用 `boundary_full.py`。
+6. 教训：清理 SQL 走 `docker exec mysql -e` 必须带数据库名（`mysql -N scms -e ...` 或全限定表名），否则 "No database selected" 静默失败、测试残留数据。
+
+回归：边界套件 233/233、冒烟 70/70、e2e 1/1、管理员用户管理页浏览器抽查正常。
+
+### 2026-09-09 全功能验证与三处修复（冒烟 70/70 + e2e + 浏览器三角色实测通过）
+
+启动服务全链路验证（后端冒烟 + Playwright e2e + 浏览器逐项操作），发现并修复：
+
+1. **竞赛演示数据漂移（数据层）**：全部 8 项竞赛 `max_members` 被历史操作重置为 1（疑似第 2 条 bug 所致），多队竞赛无法走"建队→提交→入队"全链 → 恢复 数学建模/ACM-ICPC/电子设计/CCPC=3、创新大赛=5，个人赛保持 1。**教训：数据变更须以业务语义为准，勿凭默认值批量覆盖。**
+2. **`CompetitionDTO` 字段默认值静默重置（后端）**：`maxMembers = 1` / `status = 2` 是字段初始值，PUT 省略字段时 Jackson 仍反序列化出 1/2，`updateCompetition` 按 `!= null` 判断会覆盖库值。去掉 DTO 默认值，创建路径在 Service 补默认（max=1、status=2）。
+3. **驳回队死状态（后端+前端）**：被驳回(3)的队既不能重提（`submitTeam` 仅收 0）也不能解散（`disbandTeam` 挡 `>=2`）。改为：0/3 可提交、仅 2 不可解散；StudentTeams/TeamDetail 按钮同步显示「重新提交审核」。
+4. **StudentTeams 老师下拉空列表（前端）**：创建团队弹窗渲染 `teacherOptions`，但数据加载写的是 `teachers`（两个弹窗 state 用反）→ 统一为 `teachers`，删除多余 state。
+
+另清理 3 条指向已删队伍的陈旧审核消息（`ref_type='team'` 且 ref 不存在）。回归：冒烟 70/70、e2e 1/1、API 专项（部分 PUT 不重置 / 驳回→重提→解散 / 已通过队仍拒解散）、浏览器实测创建弹窗老师下拉与驳回队按钮均通过。
+
 ### 2026-09-05 TeamUp Lean 全面测试与修复（冒烟 67/67 通过）
 
 启动前后端开发服务器进行全链路测试（API 冒烟 67 项断言 + 浏览器 UI 抽查），发现并修复：

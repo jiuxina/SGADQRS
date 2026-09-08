@@ -175,6 +175,10 @@ npm run dev        # http://localhost:3000
 # 后端全链路冒烟（需后端 8080 + mysql-scms 运行；自动清理本次写入的数据）
 python backend/smoke_full.py
 
+# 边界与容错全量回归（需后端 8080 + mysql-scms 运行；临时数据+自清理+种子完整性校验，233 断言）
+python backend/boundary_full.py
+# 注：backend/boundary_test.sh 为历史遗留脚本，会污染演示数据，请勿直接运行
+
 # 前端 e2e（需前端 3000 + 后端 8080 运行）
 cd frontend && npx playwright test          # 用例：frontend/e2e/teamup.spec.ts
 
