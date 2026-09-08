@@ -29,6 +29,7 @@ public class RegistrationController {
                               @RequestParam(required = false) Long competitionId,
                               @RequestParam(required = false) Integer status,
                               @RequestParam(required = false) Long teacherId,
+                              @RequestParam(required = false) String keyword,
                               @AuthenticationPrincipal LoginUser loginUser) {
         Long tid = null;
         Long memberId = null;
@@ -44,7 +45,7 @@ public class RegistrationController {
         } else if ("student".equals(loginUser.getRoleCode())) {
             memberId = loginUser.getUserId();
         }
-        return registrationService.listTeams(current, size, competitionId, status, publisherId, tid, memberId);
+        return registrationService.listTeams(current, size, competitionId, status, publisherId, tid, memberId, keyword);
     }
 
     @Operation(summary = "竞赛参赛者名单（已通过队伍的全部成员，供成绩录入）")

@@ -12,6 +12,7 @@ import com.scms.security.LoginUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,11 +35,12 @@ public class RegistrationService {
     private final RecruitPostMapper recruitPostMapper;
     private final NotificationService notificationService;
 
-    public Result<?> listTeams(int current, int size, Long competitionId, Integer status, Long publisherId, Long teacherId, Long memberId) {
+    public Result<?> listTeams(int current, int size, Long competitionId, Integer status, Long publisherId, Long teacherId, Long memberId, String keyword) {
         Page<CompetitionTeam> page = Pages.of(current, size);
         LambdaQueryWrapper<CompetitionTeam> wrapper = new LambdaQueryWrapper<>();
         if (competitionId != null) wrapper.eq(CompetitionTeam::getCompetitionId, competitionId);
         if (status != null) wrapper.eq(CompetitionTeam::getStatus, status);
+        if (StringUtils.hasText(keyword)) wrapper.like(CompetitionTeam::getTeamName, keyword);
         if (publisherId != null) {
             wrapper.apply("competition_id IN (SELECT id FROM competition WHERE publisher_id = {0})", publisherId);
         }
