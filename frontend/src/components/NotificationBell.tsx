@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { Bell } from 'lucide-react'
@@ -7,34 +7,20 @@ import type { NotificationItem } from '../api/types'
 import { formatDate } from '../utils/format'
 import { notificationTarget, inboxPathByRole } from '../utils/notification'
 import { useAuthStore } from '../store/authStore'
+import { useNotificationStore } from '../store/notificationStore'
 
 /**
- * 顶栏通知铃铛：30s 轮询未读数，点击弹出最近通知预览；
- * 点击单条消息按 refType 跳转对应页面，无落地页时回退消息中心。
+ * 顶栏通知铃铛：未读数由 UnreadFavicon 统一轮询写入 store，这里只消费；
+ * 点击弹出最近通知预览，点击单条消息按 refType 跳转对应页面，无落地页时回退消息中心。
  */
 export default function NotificationBell({ bellPath }: { bellPath?: string }) {
   const navigate = useNavigate()
   const role = useAuthStore((s) => s.user?.role)
   const inboxPath = bellPath ?? inboxPathByRole(role)
-  const [count, setCount] = useState(0)
+  const count = useNotificationStore((s) => s.count)
   const [items, setItems] = useState<NotificationItem[]>([])
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
-
-  const refresh = useCallback(async () => {
-    try {
-      const { count } = await notificationApi.unreadCount()
-      setCount(count)
-    } catch {
-      /* 静默失败，不打扰用户 */
-    }
-  }, [])
-
-  useEffect(() => {
-    refresh()
-    const timer = setInterval(refresh, 30000)
-    return () => clearInterval(timer)
-  }, [refresh])
 
   useEffect(() => {
     if (!open) return
@@ -104,7 +90,10 @@ export default function NotificationBell({ bellPath }: { bellPath?: string }) {
                   key={n.id}
                   onClick={() => {
                     setOpen(false)
-                    if (n.isRead === 0) notificationApi.markRead(n.id).catch(() => {})
+                    if (n.isRead === 0) {
+                      notificationApi.markRead(n.id).catch(() => {})
+                      useNotificationStore.getState().refresh()
+                    }
                     navigate(notificationTarget(n) || inboxPath)
                   }}
                   style={{

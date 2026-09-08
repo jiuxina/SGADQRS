@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, type ReactNode } from 'react'
+import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -17,10 +17,16 @@ import {
   MessageSquare,
   Menu,
   X,
+  CircleHelp,
 } from 'lucide-react'
 import { useGlassShimmerContainer } from '../hooks/useAnimations'
 import { useAuthStore } from '../store/authStore'
+import { useNotificationStore } from '../store/notificationStore'
 import { env } from '../config/env'
+import { STORAGE_KEYS } from '../config/constants'
+import { resolveTutorial } from '../config/tutorials'
+import TutorialOverlay from './TutorialOverlay'
+import UnreadFavicon from './UnreadFavicon'
 import { useIsMobile } from '../hooks/useIsMobile'
 import PageTransition from './PageTransition'
 import NotificationBell from './NotificationBell'
@@ -141,6 +147,22 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [tutorialOpen, setTutorialOpen] = useState(false)
+  const collapseTimer = useRef<number | null>(null)
+
+  /* 悬浮侧边栏时横向展开显示标签，离开后延迟收起（避免误触闪烁） */
+  const expandSidebar = useCallback(() => {
+    if (collapseTimer.current) {
+      window.clearTimeout(collapseTimer.current)
+      collapseTimer.current = null
+    }
+    setSidebarExpanded(true)
+  }, [])
+
+  const collapseSidebar = useCallback(() => {
+    if (collapseTimer.current) window.clearTimeout(collapseTimer.current)
+    collapseTimer.current = window.setTimeout(() => setSidebarExpanded(false), 260)
+  }, [])
 
   const pathRole = getRoleFromPath(location.pathname)
   const role = (user?.role as 'admin' | 'teacher' | 'student') || pathRole
@@ -158,6 +180,22 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
     || (/^\/(admin|teacher)\/competitions\/\d+\/edit$/.test(location.pathname) ? '编辑竞赛' : null)
     || (/^\/(student|teacher)\/teams\/detail\/\d+$|^\/admin\/competitions\/team\/\d+$/.test(location.pathname) ? '队伍详情' : null)
     || (/^\/student\/u\/\d+$/.test(location.pathname) ? 'TA 的主页' : '概览')
+  const tutorial = resolveTutorial(location.pathname, activeTab, pageTitle ?? '')
+
+  /* 浏览器标签页标题跟随页面名 + 未读数 */
+  const unreadCount = useNotificationStore((s) => s.count)
+  useEffect(() => {
+    document.title = `${pageTitle}${unreadCount > 0 ? ` (${unreadCount})` : ''} · 赛友 TeamUp`
+  }, [pageTitle, unreadCount])
+
+  /* 每个页面（按教程标题去重）首次访问自动播一次使用教程 */
+  const tutorialSeenKey = `${STORAGE_KEYS.TUTORIAL_SEEN_PREFIX}${tutorial.title}`
+  useEffect(() => {
+    if (!localStorage.getItem(tutorialSeenKey)) {
+      localStorage.setItem(tutorialSeenKey, '1')
+      setTutorialOpen(true)
+    }
+  }, [tutorialSeenKey])
 
   const handleLogout = () => {
     logout()
@@ -217,6 +255,7 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
   if (isMobile) {
     return (
       <div className="mobile-shell" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <UnreadFavicon />
         <div className="page-bg" />
 
         {/* Mobile Header */}
@@ -240,6 +279,9 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
               {pageTitle}
             </motion.span>
           </AnimatePresence>
+          <button className="mobile-menu-btn" onClick={() => setTutorialOpen(true)} aria-label="使用教程" title="使用教程">
+            <CircleHelp size={20} strokeWidth={1.8} />
+          </button>
           <button className="mobile-menu-btn" onClick={() => role === 'student' ? navigate('/student/notifications') : navigate('/profile')} aria-label="通知">
             <Bell size={20} strokeWidth={1.8} />
           </button>
@@ -352,6 +394,8 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
             </>
           )}
         </AnimatePresence>
+
+        {tutorialOpen && <TutorialOverlay tutorial={tutorial} onClose={() => setTutorialOpen(false)} />}
       </div>
     )
   }
@@ -361,13 +405,21 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
      ========================================= */
   return (
     <div className="desktop-shell">
+      <UnreadFavicon />
       <div className="page-bg" />
 
-      {/* Sidebar — Icon Capsule */}
-      <aside className="desktop-sidebar">
-        <div className="sidebar-brand" />
+      {/* Sidebar — Icon Capsule，悬浮横向展开 */}
+      <aside
+        className={`desktop-sidebar ${sidebarExpanded ? 'expanded' : ''}`}
+        onMouseEnter={expandSidebar}
+        onMouseLeave={collapseSidebar}
+      >
+        <div className="sidebar-brand">
+          <div className="sidebar-brand-icon" />
+          {sidebarExpanded && <div className="sidebar-brand-text">竞赛管理平台</div>}
+        </div>
 
-        <nav className="sidebar-nav" onMouseEnter={() => setSidebarExpanded(true)} onMouseLeave={() => setTimeout(() => setSidebarExpanded(false), 300)}>
+        <nav className="sidebar-nav">
           {navItems.map((item) => {
             const active = activeId === item.id
             const Icon = item.icon
@@ -379,13 +431,6 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                 whileTap={{ scale: 0.88 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 22 }}
               >
-                {active && (
-                  <motion.div
-                    className="sidebar-active-bg"
-                    layoutId="sidebar-indicator"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  />
-                )}
                 <Icon strokeWidth={active ? 2 : 1.5} />
                 {sidebarExpanded ? (
                   <div className="sidebar-label">{item.label}</div>
@@ -408,13 +453,6 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
             whileTap={{ scale: 0.88 }}
             transition={{ type: 'spring', stiffness: 400, damping: 22 }}
           >
-            {location.pathname === '/profile' && (
-              <motion.div
-                className="sidebar-active-bg"
-                layoutId="sidebar-indicator"
-                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              />
-            )}
             <div className="sidebar-user">
               <div className="sidebar-user-avatar">
                 <img
@@ -424,7 +462,11 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                 />
               </div>
             </div>
-            <div className="sidebar-tooltip">个人中心</div>
+            {sidebarExpanded ? (
+              <div className="sidebar-label">{user?.realName || '个人中心'}</div>
+            ) : (
+              <div className="sidebar-tooltip">个人中心</div>
+            )}
           </motion.button>
           <motion.button
             className="sidebar-item"
@@ -434,7 +476,11 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
             transition={{ type: 'spring', stiffness: 400, damping: 22 }}
           >
             <LogOut strokeWidth={1.5} />
-            <div className="sidebar-tooltip">退出登录</div>
+            {sidebarExpanded ? (
+              <div className="sidebar-label">退出登录</div>
+            ) : (
+              <div className="sidebar-tooltip">退出登录</div>
+            )}
           </motion.button>
         </div>
       </aside>
@@ -456,11 +502,6 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                   {pageTitle}
                 </motion.span>
               </AnimatePresence>
-              <span className="role-badge {
-                role === 'admin' ? 'role-admin' :
-                role === 'teacher' ? 'role-teacher' :
-                'role-student'
-              }">{role === 'admin' ? '管理员' : role === 'teacher' ? '教师' : '学生'}</span>
             </div>
           <div className="desktop-header-actions">
             <div className="search-wrap" style={{ width: '200px' }}>
@@ -481,6 +522,9 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                 <Bell strokeWidth={1.5} />
               </button>
             )}
+            <button className="header-action-btn" title="使用教程" aria-label="使用教程" onClick={() => setTutorialOpen(true)}>
+              <CircleHelp strokeWidth={1.5} />
+            </button>
           </div>
         </header>
 
@@ -491,6 +535,8 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
           </PageTransition>
         </div>
       </main>
+
+      {tutorialOpen && <TutorialOverlay tutorial={tutorial} onClose={() => setTutorialOpen(false)} />}
     </div>
   )
 }
