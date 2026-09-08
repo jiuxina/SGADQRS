@@ -140,6 +140,7 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
   const isMobile = useIsMobile()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sidebarExpanded, setSidebarExpanded] = useState(false)
 
   const pathRole = getRoleFromPath(location.pathname)
   const role = (user?.role as 'admin' | 'teacher' | 'student') || pathRole
@@ -366,7 +367,7 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
       <aside className="desktop-sidebar">
         <div className="sidebar-brand" />
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" onMouseEnter={() => setSidebarExpanded(true)} onMouseLeave={() => setTimeout(() => setSidebarExpanded(false), 300)}>
           {navItems.map((item) => {
             const active = activeId === item.id
             const Icon = item.icon
@@ -375,7 +376,6 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                 key={item.id}
                 className={`sidebar-item ${active ? 'active' : ''}`}
                 onClick={() => navigate(item.path)}
-                onMouseEnter={positionTooltip}
                 whileTap={{ scale: 0.88 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 22 }}
               >
@@ -387,7 +387,11 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
                   />
                 )}
                 <Icon strokeWidth={active ? 2 : 1.5} />
-                <div className="sidebar-tooltip">{item.label}</div>
+                {sidebarExpanded ? (
+                  <div className="sidebar-label">{item.label}</div>
+                ) : (
+                  <div className="sidebar-tooltip">{item.label}</div>
+                )}
                 {item.badge && (
                   <div className="sidebar-badge">{item.badge}</div>
                 )}
@@ -440,19 +444,24 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
         {/* Header */}
         <header className="desktop-header">
           <span />
-          <div className="desktop-header-title">
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={pageTitle}
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ type: 'spring', stiffness: 320, damping: 28, mass: 0.7 }}
-              >
-                {pageTitle}
-              </motion.span>
-            </AnimatePresence>
-          </div>
+<div className="desktop-header-title">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={pageTitle}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -16 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 28, mass: 0.7 }}
+                >
+                  {pageTitle}
+                </motion.span>
+              </AnimatePresence>
+              <span className="role-badge {
+                role === 'admin' ? 'role-admin' :
+                role === 'teacher' ? 'role-teacher' :
+                'role-student'
+              }">{role === 'admin' ? '管理员' : role === 'teacher' ? '教师' : '学生'}</span>
+            </div>
           <div className="desktop-header-actions">
             <div className="search-wrap" style={{ width: '200px' }}>
               <Search strokeWidth={1.5} />
