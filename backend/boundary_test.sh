@@ -1,5 +1,10 @@
 #!/bin/bash
-# 边界操作全量回归脚本:每项输出 PASS/FAIL + 实际响应摘要
+# ⚠⚠⚠ 警告(2026-09-09): 本脚本为历史遗留, 直接运行会污染演示库!
+#  - B2c 会把竞赛3的 max_members 重置为 1(即当年数据漂移事故的来源)
+#  - B13 会真实发布竞赛1的种子成绩
+#  - 多处写入不自动清理
+# 边界与容错测试请改用 backend/boundary_full.py(临时数据+自清理+种子完整性校验, 233 断言)。
+# 本脚本仅作历史参考保留。
 BASE=http://localhost:8080/api
 J() { python -c "import sys,json;d=json.load(sys.stdin);print(json.dumps(d,ensure_ascii=False)[:160])" 2>/dev/null || echo "RAW"; }
 
