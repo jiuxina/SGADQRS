@@ -492,6 +492,47 @@ cd frontend && npm run build
 
 ## 更新日志
 
+### 2026-09-09 体验优化 9 项（标题/回跳/回顶/错误边界/自动教程/骨架屏/草稿/搜索/favicon 角标）
+
+1. **标签页标题**：`DesktopLayout` 按当前页面名 + 未读数实时更新 `document.title`（如 `概览 (1) · 赛友 TeamUp`）。
+2. **登录回跳**：`LoginPage` 读取 AuthGuard 传入的 `state.from`（此前被忽略），仅当来源属于当前登录端路由时回跳原页（含 search 参数）；顺带修复装饰性的「记住账号」复选框——现真正预填/保存用户名（`STORAGE_KEYS.REMEMBER_USER`）。
+3. **路由切换回顶部**：`PageTransition` 监听 pathname，对 `.desktop-content/.mobile-content` 两个独立滚动容器 `scrollTo(0)`。
+4. **页面级错误边界**：新增 `PageErrorBoundary`（重试 + 返回概览），在 `App.tsx` 的 DashboardLayout 内以 `key={pathname}` 包住 `<Outlet/>`——单页崩溃不再白屏，侧边栏/顶栏保留。
+5. **首次自动教程**：每个页面（按教程标题去重）首次访问自动弹一次使用教程遮罩，`STORAGE_KEYS.TUTORIAL_SEEN_PREFIX` 记录已看；右上角 ? 按钮仍可随时打开。
+6. **仪表盘骨架屏**：学生/教师概览页新增 loading 态，加载中渲染 `DashboardSkeleton + ListSkeleton`（实测加载期可见、到达后消失）。
+7. **发布竞赛表单草稿**：创建模式自动把表单/奖项/封面/附件暂存 localStorage（`STORAGE_KEYS.COMPETITION_DRAFT`），刷新恢复并提示，提交或存草稿后清除。**同时移除「竞赛分类/参赛资格/联系方式」三个字段**——后端 DTO/实体从无这三列，用户填写后被静默丢弃（比回填缺失更严重的误导），故直接删除而非回填。
+8. **搜索扩展**：后端 `RegistrationController/Service.listTeams` 新增可选 `keyword`（teamName 模糊）；前端教师/管理员队伍页新增队名搜索框；管理员/教师竞赛页消费顶栏搜索跳转的 `?search=` 参数（此前是无人读取的孤儿参数），教师竞赛页补页内搜索框 + keyword 传参。
+9. **favicon 未读角标**：新增 `store/notificationStore.ts`（未读数全局态）+ `UnreadFavicon`（全角色 30s 轮询，canvas 重绘 🤝 底 + 红色数字角标，99+ 封顶）；`NotificationBell` 改为消费 store（去重轮询），点击已读后即时刷新。
+
+验证：`tsc` + `vite build` 通过；后端 `mvn package` 并重启（新 keyword 接口 curl 实测 `keyword=ACM` 精确命中）；内置浏览器实测——标题随路由/未读变化、登录过期后回跳原页、记住账号预填、滚动回顶、每 tab 首次自动教程、仪表盘骨架屏、草稿保存/恢复、教师队名搜索与两处 `?search=` 消费、插入临时未读通知后 favicon 变 PNG + 铃铛角标 1 + 标题带 (1)，删除后恢复（测试数据已清理）。
+
+### 2026-09-09 页面使用教程遮罩（全端全 tab）
+
+1. **教程内容 `config/tutorials.ts`**：按路由编写三端全部主导航 tab 的分步教程（管理员 5 个、教师 4 个、学生 5 个）+ 内层 tab 变体（组队中心|招募广场、参赛历史|成绩单等 `路径|tab` 键）+ 公共页（个人中心）；详情页类路由（竞赛详情/队伍详情/发布竞赛/TA 主页）走正则兜底，未覆盖路由按 pageTitle 走通用兜底。
+2. **`components/TutorialOverlay.tsx`**：暗色蒙层 + 毛玻璃分步卡片（步骤序号、描述、进度点、上一步/下一步/知道了），支持 ESC、方向键翻步、点蒙层关闭。
+3. **入口**：`DesktopLayout` 右上角通知旁新增帮助按钮（桌面 `header-action-btn`，移动 `mobile-menu-btn`），按当前路由+tab 实时解析对应教程。
+4. 验证：`tsc` + build 通过；内置浏览器实测——管理员端总览/用户管理/竞赛详情（正则兜底）、学生端组队中心内层 tab=招募广场、ESC/X/知道了三种关闭方式、移动端 390px 视口入口与卡片自适应，全部通过。
+
+### 2026-09-09 全站字体对标 iOS（打包 Inter + 思源黑体）
+
+原字体栈只声明系统字体（`-apple-system, BlinkMacSystemFont, 'SF Pro Display/Text', 'Inter', 'Helvetica Neue', sans-serif`），Windows 上英文/数字落到 Segoe UI、中文落到微软雅黑，无法对齐 iOS 观感。改动：
+
+1. `npm i @fontsource-variable/inter @fontsource-variable/noto-sans-sc`（Inter = SF Pro 最佳开源替代，负责英文/数字；Noto Sans SC = 思源黑体，最接近苹方的开源中文字体），`main.tsx` 引入。
+2. `html` 字体栈改为：`-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter Variable', 'Inter', 'PingFang SC', 'Noto Sans SC Variable', 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei', sans-serif`——Apple 设备走原生 SF/苹方，Windows/Linux 走打包的 Inter/思源黑体，中文显式回退链补齐。
+3. 打包体积：Noto Sans SC 按 unicode-range 切成 ~100 个 woff2 分片（每个 7-10KB），浏览器只拉取页面实际用到的字形分片；Inter Variable 约 50KB×2。`document.fonts.check` 实测 Inter 与中文分片均按需加载成功。
+
+### 2026-09-09 概览页角色标识卡片（RoleHero）
+
+三端概览页（StudentDashboard/TeacherDashboard/AdminDashboard）顶部新增 `components/RoleHero.tsx` 角色标识卡片：**玻璃卡片单行**——角色名按端着色（学生=蓝、教师=橙、管理员=红，加粗）+ 灰色按时段问候语，无图标无日期，风格与其余玻璃卡一致，移动端缩小内边距。应用户多轮反馈迭代：初版"渐变大横幅+装饰光斑+职责简介"→ 去横幅改玻璃卡 → 去卡片纯文字 → **最终恢复卡片底、保留单行极简内容**。**同轮移除了页头标题旁的小号"XX端"徽章**（desktop header 与 mobile header 均删，`.role-badge/.role-*/.mobile-role-badge` CSS 一并清理）——角色标识统一由该卡片承担。验证：`tsc` + build 通过；内置浏览器实测管理员端渲染正常。
+
+### 2026-09-09 桌面端体验优化与创建组队修复（Playwright 学生/教师双角色实测）
+
+1. **侧边栏悬浮横向展开**：图标胶囊（68px）悬浮时平滑展开至 208px，显示每个 tab 名称（含底部个人中心/退出登录与品牌文字）；离开延迟 260ms 收起防误触闪烁。修复点：展开/收起事件从 `.sidebar-nav` 上提到 `aside`；用 ref 定时器替代裸 `setTimeout`（旧实现重进不取消会闪烁）。**活动项高亮从 motion `layoutId` 共享布局元素改为按钮自身 CSS 背景**——CSS 宽度过渡会让 framer-motion 的投影快照冻结在中间态，指示块缩成 44px 方块；同时 hover 高亮排除 active 项（`:hover:not(.active)`）。
+2. **角色端标识修复**：desktop header 的角色徽章 `className` 此前是写坏的 JSX 字面量（引号内是三元表达式文本，`role-admin/teacher/student` 样式从未生效）→ 改为模板字符串，文案改「管理员端/教师端/学生端」；mobile header 增加同款小徽章。
+3. **创建组队排查与修复**：API 端到端实测创建/解散正常（此前怀疑的中文请求体 400 是 Git Bash 终端 GBK 编码假象，浏览器 UTF-8 无此问题）。真实缺陷在 UI：创建弹窗的竞赛下拉会列出待审核/已结束竞赛，选中必然报「该竞赛当前不可参赛」→ 下拉只列可报名竞赛（status 2/3，与后端 `createTeam` 接受规则一致）、个人赛（maxMembers=1）标注「个人赛，创建即报名」、无可用竞赛给空态提示、`handleCreate` 对陈旧选择二次校验（弹窗开着期间竞赛状态变化）。
+
+涉及：`frontend/src/components/DesktopLayout.tsx`、`frontend/src/index.css`、`frontend/src/pages/StudentTeams.tsx`。验证：`tsc` + `vite build` 通过；Playwright 实测学生/教师登录徽章与 class、侧边栏 68→208px 展开标签齐全、活动项高亮正常、弹窗下拉仅含 6 个可报名竞赛（正确排除 2 个已结束）、UI 点击创建队伍返回 200 并清理测试数据。
+
 ### 2026-09-09 全面边界与容错测试（新增 `backend/boundary_full.py`，233 断言 0 失败）
 
 覆盖：匿名/篡改 token/禁用后旧 token、角色越权矩阵、分页钳制(1/200)、日期与人数边界、队伍状态机全链、招募/社区申请/邀请全守卫、成绩范围与存在性、上传白名单与路径穿越、XSS 原文存取（前端 React 转义兜底）、种子完整性快照校验。发现并修复：
