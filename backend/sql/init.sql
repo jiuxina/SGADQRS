@@ -79,9 +79,12 @@ CREATE TABLE IF NOT EXISTS `competition_team` (
 CREATE TABLE IF NOT EXISTS `competition_team_member` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `team_id` BIGINT NOT NULL,
+    `competition_id` BIGINT NOT NULL DEFAULT 0 COMMENT '冗余竞赛ID（一人一赛一队唯一约束）',
     `student_id` BIGINT NOT NULL,
     `join_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_tm_team_student` (`team_id`, `student_id`),
+    UNIQUE KEY `uk_tm_comp_student` (`competition_id`, `student_id`),
     KEY `idx_tm_team` (`team_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='团队成员表';
 
@@ -119,6 +122,7 @@ CREATE TABLE IF NOT EXISTS `recruit_post` (
     `content` TEXT DEFAULT NULL COMMENT '说明',
     `team_id` BIGINT DEFAULT NULL COMMENT '关联队伍(招募帖)',
     `tags` VARCHAR(255) DEFAULT NULL COMMENT '方向标签(逗号分隔)',
+    `contact` VARCHAR(100) DEFAULT NULL COMMENT '联系方式（微信/QQ/邮箱等，选填）',
     `deadline` DATETIME DEFAULT NULL COMMENT '组队截止时间',
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '1-招募中 0-已关闭',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -129,10 +133,10 @@ CREATE TABLE IF NOT EXISTS `recruit_post` (
     KEY `idx_rp_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='组队招募/求组帖';
 
--- 社区请求：1-资料互看 2-入队申请 3-入队邀请（互看同意后双方解锁资料）
+-- 社区请求：2-入队申请 3-入队邀请（1-资料互看已废弃，存量数据仅作历史）
 CREATE TABLE IF NOT EXISTS `community_request` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `type` TINYINT NOT NULL COMMENT '1-资料互看 2-入队申请 3-入队邀请',
+    `type` TINYINT NOT NULL COMMENT '2-入队申请 3-入队邀请（1-资料互看已废弃）',
     `post_id` BIGINT DEFAULT NULL COMMENT '关联招募帖',
     `team_id` BIGINT DEFAULT NULL COMMENT '关联队伍',
     `from_user_id` BIGINT NOT NULL COMMENT '发起人',
@@ -181,29 +185,31 @@ INSERT INTO `sys_user` (`id`, `username`, `password`, `real_name`, `nickname`, `
 (8, 'S20220002', '$2b$10$j7XnMEsPsByfvmbAQqFmLORnxpqfL/QrrRccVMsHN.izBV6n1jyRG', '刘洋', '洋仔', NULL, 1, 1, '电子信息学院', '电子信息工程', '软工2201班', '电子发烧友，喜欢做小车和小机器人。', '嵌入式,硬件,单片机', 1, NOW(), NOW());
 
 -- 竞赛数据（发布即生效）
+-- 演示数据：status=2(已发布)的竞赛报名时间窗用相对时间，保持"可报名"常青（建队/入队会校验报名截止）
 INSERT INTO `competition` (`id`, `competition_name`, `organizer`, `publisher_id`, `cover_image`, `description`, `rules`, `registration_start`, `registration_end`, `competition_start`, `competition_end`, `location`, `max_members`, `awards`, `attachments`, `status`, `create_time`, `update_time`) VALUES
-(1, '全国大学生数学建模竞赛', '教育部高等教育司', 2, NULL, '全国大学生数学建模竞赛是国内规模最大的基础性学科竞赛，创办于1992年，每年一届。', '1. 每队3人；2. 赛期3天；3. 提交论文', '2026-05-01 00:00:00', '2026-06-30 23:59:59', '2026-09-10 00:00:00', '2026-09-13 00:00:00', '线上+线下', 3, '[{"name":"一等奖","level":1},{"name":"二等奖","level":2},{"name":"三等奖","level":3}]', NULL, 2, NOW(), NOW()),
-(2, 'ACM-ICPC程序设计竞赛', '国际计算机学会', 2, NULL, 'ACM国际大学生程序设计竞赛是最具影响力的大学生程序设计竞赛。', '1. 每队3人；2. 5小时；3. C/C++/Java/Python', '2026-04-01 00:00:00', '2026-05-15 23:59:59', '2026-06-01 00:00:00', '2026-06-01 05:00:00', '计算机学院实验室', 3, '[{"name":"金牌","level":1},{"name":"银牌","level":2},{"name":"铜牌","level":3}]', NULL, 2, NOW(), NOW()),
-(3, '中国"互联网+"大学生创新创业大赛', '教育部', 3, NULL, '中国"互联网+"大学生创新创业大赛，由教育部与政府、各高校共同主办。', '1. 团队参赛；2. 提交商业计划书；3. 现场路演', '2026-03-01 00:00:00', '2026-04-30 23:59:59', '2026-07-01 00:00:00', '2026-07-03 00:00:00', '学校大礼堂', 5, '[{"name":"金奖","level":1},{"name":"银奖","level":2},{"name":"铜奖","level":3},{"name":"最佳创意奖","level":4}]', NULL, 2, NOW(), NOW()),
-(4, '全国大学生电子设计竞赛', '教育部高等教育司', 3, NULL, '全国大学生电子设计竞赛是面向大学生的群众性科技活动。', '1. 每队3人；2. 4天3夜；3. 完成实物制作', '2026-05-15 00:00:00', '2026-07-15 23:59:59', '2026-08-01 00:00:00', '2026-08-04 00:00:00', '电子信息学院实验室', 3, '[{"name":"一等奖","level":1},{"name":"二等奖","level":2},{"name":"三等奖","level":3}]', NULL, 2, NOW(), NOW()),
-(5, '校园英语演讲比赛', '外国语学院', 2, NULL, '提升大学生英语口语表达能力和跨文化交际能力。', '1. 个人赛；2. 3分钟定题演讲；3. 2分钟即兴', '2026-04-10 00:00:00', '2026-05-10 23:59:59', '2026-05-25 00:00:00', '2026-05-25 12:00:00', '外语学院报告厅', 1, '[{"name":"一等奖","level":1},{"name":"二等奖","level":2},{"name":"三等奖","level":3},{"name":"最佳风采奖","level":4}]', NULL, 2, NOW(), NOW()),
+(1, '全国大学生数学建模竞赛', '教育部高等教育司', 2, NULL, '全国大学生数学建模竞赛是国内规模最大的基础性学科竞赛，创办于1992年，每年一届。', '1. 每队3人；2. 赛期3天；3. 提交论文', DATE_SUB(NOW(), INTERVAL 30 DAY), NOW() + INTERVAL 60 DAY, NOW() + INTERVAL 90 DAY, NOW() + INTERVAL 93 DAY, '线上+线下', 3, '[{"name":"一等奖","level":1},{"name":"二等奖","level":2},{"name":"三等奖","level":3}]', NULL, 2, NOW(), NOW()),
+(2, 'ACM-ICPC程序设计竞赛', '国际计算机学会', 2, NULL, 'ACM国际大学生程序设计竞赛是最具影响力的大学生程序设计竞赛。', '1. 每队3人；2. 5小时；3. C/C++/Java/Python', DATE_SUB(NOW(), INTERVAL 30 DAY), NOW() + INTERVAL 60 DAY, NOW() + INTERVAL 90 DAY, NOW() + INTERVAL 90 DAY + INTERVAL 5 HOUR, '计算机学院实验室', 3, '[{"name":"金牌","level":1},{"name":"银牌","level":2},{"name":"铜牌","level":3}]', NULL, 2, NOW(), NOW()),
+(3, '中国"互联网+"大学生创新创业大赛', '教育部', 3, NULL, '中国"互联网+"大学生创新创业大赛，由教育部与政府、各高校共同主办。', '1. 团队参赛；2. 提交商业计划书；3. 现场路演', DATE_SUB(NOW(), INTERVAL 30 DAY), NOW() + INTERVAL 60 DAY, NOW() + INTERVAL 90 DAY, NOW() + INTERVAL 93 DAY, '学校大礼堂', 5, '[{"name":"金奖","level":1},{"name":"银奖","level":2},{"name":"铜奖","level":3},{"name":"最佳创意奖","level":4}]', NULL, 2, NOW(), NOW()),
+(4, '全国大学生电子设计竞赛', '教育部高等教育司', 3, NULL, '全国大学生电子设计竞赛是面向大学生的群众性科技活动。', '1. 每队3人；2. 4天3夜；3. 完成实物制作', DATE_SUB(NOW(), INTERVAL 30 DAY), NOW() + INTERVAL 60 DAY, NOW() + INTERVAL 90 DAY, NOW() + INTERVAL 94 DAY, '电子信息学院实验室', 3, '[{"name":"一等奖","level":1},{"name":"二等奖","level":2},{"name":"三等奖","level":3}]', NULL, 2, NOW(), NOW()),
+(5, '校园英语演讲比赛', '外国语学院', 2, NULL, '提升大学生英语口语表达能力和跨文化交际能力。', '1. 个人赛；2. 3分钟定题演讲；3. 2分钟即兴', DATE_SUB(NOW(), INTERVAL 30 DAY), NOW() + INTERVAL 60 DAY, NOW() + INTERVAL 90 DAY, NOW() + INTERVAL 90 DAY + INTERVAL 12 HOUR, '外语学院报告厅', 1, '[{"name":"一等奖","level":1},{"name":"二等奖","level":2},{"name":"三等奖","level":3},{"name":"最佳风采奖","level":4}]', NULL, 2, NOW(), NOW()),
 (6, '"蓝桥杯"软件设计大赛', '工业和信息化部', 2, NULL, '蓝桥杯全国软件和信息技术专业人才大赛。', '1. 个人赛；2. 4小时；3. C/C++/Java', '2026-02-01 00:00:00', '2026-03-31 23:59:59', '2026-04-15 00:00:00', '2026-04-15 16:00:00', '线上', 1, '[{"name":"一等奖","level":1},{"name":"二等奖","level":2},{"name":"三等奖","level":3},{"name":"优秀奖","level":4}]', NULL, 4, NOW(), NOW()),
-(7, '广西民族大学第九届"创易杯"程序设计竞赛', '人工智能学院', 2, '/public/创易杯海报.png', '<h3>人工智能学院关于举办"广西民族大学第九届创易杯程序设计竞赛"的通知</h3><p>各学院、各班级：</p><p>为丰富校园学术与文化氛围，培养大学生的创新思维和利用计算机分析问题、解决实际问题的能力，促进各学院师生之间的交流与合作，提高全校学生程序设计水平，选拔优秀学生参加各级各类程序设计竞赛，人工智能学院拟于2026年11月29日举办"广西民族大学第九届创易杯程序设计竞赛"。现将有关事项通知如下：</p><h4>一、参赛对象</h4><p>我校全日制在校本科学生。</p><h4>二、参赛时间</h4><p>1. 报名时间：2026年6月16日——7月16日</p><p>2. 竞赛时间：2026年11月29日 8:30--12:00</p><h4>三、报名方式</h4><p>报名网站：https://signup.gxmzu.icu</p><p>联系人及电话：黄志聪，18102763836，QQ: 3543002413</p><p>报名注意事项：</p><ol><li>学院实验室机位有限，今年赛事机位总容量为320人。</li><li>2022-2024级学生在线报名255个名额，报名系统截止条件为：报名人数已满或到达截止时间，请大家及时报名。</li><li>2025级学生不需要在线报名，通过《计算机导论与程序设计基础》课程任课教师推荐获得参赛资格（共65个名额）。</li></ol><h4>四、竞赛奖励</h4><p>本次竞赛按"30%+最低过题数"双原则设置奖励；设置一等奖、二等奖、三等奖、优秀奖，颁发校级获奖证书及相应奖品。</p><h4>五、赛制说明</h4><p>本次竞赛采用希冀平台在线提交评判（OnlineJudge）的ACM赛制，考生用自己熟悉语言（一般有C/C++/Java）写好源代码提交即可，系统会实时返回信息，评判代码是否正确。采用黑箱测试，程序的输出和标准输出完全符合即可。本次竞赛成绩还将作为以下成员选拔的重要依据：</p><ol><li>2026-2027学年人工智能学院程序设计竞赛实验班成员；</li><li>2027年广西民族大学参加各级各类程序设计竞赛成员。</li></ol><h4>六、竞赛委员会联系信息</h4><p>联系人：张桂芬（电话 15907712242）</p><p>覃春芳（电话 18878792124）</p><p>刘美玲（电话 18978939529）</p><p>创易杯程序设计竞赛QQ群：749565226</p>', '1. 个人赛；2. ACM赛制（OnlineJudge）；3. 3.5小时；4. C/C++/Java；5. 黑箱测试', '2026-06-16 00:00:00', '2026-07-16 23:59:59', '2026-11-29 08:30:00', '2026-11-29 12:00:00', '希冀平台在线', 1, '[{"name":"一等奖","level":1},{"name":"二等奖","level":2},{"name":"三等奖","level":3},{"name":"优秀奖","level":4}]', NULL, 2, NOW(), NOW());
+(7, '广西民族大学第九届"创易杯"程序设计竞赛', '人工智能学院', 2, '/public/创易杯海报.png', '<h3>人工智能学院关于举办"广西民族大学第九届创易杯程序设计竞赛"的通知</h3><p>各学院、各班级：</p><p>为丰富校园学术与文化氛围，培养大学生的创新思维和利用计算机分析问题、解决实际问题的能力，促进各学院师生之间的交流与合作，提高全校学生程序设计水平，选拔优秀学生参加各级各类程序设计竞赛，人工智能学院拟于2026年11月29日举办"广西民族大学第九届创易杯程序设计竞赛"。现将有关事项通知如下：</p><h4>一、参赛对象</h4><p>我校全日制在校本科学生。</p><h4>二、参赛时间</h4><p>1. 报名时间：2026年6月16日——7月16日</p><p>2. 竞赛时间：2026年11月29日 8:30--12:00</p><h4>三、报名方式</h4><p>报名网站：https://signup.gxmzu.icu</p><p>联系人及电话：黄志聪，18102763836，QQ: 3543002413</p><p>报名注意事项：</p><ol><li>学院实验室机位有限，今年赛事机位总容量为320人。</li><li>2022-2024级学生在线报名255个名额，报名系统截止条件为：报名人数已满或到达截止时间，请大家及时报名。</li><li>2025级学生不需要在线报名，通过《计算机导论与程序设计基础》课程任课教师推荐获得参赛资格（共65个名额）。</li></ol><h4>四、竞赛奖励</h4><p>本次竞赛按"30%+最低过题数"双原则设置奖励；设置一等奖、二等奖、三等奖、优秀奖，颁发校级获奖证书及相应奖品。</p><h4>五、赛制说明</h4><p>本次竞赛采用希冀平台在线提交评判（OnlineJudge）的ACM赛制，考生用自己熟悉语言（一般有C/C++/Java）写好源代码提交即可，系统会实时返回信息，评判代码是否正确。采用黑箱测试，程序的输出和标准输出完全符合即可。本次竞赛成绩还将作为以下成员选拔的重要依据：</p><ol><li>2026-2027学年人工智能学院程序设计竞赛实验班成员；</li><li>2027年广西民族大学参加各级各类程序设计竞赛成员。</li></ol><h4>六、竞赛委员会联系信息</h4><p>联系人：张桂芬（电话 15907712242）</p><p>覃春芳（电话 18878792124）</p><p>刘美玲（电话 18978939529）</p><p>创易杯程序设计竞赛QQ群：749565226</p>', '1. 个人赛；2. ACM赛制（OnlineJudge）；3. 3.5小时；4. C/C++/Java；5. 黑箱测试', DATE_SUB(NOW(), INTERVAL 30 DAY), NOW() + INTERVAL 60 DAY, NOW() + INTERVAL 90 DAY + INTERVAL 8 HOUR + INTERVAL 30 MINUTE, NOW() + INTERVAL 90 DAY + INTERVAL 12 HOUR, '希冀平台在线', 1, '[{"name":"一等奖","level":1},{"name":"二等奖","level":2},{"name":"三等奖","level":3},{"name":"优秀奖","level":4}]', NULL, 2, NOW(), NOW());
 
 -- 参赛队伍（单人赛=1人队）
 INSERT INTO `competition_team` VALUES (1, 1, '算法小分队', 4, 2, '热爱数学建模', 2, NOW());
 INSERT INTO `competition_team` VALUES (2, 3, '创新未来队', 6, 3, '用科技改变世界', 2, NOW());
 INSERT INTO `competition_team` VALUES (3, 2, '代码大师队', 4, NULL, '挑战极限', 1, NOW());
 INSERT INTO `competition_team` VALUES (4, 2, 'ICPC集训队', 6, NULL, '冲击区域赛', 0, NOW());
-INSERT INTO `competition_team` VALUES (5, 6, '刘洋', NULL, NULL, NULL, 2, NOW());
+INSERT INTO `competition_team` VALUES (5, 6, '刘洋', 8, NULL, NULL, 2, NOW());
 
 -- 团队成员
-INSERT INTO `competition_team_member` VALUES (1, 1, 4, NOW());
-INSERT INTO `competition_team_member` VALUES (2, 1, 5, NOW());
-INSERT INTO `competition_team_member` VALUES (3, 2, 6, NOW());
-INSERT INTO `competition_team_member` VALUES (4, 3, 4, NOW());
-INSERT INTO `competition_team_member` VALUES (5, 4, 6, NOW());
-INSERT INTO `competition_team_member` VALUES (6, 5, 8, NOW());
+INSERT INTO `competition_team_member` (`id`, `team_id`, `competition_id`, `student_id`, `join_time`) VALUES
+(1, 1, 1, 4, NOW()),
+(2, 1, 1, 5, NOW()),
+(3, 2, 3, 6, NOW()),
+(4, 3, 2, 4, NOW()),
+(5, 4, 2, 6, NOW()),
+(6, 5, 6, 8, NOW());
 
 -- 成绩数据（一人一行）
 INSERT INTO `competition_result` (`id`, `competition_id`, `student_id`, `team_id`, `score`, `ranking`, `award_level`, `award_name`, `remark`, `is_published`, `publish_time`, `create_time`) VALUES
