@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 社区请求全链路：资料互看(1) / 入队申请(2) / 入队邀请(3)。
- * 两步制：先互看解锁资料，再在此基础上申请/邀请入队；同意后由 RegistrationService 完成入队。
+ * 社区请求全链路：入队申请(2) / 入队邀请(3)，均可附备注（message，常写联系方式）便于快速沟通。
+ * 同意后由 RegistrationService 完成入队；资料互看(1)已下线，存量 type=1 数据仅作历史、列表不再暴露。
  */
 @Service
 @RequiredArgsConstructor
@@ -36,27 +36,8 @@ public class CommunityService {
 
     @Transactional
     public Result<?> createRequest(CommunityRequestDTO dto, Long meId) {
-        if (dto.getType() == null || dto.getType() < 1 || dto.getType() > 3) return Result.error("请求类型无效");
+        if (dto.getType() == null || dto.getType() < 2 || dto.getType() > 3) return Result.error("请求类型无效");
         String message = dto.getMessage();
-
-        if (dto.getType() == 1) {
-            // 资料互看
-            Long target = dto.getToUserId();
-            if (target == null) return Result.error("请指定对方");
-            if (target.equals(meId)) return Result.error("不能对自己发起互看请求");
-            User targetUser = userMapper.selectById(target);
-            if (targetUser == null) return Result.error("对方不存在");
-            if (cardService.unlocked(meId, target)) return Result.error("你们已互看过资料");
-            if (cardService.hasPendingUnlock(meId, target)) return Result.error("已发送过互看请求，请等待对方处理");
-
-            CommunityRequest req = build(meId, target, message, null, null, 1);
-            requestMapper.insert(req);
-            User me = userMapper.selectById(meId);
-            notificationService.send(target, "interaction", "收到资料互看请求",
-                    cardService.displayName(me) + " 请求与你互看资料，同意后双方可查看完整资料与获奖记录。",
-                    "request", req.getId());
-            return Result.success("互看请求已发送", req);
-        }
 
         // type=2/3 均基于招募帖
         if (dto.getPostId() == null) return Result.error("请指定招募帖");
@@ -69,10 +50,11 @@ public class CommunityService {
             if (post.getType() != 1) return Result.error("该帖子是求组帖，不能申请加入");
             Long leader = post.getUserId();
             if (leader.equals(meId)) return Result.error("不能申请加入自己的队伍");
-            if (!cardService.unlocked(meId, leader)) return Result.error("请先与对方互看资料，再申请入队");
             Long teamId = post.getTeamId();
             if (teamId == null) return Result.error("该招募未关联队伍");
             if (isInTeam(teamId, meId)) return Result.error("你已在队伍中");
+            String preErr = precheckJoinable(teamId, meId, true);
+            if (preErr != null) return Result.error(preErr);
 
             req = build(meId, leader, message, post.getId(), teamId, 2);
             requestMapper.insert(req);
@@ -91,8 +73,9 @@ public class CommunityService {
             if (!team.getCompetitionId().equals(post.getCompetitionId())) return Result.error("队伍与该竞赛不匹配");
             Long invitee = post.getUserId();
             if (invitee.equals(meId)) return Result.error("不能邀请自己");
-            if (!cardService.unlocked(meId, invitee)) return Result.error("请先与对方互看资料，再发起邀请");
             if (isInTeam(teamId, invitee)) return Result.error("对方已在队伍中");
+            String preErr = precheckJoinable(teamId, invitee, false);
+            if (preErr != null) return Result.error(preErr);
 
             req = build(meId, invitee, message, post.getId(), teamId, 3);
             requestMapper.insert(req);
@@ -113,21 +96,6 @@ public class CommunityService {
         if (req.getStatus() != 0) return Result.error("该请求已处理");
 
         String meName = cardService.displayName(userMapper.selectById(meId));
-
-        if (req.getType() == 1) {
-            req.setStatus(status);
-            req.setHandleTime(LocalDateTime.now());
-            requestMapper.updateById(req);
-            if (status == 1) {
-                notificationService.send(req.getFromUserId(), "interaction", "资料互看已同意",
-                        meName + " 已同意与你互看资料，现在可以查看彼此的完整资料与获奖记录。",
-                        "request", req.getId());
-            } else {
-                notificationService.send(req.getFromUserId(), "interaction", "资料互看被拒绝",
-                        meName + " 拒绝了你的互看请求。", "request", req.getId());
-            }
-            return Result.success(status == 1 ? "已同意互看" : "已拒绝", null);
-        }
 
         if (req.getType() == 2) {
             // 入队申请：我（队长）处理 from_user 的申请
@@ -174,11 +142,12 @@ public class CommunityService {
         return Result.success("已拒绝", null);
     }
 
-    /** 收到的请求（待处理优先展示） */
+    /** 收到的请求（待处理优先展示；type=1 资料互看已下线，历史数据不暴露） */
     public Result<?> received(int current, int size, Integer type, Integer status, Long meId) {
         Page<CommunityRequest> page = Pages.of(current, size);
         LambdaQueryWrapper<CommunityRequest> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CommunityRequest::getToUserId, meId);
+        wrapper.ne(CommunityRequest::getType, 1);
         if (type != null) wrapper.eq(CommunityRequest::getType, type);
         if (status != null) wrapper.eq(CommunityRequest::getStatus, status);
         wrapper.orderByAsc(CommunityRequest::getStatus).orderByDesc(CommunityRequest::getCreateTime);
@@ -187,11 +156,12 @@ public class CommunityService {
         return Result.success(new PageResult<>(result));
     }
 
-    /** 我发出的请求 */
+    /** 我发出的请求（type=1 资料互看已下线，历史数据不暴露） */
     public Result<?> sent(int current, int size, Integer type, Integer status, Long meId) {
         Page<CommunityRequest> page = Pages.of(current, size);
         LambdaQueryWrapper<CommunityRequest> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CommunityRequest::getFromUserId, meId);
+        wrapper.ne(CommunityRequest::getType, 1);
         if (type != null) wrapper.eq(CommunityRequest::getType, type);
         if (status != null) wrapper.eq(CommunityRequest::getStatus, status);
         wrapper.orderByDesc(CommunityRequest::getCreateTime);
@@ -219,6 +189,31 @@ public class CommunityService {
                         .eq(CompetitionTeamMember::getStudentId, userId)
         );
         return count != null && count > 0;
+    }
+
+    /** 发送申请/邀请前的快失败预校验：报名时间窗、满员、已在其他队伍（最终闸门仍在 addMemberToTeam）；返回错误文案或 null */
+    private String precheckJoinable(Long teamId, Long studentId, boolean forSelf) {
+        CompetitionTeam team = teamMapper.selectById(teamId);
+        if (team == null) return "队伍不存在";
+        Competition comp = competitionMapper.selectById(team.getCompetitionId());
+        if (comp == null) return "所属竞赛不存在";
+        String windowErr = registrationService.checkRegistrationWindow(comp);
+        if (windowErr != null) return windowErr;
+        long members = teamMemberMapper.selectCount(
+                new LambdaQueryWrapper<CompetitionTeamMember>()
+                        .eq(CompetitionTeamMember::getTeamId, teamId)
+        );
+        if (comp.getMaxMembers() != null && members >= comp.getMaxMembers()) return "该队伍人数已满";
+        Long joinedOther = teamMemberMapper.selectCount(
+                new LambdaQueryWrapper<CompetitionTeamMember>()
+                        .eq(CompetitionTeamMember::getCompetitionId, team.getCompetitionId())
+                        .eq(CompetitionTeamMember::getStudentId, studentId)
+                        .ne(CompetitionTeamMember::getTeamId, teamId)
+        );
+        if (joinedOther != null && joinedOther > 0) {
+            return forSelf ? "你已参加了此竞赛的其他队伍" : "对方已参加了此竞赛的其他队伍";
+        }
+        return null;
     }
 
     /** 队伍满员后自动关闭其招募帖 */

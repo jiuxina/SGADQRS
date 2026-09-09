@@ -94,6 +94,32 @@ public class RegistrationController {
         return registrationService.disbandTeam(id, loginUser.getUserId());
     }
 
+    @Operation(summary = "成员退队（本人操作，限组建中/已拒绝状态；队长须先转让或解散）")
+    @PutMapping("/team/{id}/leave")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<?> leaveTeam(@PathVariable Long id,
+                               @AuthenticationPrincipal LoginUser loginUser) {
+        return registrationService.leaveTeam(id, loginUser.getUserId());
+    }
+
+    @Operation(summary = "队长移除成员（限组建中/已拒绝状态）")
+    @DeleteMapping("/team/{id}/member/{studentId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<?> removeMember(@PathVariable Long id,
+                                  @PathVariable Long studentId,
+                                  @AuthenticationPrincipal LoginUser loginUser) {
+        return registrationService.removeMember(id, loginUser.getUserId(), studentId);
+    }
+
+    @Operation(summary = "队长转让（新队长须为在队成员；已通过审核的队伍不可转让）")
+    @PutMapping("/team/{id}/leader/{studentId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<?> transferLeader(@PathVariable Long id,
+                                    @PathVariable Long studentId,
+                                    @AuthenticationPrincipal LoginUser loginUser) {
+        return registrationService.transferLeader(id, loginUser.getUserId(), studentId);
+    }
+
     @Operation(summary = "管理员审核参赛队伍")
     @PutMapping("/team/{id}/audit")
     @PreAuthorize("hasRole('ADMIN')")

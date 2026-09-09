@@ -12,7 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "社区请求（互看/申请/邀请）")
+@Tag(name = "社区请求（申请/邀请）")
 @RestController
 @RequestMapping("/community")
 @RequiredArgsConstructor
@@ -20,7 +20,7 @@ public class CommunityController {
 
     private final CommunityService communityService;
 
-    @Operation(summary = "发起请求：1-资料互看 2-入队申请 3-入队邀请")
+    @Operation(summary = "发起请求：2-入队申请 3-入队邀请（可附备注/联系方式）")
     @PostMapping("/request")
     @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
     public Result<?> create(@RequestBody CommunityRequestDTO dto,

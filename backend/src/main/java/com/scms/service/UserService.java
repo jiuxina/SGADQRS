@@ -58,49 +58,43 @@ public class UserService {
     }
 
     /**
-     * 社区公开资料：未解锁只返回脱敏卡（unlocked=false）；
-     * 解锁（互看同意）/本人/管理员可见真实姓名、完整简介、获奖记录与参赛统计。手机号、邮箱永不外露。
+     * 社区公开资料：资料互看机制已下线，完整资料（真实姓名、完整简介、获奖记录、参赛统计）对所有登录用户可见。手机号、邮箱永不外露。
      */
     public Result<?> getPublicProfile(Long targetId, Long viewerId, boolean viewerIsAdmin) {
         User target = userMapper.selectById(targetId);
         if (target == null) return Result.error("用户不存在");
 
         Map<String, Object> data = cardService.card(targetId, viewerId);
-        boolean unlocked = viewerIsAdmin || Boolean.TRUE.equals(data.get("unlocked"));
-        data.put("unlocked", unlocked);
+        data.put("username", target.getUsername());
+        data.put("realName", target.getRealName());
+        data.put("nickname", target.getNickname());
+        data.put("bio", target.getBio());
 
-        if (unlocked) {
-            data.put("username", target.getUsername());
-            data.put("realName", target.getRealName());
-            data.put("nickname", target.getNickname());
-            data.put("bio", target.getBio());
-
-            List<Map<String, Object>> awards = new ArrayList<>();
-            List<CompetitionResult> results = competitionResultMapper.selectList(
-                    new LambdaQueryWrapper<CompetitionResult>()
-                            .eq(CompetitionResult::getStudentId, targetId)
-                            .eq(CompetitionResult::getIsPublished, 1)
-                            .orderByDesc(CompetitionResult::getPublishTime)
-                            .orderByDesc(CompetitionResult::getCreateTime)
-            );
-            for (CompetitionResult r : results) {
-                Map<String, Object> a = new HashMap<>();
-                Competition comp = competitionMapper.selectById(r.getCompetitionId());
-                a.put("competitionName", comp != null ? comp.getCompetitionName() : null);
-                a.put("awardLevel", r.getAwardLevel());
-                a.put("awardName", r.getAwardName());
-                a.put("ranking", r.getRanking());
-                a.put("score", r.getScore());
-                a.put("publishTime", r.getPublishTime());
-                awards.add(a);
-            }
-            data.put("awards", awards);
-
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("totalParticipations", awards.size());
-            stats.put("totalAwards", awards.stream().filter(a -> a.get("awardLevel") != null).count());
-            data.put("stats", stats);
+        List<Map<String, Object>> awards = new ArrayList<>();
+        List<CompetitionResult> results = competitionResultMapper.selectList(
+                new LambdaQueryWrapper<CompetitionResult>()
+                        .eq(CompetitionResult::getStudentId, targetId)
+                        .eq(CompetitionResult::getIsPublished, 1)
+                        .orderByDesc(CompetitionResult::getPublishTime)
+                        .orderByDesc(CompetitionResult::getCreateTime)
+        );
+        for (CompetitionResult r : results) {
+            Map<String, Object> a = new HashMap<>();
+            Competition comp = competitionMapper.selectById(r.getCompetitionId());
+            a.put("competitionName", comp != null ? comp.getCompetitionName() : null);
+            a.put("awardLevel", r.getAwardLevel());
+            a.put("awardName", r.getAwardName());
+            a.put("ranking", r.getRanking());
+            a.put("score", r.getScore());
+            a.put("publishTime", r.getPublishTime());
+            awards.add(a);
         }
+        data.put("awards", awards);
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalParticipations", awards.size());
+        stats.put("totalAwards", awards.stream().filter(a -> a.get("awardLevel") != null).count());
+        data.put("stats", stats);
         return Result.success(data);
     }
 

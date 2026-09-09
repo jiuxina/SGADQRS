@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.Map;
 /**
  * 参赛队伍（参赛单位）服务：报名与队伍合一。
  * 审核链：队长建队(0组建中) → 提交审核(1) → 管理员审(2通过/3拒绝)，被驳回(3)可修改后重新提交(1)；单人赛=1人队，创建即提交。
+ * 名单规则：提交审核后名单冻结（不可退队/移除），被驳回后可调整；成员流动=退队/队长移除/转让队长，仅在组建中或被驳回时开放。
  * 指导老师由队长指定，老师只读不审批。
  */
 @Service
@@ -88,6 +90,8 @@ public class RegistrationService {
         Competition comp = competitionMapper.selectById(dto.getCompetitionId());
         if (comp == null) return Result.error("竞赛不存在");
         if (comp.getStatus() != 2 && comp.getStatus() != 3) return Result.error("该竞赛当前不可参赛");
+        String windowErr = checkRegistrationWindow(comp);
+        if (windowErr != null) return Result.error(windowErr);
         // 边界：字段长度与库表一致，防止超长直接撞 DB 约束变 500
         if (dto.getTeamName() != null && dto.getTeamName().length() > 50) return Result.error("团队名称不能超过 50 字");
         if (dto.getTeamSlogan() != null && dto.getTeamSlogan().length() > 200) return Result.error("团队口号不能超过 200 字");
@@ -98,10 +102,10 @@ public class RegistrationService {
                 return Result.error("指导老师不存在");
             }
         }
-        // 边界：同一学生同一竞赛只能有一支队伍（建队或入队均算）
+        // 边界：同一学生同一竞赛只能有一支队伍（建队或入队均算；走冗余列，命中 uk_tm_comp_student）
         Long joined = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
-                .eq(CompetitionTeamMember::getStudentId, leaderId)
-                .apply("team_id IN (SELECT id FROM competition_team WHERE competition_id = {0})", dto.getCompetitionId()));
+                .eq(CompetitionTeamMember::getCompetitionId, dto.getCompetitionId())
+                .eq(CompetitionTeamMember::getStudentId, leaderId));
         if (joined != null && joined > 0) return Result.error("你已参加了该竞赛的队伍，不可重复报名");
 
         CompetitionTeam team = new CompetitionTeam();
@@ -116,6 +120,7 @@ public class RegistrationService {
 
         CompetitionTeamMember member = new CompetitionTeamMember();
         member.setTeamId(team.getId());
+        member.setCompetitionId(dto.getCompetitionId());
         member.setStudentId(leaderId);
         teamMemberMapper.insert(member);
 
@@ -125,20 +130,22 @@ public class RegistrationService {
     /** 队长提交审核（0组建中/3已拒绝 → 1待审核；被驳回后可修改再重新提交） */
     @Transactional
     public Result<?> submitTeam(Long teamId, Long leaderId) {
-        CompetitionTeam team = teamMapper.selectById(teamId);
+        CompetitionTeam team = teamMapper.selectByIdForUpdate(teamId);
         if (team == null) return Result.error("队伍不存在");
         if (!leaderId.equals(team.getLeaderId())) return Result.error("只有队长可以提交审核");
         Integer st = team.getStatus();
         if (st == null || (st != 0 && st != 3)) return Result.error("当前状态不可提交");
         team.setStatus(1);
         teamMapper.updateById(team);
+        // 名单随提交冻结，关联招募帖同步下架（继续招募已无意义）
+        closeOpenPostsForTeam(teamId);
         return Result.success("已提交审核", null);
     }
 
     /** 队长更换指导老师（teacherId 传空表示取消指定） */
     @Transactional
     public Result<?> changeTeacher(Long teamId, Long leaderId, Long teacherId) {
-        CompetitionTeam team = teamMapper.selectById(teamId);
+        CompetitionTeam team = teamMapper.selectByIdForUpdate(teamId);
         if (team == null) return Result.error("队伍不存在");
         if (!leaderId.equals(team.getLeaderId())) return Result.error("只有队长可以指定指导老师");
         if (teacherId != null) {
@@ -152,38 +159,45 @@ public class RegistrationService {
         return Result.success(teacherId != null ? "指导老师已更新" : "已取消指导老师", null);
     }
 
-    /** 管理员审核参赛队伍（1已提交 → 2通过/3拒绝） */
     /** 解散队伍：队长本人操作，组建中(0)/待审核(1)/已拒绝(3)可解散；已通过(2)需联系管理员 */
     @Transactional
     public Result<?> disbandTeam(Long id, Long meId) {
-        CompetitionTeam team = teamMapper.selectById(id);
+        CompetitionTeam team = teamMapper.selectByIdForUpdate(id);
         if (team == null) return Result.error("队伍不存在");
         if (!meId.equals(team.getLeaderId())) return Result.error("只有队长可以解散队伍");
         if (team.getStatus() != null && team.getStatus() == 2) {
             return Result.error("已通过审核的队伍不能解散，如有需要请联系管理员");
         }
+        // 通知全体成员（队长本人已知悉，跳过）
+        List<CompetitionTeamMember> members = teamMemberMapper.selectList(
+                new LambdaQueryWrapper<CompetitionTeamMember>()
+                        .eq(CompetitionTeamMember::getTeamId, id)
+        );
+        for (CompetitionTeamMember m : members) {
+            if (m.getStudentId() != null && !m.getStudentId().equals(meId)) {
+                notificationService.send(m.getStudentId(), "interaction", "队伍已解散",
+                        "你所在的队伍「" + team.getTeamName() + "」已被队长解散。", "team", id);
+            }
+        }
         // 下架关联招募帖（status 1 招募中 → 0 已关闭）
-        recruitPostMapper.selectList(new LambdaQueryWrapper<RecruitPost>()
-                        .eq(RecruitPost::getTeamId, id))
-                .forEach(post -> {
-                    post.setStatus(0);
-                    recruitPostMapper.updateById(post);
-                });
+        closeOpenPostsForTeam(id);
         teamMemberMapper.delete(new LambdaQueryWrapper<CompetitionTeamMember>()
                 .eq(CompetitionTeamMember::getTeamId, id));
         teamMapper.deleteById(id);
         return Result.success("队伍已解散", null);
     }
 
+    /** 管理员审核参赛队伍（1已提交 → 2通过/3拒绝） */
     @Transactional
     public Result<?> auditTeam(Long id, Integer status, String auditRemark) {
-        CompetitionTeam team = teamMapper.selectById(id);
+        CompetitionTeam team = teamMapper.selectByIdForUpdate(id);
         if (team == null) return Result.error("队伍不存在");
         if (status == null || (status != 2 && status != 3)) return Result.error("无效的审核状态");
         // 边界：仅"待审核(1)"的队伍可审核，防止重复审核/审核组建中的队伍
         if (team.getStatus() == null || team.getStatus() != 1) return Result.error("该队伍当前状态不可审核（仅待审核状态可审核）");
         team.setStatus(status);
         teamMapper.updateById(team);
+        if (status == 2) closeOpenPostsForTeam(id);
 
         // 审核结果通知全体成员
         User leader = userMapper.selectById(team.getLeaderId());
@@ -212,6 +226,8 @@ public class RegistrationService {
         if (team == null) return Result.error("团队不存在");
         Competition comp = competitionMapper.selectById(team.getCompetitionId());
         if (comp == null) return Result.error("所属竞赛不存在");
+        String windowErr = checkRegistrationWindow(comp);
+        if (windowErr != null) return Result.error(windowErr);
 
         // 当前读(FOR UPDATE)：REPEATABLE READ 下普通 count 走事务旧快照，拿锁后仍看不见并发已提交的插入
         long activeCount = teamMemberMapper.selectCount(
@@ -229,19 +245,108 @@ public class RegistrationService {
                         .eq(CompetitionTeamMember::getStudentId, studentId)
         );
         if (count > 0) return Result.error("您已在该团队中");
-        // 边界：同一学生同一竞赛只能有一支队伍
+        // 边界：同一学生同一竞赛只能有一支队伍（走冗余列，命中 uk_tm_comp_student）
         Long joinedOther = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
+                .eq(CompetitionTeamMember::getCompetitionId, team.getCompetitionId())
                 .eq(CompetitionTeamMember::getStudentId, studentId)
-                .ne(CompetitionTeamMember::getTeamId, teamId)
-                .apply("team_id IN (SELECT id FROM competition_team WHERE competition_id = {0})", team.getCompetitionId()));
+                .ne(CompetitionTeamMember::getTeamId, teamId));
         if (joinedOther != null && joinedOther > 0) return Result.error("该同学已参加了此竞赛的其他队伍");
 
         CompetitionTeamMember member = new CompetitionTeamMember();
         member.setTeamId(teamId);
+        member.setCompetitionId(team.getCompetitionId());
         member.setStudentId(studentId);
         teamMemberMapper.insert(member);
 
         return Result.success("加入团队成功", null);
+    }
+
+    /** 成员退队：仅组建中(0)/已拒绝(3)可退（提交审核后名单冻结）；队长须先转让或解散 */
+    @Transactional
+    public Result<?> leaveTeam(Long teamId, Long meId) {
+        CompetitionTeam team = teamMapper.selectByIdForUpdate(teamId);
+        if (team == null) return Result.error("队伍不存在");
+        if (meId.equals(team.getLeaderId())) return Result.error("队长不能直接退队，请先转让队长或解散队伍");
+        Integer st = team.getStatus();
+        if (st == null || (st != 0 && st != 3)) return Result.error("当前状态不可退队（名单已提交审核锁定，被驳回后可退）");
+        Long count = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
+                .eq(CompetitionTeamMember::getTeamId, teamId)
+                .eq(CompetitionTeamMember::getStudentId, meId));
+        if (count == null || count == 0) return Result.error("你不是该队伍的成员");
+        teamMemberMapper.delete(new LambdaQueryWrapper<CompetitionTeamMember>()
+                .eq(CompetitionTeamMember::getTeamId, teamId)
+                .eq(CompetitionTeamMember::getStudentId, meId));
+        User me = userMapper.selectById(meId);
+        String name = me != null && me.getRealName() != null ? me.getRealName() : "有成员";
+        notificationService.send(team.getLeaderId(), "interaction", "队员退出队伍",
+                name + " 退出了队伍「" + team.getTeamName() + "」。", "team", teamId);
+        return Result.success("已退出队伍", null);
+    }
+
+    /** 队长移除成员：仅组建中(0)/已拒绝(3)可操作（提交审核后名单冻结） */
+    @Transactional
+    public Result<?> removeMember(Long teamId, Long meId, Long targetId) {
+        CompetitionTeam team = teamMapper.selectByIdForUpdate(teamId);
+        if (team == null) return Result.error("队伍不存在");
+        if (!meId.equals(team.getLeaderId())) return Result.error("只有队长可以移除成员");
+        Integer st = team.getStatus();
+        if (st == null || (st != 0 && st != 3)) return Result.error("当前状态不可移除成员（名单已提交审核锁定，被驳回后可移除）");
+        if (targetId == null || targetId.equals(meId)) return Result.error("不能移除自己");
+        Long count = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
+                .eq(CompetitionTeamMember::getTeamId, teamId)
+                .eq(CompetitionTeamMember::getStudentId, targetId));
+        if (count == null || count == 0) return Result.error("该用户不是队伍成员");
+        teamMemberMapper.delete(new LambdaQueryWrapper<CompetitionTeamMember>()
+                .eq(CompetitionTeamMember::getTeamId, teamId)
+                .eq(CompetitionTeamMember::getStudentId, targetId));
+        notificationService.send(targetId, "interaction", "你已被移出队伍",
+                "你已被移出队伍「" + team.getTeamName() + "」。", "team", teamId);
+        return Result.success("已移除该成员", null);
+    }
+
+    /** 队长转让：新队长须为在队成员；已通过(2)审核的队伍不可转让（需联系管理员） */
+    @Transactional
+    public Result<?> transferLeader(Long teamId, Long meId, Long newLeaderId) {
+        CompetitionTeam team = teamMapper.selectByIdForUpdate(teamId);
+        if (team == null) return Result.error("队伍不存在");
+        if (!meId.equals(team.getLeaderId())) return Result.error("只有队长可以转让队长");
+        if (newLeaderId == null || newLeaderId.equals(meId)) return Result.error("请选择其他成员作为新队长");
+        if (team.getStatus() != null && team.getStatus() == 2) {
+            return Result.error("已通过审核的队伍不能转让队长，如有需要请联系管理员");
+        }
+        Long count = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
+                .eq(CompetitionTeamMember::getTeamId, teamId)
+                .eq(CompetitionTeamMember::getStudentId, newLeaderId));
+        if (count == null || count == 0) return Result.error("新队长必须是队伍成员");
+        team.setLeaderId(newLeaderId);
+        teamMapper.updateById(team);
+        notificationService.send(newLeaderId, "interaction", "你已成为队长",
+                "队长已将队伍「" + team.getTeamName() + "」交给你管理。", "team", teamId);
+        return Result.success("队长已转让", null);
+    }
+
+    /** 报名时间窗校验：registrationStart/End 为空则不限制（兼容旧数据），返回错误文案或 null（CommunityService 预校验亦复用） */
+    public String checkRegistrationWindow(Competition comp) {
+        LocalDateTime now = LocalDateTime.now();
+        if (comp.getRegistrationStart() != null && now.isBefore(comp.getRegistrationStart())) {
+            return "该竞赛报名尚未开始";
+        }
+        if (comp.getRegistrationEnd() != null && now.isAfter(comp.getRegistrationEnd())) {
+            return "该竞赛报名已截止";
+        }
+        return null;
+    }
+
+    /** 下架队伍关联的招募中帖（status 1 → 0；解散/提交审核/审核通过时调用） */
+    private void closeOpenPostsForTeam(Long teamId) {
+        recruitPostMapper.selectList(new LambdaQueryWrapper<RecruitPost>()
+                        .eq(RecruitPost::getTeamId, teamId))
+                .forEach(post -> {
+                    if (post.getStatus() != null && post.getStatus() == 1) {
+                        post.setStatus(0);
+                        recruitPostMapper.updateById(post);
+                    }
+                });
     }
 
     /** 队伍详情：管理员、指导老师/竞赛发布教师、队伍成员（含队长）可见 */

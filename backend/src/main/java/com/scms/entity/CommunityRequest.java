@@ -11,7 +11,7 @@ public class CommunityRequest {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 1-资料互看 2-入队申请 3-入队邀请 */
+    /** 2-入队申请 3-入队邀请（1-资料互看已下线，存量数据仅作历史） */
     private Integer type;
 
     /** 关联招募帖 */

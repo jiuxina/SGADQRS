@@ -33,6 +33,7 @@ public class RecruitService {
         if (dto.getType() == null || (dto.getType() != 1 && dto.getType() != 2)) return Result.error("帖子类型无效");
         if (dto.getCompetitionId() == null) return Result.error("请选择竞赛");
         if (dto.getTitle() == null || dto.getTitle().isBlank()) return Result.error("请填写标题");
+        if (dto.getContact() != null && dto.getContact().length() > 100) return Result.error("联系方式不能超过 100 字");
 
         Competition comp = competitionMapper.selectById(dto.getCompetitionId());
         if (comp == null) return Result.error("竞赛不存在");
@@ -54,6 +55,7 @@ public class RecruitService {
         post.setTitle(dto.getTitle().trim());
         post.setContent(dto.getContent());
         post.setTags(dto.getTags());
+        post.setContact(dto.getContact());
         post.setDeadline(dto.getDeadline());
         post.setStatus(1);
 
@@ -119,6 +121,7 @@ public class RecruitService {
         if (dto.getTitle() != null && !dto.getTitle().isBlank()) post.setTitle(dto.getTitle().trim());
         if (dto.getContent() != null) post.setContent(dto.getContent());
         if (dto.getTags() != null) post.setTags(dto.getTags());
+        if (dto.getContact() != null) post.setContact(dto.getContact().isBlank() ? null : dto.getContact().trim());
         if (dto.getDeadline() != null) post.setDeadline(dto.getDeadline());
         recruitPostMapper.updateById(post);
         return Result.success("更新成功", post);

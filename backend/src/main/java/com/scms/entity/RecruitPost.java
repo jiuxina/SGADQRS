@@ -25,6 +25,9 @@ public class RecruitPost {
     /** 方向标签(逗号分隔) */
     private String tags;
 
+    /** 联系方式（微信/QQ/邮箱等，选填） */
+    private String contact;
+
     /** 组队截止时间 */
     private LocalDateTime deadline;
 

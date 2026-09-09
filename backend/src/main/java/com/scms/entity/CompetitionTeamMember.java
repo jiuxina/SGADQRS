@@ -12,6 +12,9 @@ public class CompetitionTeamMember {
     private Long id;
 
     private Long teamId;
+
+    /** 冗余竞赛ID：承载"一人一赛一队"唯一约束（uk_tm_comp_student） */
+    private Long competitionId;
     private Long studentId;
 
     @TableField(fill = FieldFill.INSERT)

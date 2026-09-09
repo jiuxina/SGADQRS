@@ -20,5 +20,8 @@ public class RecruitPostDTO {
 
     /** 方向标签(逗号分隔) */
     private String tags;
+
+    /** 联系方式（微信/QQ/邮箱等，选填） */
+    private String contact;
     private LocalDateTime deadline;
 }
