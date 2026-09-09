@@ -5,6 +5,8 @@ import { Trophy, Clock, Medal, Users, Image as ImageIcon } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../motion/variants'
 import QuickActions from '../components/QuickActions'
 import UpcomingReminders from '../components/UpcomingReminders'
+import RoleHero from '../components/RoleHero'
+import { DashboardSkeleton, ListSkeleton } from '../components/PageSkeleton'
 import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { resolveCoverUrl, formatDate } from '../utils/format'
@@ -17,15 +19,18 @@ export default function StudentDashboard() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const user = useAuthStore((s) => s.user)
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
 
   useEffect(() => {
     if (!user) return
-    competitionApi.dashboard().then((res) => setStats(res as Record<string, unknown>)).catch((e) => { toast.error('加载仪表盘数据失败'); console.error(e) })
-    competitionApi.list({ current: 1, size: PAGE_SIZE.DASHBOARD_PREVIEW, status: 2 })
-      .then((res) => setCompetitions(res.records))
-      .catch((e) => { toast.error('加载竞赛列表失败'); console.error(e) })
+    Promise.all([
+      competitionApi.dashboard().then((res) => setStats(res as Record<string, unknown>)).catch((e) => { toast.error('加载仪表盘数据失败'); console.error(e) }),
+      competitionApi.list({ current: 1, size: PAGE_SIZE.DASHBOARD_PREVIEW, status: 2 })
+        .then((res) => setCompetitions(res.records))
+        .catch((e) => { toast.error('加载竞赛列表失败'); console.error(e) }),
+    ]).finally(() => setLoading(false))
   }, [user])
 
   const quickActions = [
@@ -37,6 +42,14 @@ export default function StudentDashboard() {
 
   return (
     <>
+      <RoleHero />
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <DashboardSkeleton />
+          <ListSkeleton />
+        </div>
+      ) : (
+      <>
       <motion.div className="bento-grid" variants={staggerContainer} initial="hidden" animate="visible">
         <motion.div className="bento-card bento-lg" variants={staggerItem} style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="bento-label">竞赛总览</div>
@@ -129,6 +142,8 @@ export default function StudentDashboard() {
             })}
           </div>
         </div>
+      )}
+      </>
       )}
     </>
   )

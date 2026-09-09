@@ -7,7 +7,7 @@ import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 import { competitionApi, exportApi } from '../api'
 import type { CompetitionItem } from '../api/types'
 import { toast } from '../components/toastUtils'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { confirmDialog } from '../components/confirmDialogUtils'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
@@ -43,6 +43,13 @@ export default function AdminCompetitions() {
   const pagination = usePagination()
   const navigate = useNavigate()
   const [pageTab, setPageTab] = usePageTab(ADMIN_COMP_TABS)
+  const [searchParams] = useSearchParams()
+
+  // 顶栏搜索跳转带来的 ?search= 同步到页内搜索框
+  useEffect(() => {
+    const q = searchParams.get('search')
+    if (q) setSearchQuery(q)
+  }, [searchParams])
 
   const handleDelete = async (id: number, name: string, teamCount: number) => {
     const confirmed = await confirmDialog({

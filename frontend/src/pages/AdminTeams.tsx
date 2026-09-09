@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
-import { ClipboardList, Crown, Download, CheckCircle, XCircle } from 'lucide-react'
+import { ClipboardList, Crown, Download, CheckCircle, XCircle, Search } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { TableSkeleton } from '../components/PageSkeleton'
 import Pagination from '../components/Pagination'
@@ -10,6 +10,7 @@ import { toast } from '../components/toastUtils'
 import { promptDialog } from '../components/promptDialogUtils'
 import type { CompetitionItem, TeamItem } from '../api/types'
 import { formatDate } from '../utils/format'
+import { useDebounce } from '../hooks/useDebounce'
 import { fadeSlideUp } from '../motion/variants'
 
 const statusList = [
@@ -39,6 +40,8 @@ export default function AdminTeams({ presetCompetitionId }: { presetCompetitionI
   const [compFilter, setCompFilter] = useState<number | ''>(presetCompetitionId ?? '')
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined)
   const [actingId, setActingId] = useState<number | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -48,6 +51,7 @@ export default function AdminTeams({ presetCompetitionId }: { presetCompetitionI
         size: pageSize,
         competitionId: compFilter || undefined,
         status: statusFilter,
+        keyword: debouncedSearch || undefined,
       })
       setTeams(res.records)
       setTotal(res.total)
@@ -56,11 +60,14 @@ export default function AdminTeams({ presetCompetitionId }: { presetCompetitionI
     } finally {
       setLoading(false)
     }
-  }, [current, pageSize, compFilter, statusFilter])
+  }, [current, pageSize, compFilter, statusFilter, debouncedSearch])
 
   useEffect(() => {
     load()
   }, [load])
+
+  // 搜索词变化时回到第 1 页
+  useEffect(() => { setCurrent(1) }, [debouncedSearch])
 
   useEffect(() => {
     competitionApi.list({ current: 1, size: 100 })
@@ -109,6 +116,16 @@ export default function AdminTeams({ presetCompetitionId }: { presetCompetitionI
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}
       >
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="search-wrap" style={{ width: '180px' }}>
+            <Search strokeWidth={1.5} />
+            <input
+              className="glass-search"
+              placeholder="搜索队伍名称..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ marginBottom: 0 }}
+            />
+          </div>
           {!presetCompetitionId && (
           <select
             className="glass-search"

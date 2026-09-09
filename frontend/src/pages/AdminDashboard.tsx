@@ -9,6 +9,7 @@ import {
 import { DashboardSkeleton } from '../components/PageSkeleton'
 import QuickActions from '../components/QuickActions'
 import UpcomingReminders from '../components/UpcomingReminders'
+import RoleHero from '../components/RoleHero'
 import { staggerContainer, staggerItem } from '../motion/variants'
 import { statsApi, registrationApi } from '../api'
 import type { TeamItem } from '../api/types'
@@ -59,6 +60,7 @@ export default function AdminDashboard() {
 
   return (
     <>
+      <RoleHero />
       <motion.div className="bento-grid" variants={staggerContainer} initial="hidden" animate="visible">
         {/* 竞赛状态分布 */}
         <motion.div className="bento-card bento-lg" variants={staggerItem} style={{ display: 'flex', flexDirection: 'column' }}>

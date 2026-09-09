@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   Eye,
@@ -7,16 +7,27 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { env } from '../config/env'
+import { STORAGE_KEYS } from '../config/constants'
 import { toast } from '../components/toastUtils'
 
 type Role = 'admin' | 'teacher' | 'student'
 
+/** 登录角色对应的路由前缀，用于校验回跳目标是否属于该端 */
+const ROLE_PREFIX: Record<Role, string> = {
+  admin: '/admin',
+  teacher: '/teacher',
+  student: '/student',
+}
+
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const login = useAuthStore((s) => s.login)
-  const [username, setUsername] = useState('')
+  const rememberedName = localStorage.getItem(STORAGE_KEYS.REMEMBER_USER) || ''
+  const [username, setUsername] = useState(rememberedName)
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<Role>('student')
+  const [remember, setRemember] = useState(Boolean(rememberedName))
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -41,7 +52,15 @@ export default function LoginPage() {
     setErrorMsg('')
     try {
       await login(username, password, role)
-      if (role === 'admin') navigate('/admin/dashboard')
+      // 记住账号
+      if (remember) localStorage.setItem(STORAGE_KEYS.REMEMBER_USER, username.trim())
+      else localStorage.removeItem(STORAGE_KEYS.REMEMBER_USER)
+      // 回跳来源页：仅当来源属于当前登录端的路由时使用，避免跨端串页
+      const from = (location.state as { from?: { pathname: string; search: string } } | null)?.from
+      const prefix = ROLE_PREFIX[role]
+      if (from?.pathname?.startsWith(prefix)) {
+        navigate(from.pathname + (from.search || ''), { replace: true })
+      } else if (role === 'admin') navigate('/admin/dashboard')
       else if (role === 'teacher') navigate('/teacher/dashboard')
       else navigate('/student/dashboard')
     } catch (err: unknown) {
@@ -162,7 +181,7 @@ export default function LoginPage() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                <input type="checkbox" defaultChecked style={{ accentColor: 'var(--accent)' }} />
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
                 记住账号
               </label>
               <button type="button" onClick={() => toast.info('请联系管理员重置密码')} className="icon-btn" style={{ color: 'var(--accent)', fontFamily: 'inherit', fontSize: '13px' }}>

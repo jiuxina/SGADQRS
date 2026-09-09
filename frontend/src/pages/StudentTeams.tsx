@@ -118,6 +118,9 @@ export default function StudentTeams() {
 
   const isMobile = useIsMobile()
 
+  // 创建接口只接受 已发布(2)/进行中(3) 的竞赛，下拉只列可报名项，避免选到已结束/待审核的竞赛必然报错
+  const joinableComps = competitions.filter((c) => c.status === 2 || c.status === 3)
+
   const loadTeams = useCallback(async () => {
     setLoading(true)
     try {
@@ -180,6 +183,11 @@ export default function StudentTeams() {
   const handleCreate = async () => {
     if (!createCompId) {
       toast.warning('请选择竞赛')
+      return
+    }
+    if (!joinableComps.some((c) => c.id === Number(createCompId))) {
+      toast.warning('该竞赛当前不可报名，请重新选择')
+      setCreateCompId('')
       return
     }
     if (!teamName.trim()) {
@@ -521,11 +529,11 @@ export default function StudentTeams() {
                     style={{ width: '100%', marginBottom: 0 }}
                   >
                     <option value="">
-                      {loadingCompetitions ? '加载中...' : '请选择要参加的竞赛'}
+                      {loadingCompetitions ? '加载中...' : (joinableComps.length > 0 ? '请选择要参加的竞赛' : '暂无可报名的竞赛')}
                     </option>
-                    {competitions.map((comp) => (
+                    {joinableComps.map((comp) => (
                       <option key={comp.id} value={comp.id}>
-                        {comp.competitionName}
+                        {comp.competitionName}{comp.maxMembers === 1 ? '（个人赛，创建即报名）' : ''}
                       </option>
                     ))}
                   </select>

@@ -5,6 +5,8 @@ import { Trophy, Users, FileText } from 'lucide-react'
 import { staggerContainer, staggerItem } from '../motion/variants'
 import QuickActions from '../components/QuickActions'
 import UpcomingReminders from '../components/UpcomingReminders'
+import RoleHero from '../components/RoleHero'
+import { DashboardSkeleton, ListSkeleton } from '../components/PageSkeleton'
 import { competitionApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { PAGE_SIZE } from '../config/constants'
@@ -13,15 +15,18 @@ import { toast } from '../components/toastUtils'
 export default function TeacherDashboard() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
   const [competitions, setCompetitions] = useState<Array<{ id: number; competitionName: string; registrationCount: number; status: number }>>([])
 
   useEffect(() => {
     if (!user) return
-    competitionApi.dashboard().then((res) => setStats(res as Record<string, unknown>)).catch((e) => { toast.error('加载仪表盘数据失败'); console.error(e) })
-    competitionApi.list({ current: 1, size: PAGE_SIZE.DASHBOARD_PREVIEW, publisherId: user.id })
-      .then((res) => setCompetitions(res.records))
-      .catch((e) => { toast.error('加载竞赛列表失败'); console.error(e) })
+    Promise.all([
+      competitionApi.dashboard().then((res) => setStats(res as Record<string, unknown>)).catch((e) => { toast.error('加载仪表盘数据失败'); console.error(e) }),
+      competitionApi.list({ current: 1, size: PAGE_SIZE.DASHBOARD_PREVIEW, publisherId: user.id })
+        .then((res) => setCompetitions(res.records))
+        .catch((e) => { toast.error('加载竞赛列表失败'); console.error(e) }),
+    ]).finally(() => setLoading(false))
   }, [user])
 
   const quickActions = [
@@ -32,6 +37,14 @@ export default function TeacherDashboard() {
 
   return (
     <>
+      <RoleHero />
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <DashboardSkeleton />
+          <ListSkeleton />
+        </div>
+      ) : (
+      <>
       <motion.div className="bento-grid" variants={staggerContainer} initial="hidden" animate="visible">
         <motion.div className="bento-card bento-lg" variants={staggerItem} style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="bento-label">赛事概览</div>
@@ -62,7 +75,8 @@ export default function TeacherDashboard() {
           <QuickActions items={quickActions} />
         </motion.div>
       </motion.div>
-
+      </>
+      )}
     </>
   )
 }

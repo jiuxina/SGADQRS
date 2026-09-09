@@ -11,6 +11,7 @@ import type { CompetitionAttachment } from '../api/types'
 import { fadeSlideUp, instant } from '../motion/variants'
 import { competitionApi, fileApi } from '../api'
 import { useAuthStore } from '../store/authStore'
+import { STORAGE_KEYS } from '../config/constants'
 import { toast } from '../components/toastUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { resolveCoverUrl } from '../utils/format'
@@ -18,9 +19,6 @@ import { resolveCoverUrl } from '../utils/format'
 interface FormData {
   name: string
   organizer: string
-  category?: string
-  eligibility?: string
-  contactInfo?: string
   description: string
   rules: string
   registrationStart: string
@@ -36,6 +34,39 @@ interface AwardItem {
   level: number
 }
 
+const EMPTY_FORM: FormData = {
+  name: '',
+  organizer: '',
+  description: '',
+  rules: '',
+  registrationStart: '',
+  registrationEnd: '',
+  competitionStart: '',
+  competitionEnd: '',
+  location: '',
+  maxMembers: '5',
+}
+
+interface CompetitionDraft {
+  form: FormData
+  awards: AwardItem[]
+  coverImage: string | null
+  attachments: CompetitionAttachment[]
+}
+
+/** 读取创建模式下的本地草稿（损坏/缺失返回 null） */
+function readDraft(): CompetitionDraft | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.COMPETITION_DRAFT)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as CompetitionDraft
+    if (!parsed || typeof parsed !== 'object' || !parsed.form) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
 /** 从日期时间字符串中提取日期部分 YYYY-MM-DD */
 function extractDate(datetime: string | null | undefined): string {
   if (!datetime) return ''
@@ -48,33 +79,37 @@ export default function TeacherCompetitionCreate() {
   const isEdit = Boolean(id)
   const editId = id ? Number(id) : undefined
   useAuthStore((s) => s.user)
+  /** 创建模式下的本地草稿（仅初始化读一次） */
+  const [initialDraft] = useState(() => (isEdit ? null : readDraft()))
   const [submitting, setSubmitting] = useState(false)
   const [loadingData, setLoadingData] = useState(false)
-  const [coverImage, setCoverImage] = useState<string | null>(null)
+  const [coverImage, setCoverImage] = useState<string | null>(initialDraft?.coverImage ?? null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [attachments, setAttachments] = useState<CompetitionAttachment[]>([])
+  const [attachments, setAttachments] = useState<CompetitionAttachment[]>(initialDraft?.attachments ?? [])
   const [uploadingAttachment, setUploadingAttachment] = useState(false)
   const attachmentInputRef = useRef<HTMLInputElement>(null)
-  const [form, setForm] = useState<FormData>({
-    name: '',
-    organizer: '',
-    category: '',
-    eligibility: '',
-    contactInfo: '',
-    description: '',
-    rules: '',
-    registrationStart: '',
-    registrationEnd: '',
-    competitionStart: '',
-    competitionEnd: '',
-    location: '',
-    maxMembers: '5',
-  })
-  const [awards, setAwards] = useState<AwardItem[]>([])
+  const [form, setForm] = useState<FormData>(initialDraft?.form ?? EMPTY_FORM)
+  const [awards, setAwards] = useState<AwardItem[]>(initialDraft?.awards ?? [])
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const isMobile = useIsMobile()
   const hasUnsavedChanges = useRef(false)
+
+  // 恢复草稿提示
+  useEffect(() => {
+    if (initialDraft) toast.info('已恢复上次未提交的草稿')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 创建模式：表单变化自动暂存草稿，避免误关页面丢内容
+  useEffect(() => {
+    if (isEdit) return
+    try {
+      localStorage.setItem(STORAGE_KEYS.COMPETITION_DRAFT, JSON.stringify({ form, awards, coverImage, attachments }))
+    } catch {
+      /* 存储配额满等情况静默 */
+    }
+  }, [isEdit, form, awards, coverImage, attachments])
 
   // 离开页面时提示保存
   useEffect(() => {
@@ -204,9 +239,6 @@ export default function TeacherCompetitionCreate() {
         ...(isEdit ? { id: editId } : {}),
         competitionName: form.name,
         organizer: form.organizer,
-        category: form.category || undefined,
-        eligibility: form.eligibility || undefined,
-        contactInfo: form.contactInfo || undefined,
         coverImage: coverImage ?? undefined,
         description: form.description,
         rules: form.rules,
@@ -226,6 +258,7 @@ export default function TeacherCompetitionCreate() {
         await competitionApi.create(payload)
       }
       hasUnsavedChanges.current = false
+      if (!isEdit) localStorage.removeItem(STORAGE_KEYS.COMPETITION_DRAFT)
       navigate(-1)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '保存失败')
@@ -240,9 +273,6 @@ export default function TeacherCompetitionCreate() {
         ...(isEdit ? { id: editId } : {}),
         competitionName: form.name,
         organizer: form.organizer,
-        category: form.category || undefined,
-        eligibility: form.eligibility || undefined,
-        contactInfo: form.contactInfo || undefined,
         coverImage: coverImage ?? undefined,
         description: form.description,
         rules: form.rules,
@@ -262,6 +292,7 @@ export default function TeacherCompetitionCreate() {
         await competitionApi.create(payload)
       }
       hasUnsavedChanges.current = false
+      if (!isEdit) localStorage.removeItem(STORAGE_KEYS.COMPETITION_DRAFT)
       navigate(-1)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '提交失败')
@@ -372,35 +403,6 @@ export default function TeacherCompetitionCreate() {
             <label style={labelStyle}>主办单位 <span style={{ color: 'var(--danger)' }}>*</span></label>
             <input className="glass-input" placeholder="请输入主办单位" value={form.organizer} onChange={(e) => updateField('organizer', e.target.value)} />
             {errors.organizer && <div style={errorStyle}>{errors.organizer}</div>}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-            <div>
-              <label style={labelStyle}>竞赛分类</label>
-              <select
-                className="glass-input"
-                value={form.category}
-                onChange={(e) => updateField('category', e.target.value)}
-                style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.55)', background: 'rgba(255, 255, 255, 0.32)', backdropFilter: 'blur(18px) saturate(1.5)', fontSize: '14px', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit', appearance: 'none', cursor: 'pointer' }}
-              >
-                <option value="">请选择分类</option>
-                <option value="编程">编程</option>
-                <option value="设计">设计</option>
-                <option value="学术">学术</option>
-                <option value="数学建模">数学建模</option>
-                <option value="电子硬件">电子硬件</option>
-                <option value="创新创业">创新创业</option>
-                <option value="其他">其他</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>参赛资格</label>
-              <input className="glass-input" placeholder="如：全日制本科生，限大二及以上" value={form.eligibility} onChange={(e) => updateField('eligibility', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>联系方式</label>
-              <input className="glass-input" placeholder="如：张老师 13800138000" value={form.contactInfo} onChange={(e) => updateField('contactInfo', e.target.value)} />
-            </div>
           </div>
 
           <div style={fieldGroupStyle}>

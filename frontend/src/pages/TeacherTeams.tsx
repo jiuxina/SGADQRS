@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
-import { ChevronDown, ChevronRight, Download, Crown } from 'lucide-react'
+import { ChevronDown, ChevronRight, Download, Crown, Search } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { ListSkeleton, LoadingBar } from '../components/PageSkeleton'
 import { fadeSlideUp } from '../motion/variants'
@@ -11,6 +11,7 @@ import type { TeamItem, CompetitionItem } from '../api/types'
 import { toast } from '../components/toastUtils'
 import { formatDate } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
+import { useDebounce } from '../hooks/useDebounce'
 import Pagination from '../components/Pagination'
 
 const statusMap: Record<number, { cls: string; label: string }> = {
@@ -34,6 +35,8 @@ export default function TeacherTeams() {
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [selectedCompId, setSelectedCompId] = useState<number | undefined>(undefined)
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
 
   useEffect(() => {
     if (!user) return
@@ -44,13 +47,14 @@ export default function TeacherTeams() {
 
   const fetchData = useCallback(async (competitionId?: number) => {
     if (!user) return null
-    const params: { current: number; size: number; competitionId?: number; teacherId?: number } = {
+    const params: { current: number; size: number; competitionId?: number; teacherId?: number; keyword?: string } = {
       current: pagination.current, size: pagination.pageSize,
     }
     if (competitionId) params.competitionId = competitionId
     if (activeTab === 'advisor') params.teacherId = user.id
+    if (debouncedSearch) params.keyword = debouncedSearch
     return registrationApi.teamList(params)
-  }, [user, activeTab, pagination.current, pagination.pageSize])
+  }, [user, activeTab, debouncedSearch, pagination.current, pagination.pageSize])
 
   useEffect(() => {
     fetchData(selectedCompId).then(result => {
@@ -61,7 +65,7 @@ export default function TeacherTeams() {
       .finally(() => setLoading(false))
   }, [fetchData, selectedCompId])
 
-  useEffect(() => { pagination.resetPage() }, [selectedCompId, activeTab])
+  useEffect(() => { pagination.resetPage() }, [selectedCompId, activeTab, debouncedSearch])
   useEffect(() => { setSelectedCompId(undefined) }, [activeTab])
 
   const toggleExpand = (teamId: number) => {
@@ -116,7 +120,17 @@ export default function TeacherTeams() {
           <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
             {isAdvisorTab ? '我指导的团队' : '我发布竞赛的团队'} <span style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-tertiary)', marginLeft: '8px' }}>{teams.length} 个团队</span>
           </span>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="search-wrap" style={{ width: '180px' }}>
+              <Search strokeWidth={1.5} />
+              <input
+                className="glass-search"
+                placeholder="搜索团队名称..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ marginBottom: 0 }}
+              />
+            </div>
             <select
               value={selectedCompId ?? ''}
               onChange={(e) => setSelectedCompId(e.target.value ? Number(e.target.value) : undefined)}

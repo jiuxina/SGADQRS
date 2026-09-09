@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ImageIcon, Plus } from 'lucide-react'
+import { ImageIcon, Plus, Search } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { ListSkeleton, LoadingBar } from '../components/PageSkeleton'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
@@ -12,6 +12,7 @@ import { toast } from '../components/toastUtils'
 import { confirmDialog } from '../components/confirmDialogUtils'
 import { resolveCoverUrl } from '../utils/format'
 import { usePagination } from '../hooks/usePagination'
+import { useDebounce } from '../hooks/useDebounce'
 import Pagination from '../components/Pagination'
 import { getStatusBadge } from '../utils/statusBadge'
 
@@ -21,13 +22,24 @@ export default function TeacherCompetitions() {
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
+  const [searchParams] = useSearchParams()
   const pagination = usePagination()
+
+  // 顶栏搜索跳转带来的 ?search= 同步到页内搜索框
+  useEffect(() => {
+    const q = searchParams.get('search')
+    if (q) setSearchQuery(q)
+  }, [searchParams])
+
   const fetchData = useCallback(async () => {
     if (!user) return null
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize, publisherId: user.id }
     if (statusFilter !== 'all') params.status = statusFilter
+    if (debouncedSearch) params.keyword = debouncedSearch
     return competitionApi.list(params as Parameters<typeof competitionApi.list>[0])
-  }, [user, statusFilter, pagination.current, pagination.pageSize])
+  }, [user, statusFilter, debouncedSearch, pagination.current, pagination.pageSize])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -66,13 +78,25 @@ export default function TeacherCompetitions() {
   return (
     <>
       <motion.div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }} variants={fadeSlideUp} initial="hidden" animate="visible">
-        <div className="chip-row">
-          {[{ key: 'all', label: '全部' }, { key: 0, label: '草稿' }, { key: 2, label: '已发布' }, { key: 3, label: '进行中' }, { key: 4, label: '已结束' }].map((opt) => (
-            <button key={String(opt.key)} className={`chip ${statusFilter === opt.key ? 'active' : ''}`}
-              onClick={() => setStatusFilter(opt.key as number | 'all')}>
-              {opt.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div className="search-wrap" style={{ width: '220px' }}>
+            <Search strokeWidth={1.5} />
+            <input
+              className="glass-search"
+              placeholder="搜索竞赛名称..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); pagination.resetPage() }}
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <div className="chip-row">
+            {[{ key: 'all', label: '全部' }, { key: 0, label: '草稿' }, { key: 2, label: '已发布' }, { key: 3, label: '进行中' }, { key: 4, label: '已结束' }].map((opt) => (
+              <button key={String(opt.key)} className={`chip ${statusFilter === opt.key ? 'active' : ''}`}
+                onClick={() => setStatusFilter(opt.key as number | 'all')}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
         <button
           className="btn primary filled-primary"
