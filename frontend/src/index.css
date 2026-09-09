@@ -66,7 +66,10 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Helvetica Neue', sans-serif;
+  /* 对标 iOS：SF/苹方优先（Apple 原生），其次打包的 Inter（SF 开源替代）与思源黑体（苹方开源替代） */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Inter Variable', 'Inter', 'PingFang SC', 'Noto Sans SC Variable',
+    'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -138,6 +141,14 @@ body {
   position: relative;
   z-index: 100;
   overflow: hidden;
+  transition: width 0.32s var(--ease-smooth), padding 0.32s var(--ease-smooth), border-radius 0.32s var(--ease-smooth);
+}
+
+/* 悬浮展开态：横向撑开显示每个 tab 的名称 */
+.desktop-sidebar.expanded {
+  width: 208px;
+  align-items: stretch;
+  padding: 14px 12px;
 }
 
 /* Specular reflection */
@@ -167,11 +178,7 @@ body {
 }
 
 .sidebar-brand {
-  width: 28px;
   height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, rgba(170, 140, 230, 0.25), rgba(120, 160, 230, 0.25));
-  border: 1px solid rgba(255, 255, 255, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -180,8 +187,34 @@ body {
   flex-shrink: 0;
 }
 
-.sidebar-brand-text { display: none; }
-.sidebar-brand-sub { display: none; }
+.sidebar-brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(170, 140, 230, 0.25), rgba(120, 160, 230, 0.25));
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.desktop-sidebar.expanded .sidebar-brand {
+  justify-content: flex-start;
+  padding: 0 8px;
+  gap: 10px;
+}
+
+.sidebar-brand-text {
+  display: none;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.2px;
+}
+
+.desktop-sidebar.expanded .sidebar-brand-text {
+  display: block;
+  animation: sidebarLabelIn 0.3s var(--ease-smooth) 0.06s both;
+}
 
 /* Sidebar nav items */
 .sidebar-nav {
@@ -221,7 +254,7 @@ body {
 
 .sidebar-item span { display: none; }
 
-.sidebar-item:hover {
+.sidebar-item:hover:not(.active) {
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -230,15 +263,8 @@ body {
 
 .sidebar-item:hover svg { color: var(--text-primary); }
 
+/* 活动项高亮：直接铺在按钮上（收起=圆形，展开=胶囊），避免与 CSS 宽度过渡冲突 */
 .sidebar-item.active {
-  background: transparent;
-}
-
-/* Sliding active indicator background */
-.sidebar-active-bg {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(16px) saturate(1.5);
   -webkit-backdrop-filter: blur(16px) saturate(1.5);
@@ -247,11 +273,34 @@ body {
     0 2px 12px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     inset 0 -0.5px 0 rgba(0, 0, 0, 0.03);
-  z-index: -1;
 }
 
 .sidebar-item.active svg { color: var(--text-primary); }
 .sidebar-item.active span { display: none; }
+
+/* 展开态：图标项变横向胶囊，图标靠左、名称随之展示 */
+.desktop-sidebar.expanded .sidebar-item {
+  width: 100%;
+  border-radius: 13px;
+  justify-content: flex-start;
+  padding: 0 12px;
+  gap: 12px;
+}
+
+.sidebar-label {
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  opacity: 0;
+  pointer-events: none;
+  animation: sidebarLabelIn 0.3s var(--ease-smooth) 0.08s both;
+}
+
+@keyframes sidebarLabelIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 
 .sidebar-item .sidebar-badge {
   position: absolute;
@@ -399,31 +448,48 @@ body {
   position: relative;
 }
 
-.role-badge {
-  margin-left: 12px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  height: 20px;
+/* ============================================
+   概览页角色标识卡片（RoleHero）— 玻璃卡片单行
+   ============================================ */
+
+.role-hero {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(30px) saturate(1.6);
+  -webkit-backdrop-filter: blur(30px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
-.role-admin {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+.role-hero-role {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
-.role-teacher {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+.role-hero-student .role-hero-role { color: #3b82f6; }
+.role-hero-teacher .role-hero-role { color: #d97706; }
+.role-hero-admin .role-hero-role { color: #ef4444; }
+
+.role-hero-title {
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.role-student {
-  background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
+@media (max-width: 768px) {
+  .role-hero {
+    padding: 13px 16px;
+    border-radius: 14px;
+  }
 }
 
 .desktop-header-actions {
@@ -2632,4 +2698,183 @@ input[type="date"].glass-input::-webkit-datetime-edit-year-field[aria-valuetext]
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ============================================
+   页面使用教程遮罩（TutorialOverlay）
+   ============================================ */
+
+.tutorial-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 30, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.tutorial-card {
+  width: min(440px, 100%);
+  background: rgba(250, 250, 253, 0.94);
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 22px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  padding: 20px 22px 18px;
+}
+
+.tutorial-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tutorial-card-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--accent, #007aff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tutorial-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+}
+
+.tutorial-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.18s;
+}
+
+.tutorial-close:hover { background: rgba(0, 0, 0, 0.09); }
+
+.tutorial-step {
+  min-height: 88px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(0, 122, 255, 0.05);
+  border: 1px solid rgba(0, 122, 255, 0.08);
+}
+
+.tutorial-step-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.tutorial-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent, #007aff);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tutorial-step-desc {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.tutorial-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.tutorial-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.tutorial-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.15);
+  transition: all 0.25s var(--ease-smooth);
+}
+
+.tutorial-dot.active {
+  width: 18px;
+  background: var(--accent, #007aff);
+}
+
+.tutorial-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.tutorial-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s;
+}
+
+.tutorial-btn.ghost {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-secondary);
+}
+
+.tutorial-btn.ghost:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tutorial-btn.primary {
+  background: var(--accent, #007aff);
+  color: #fff;
+}
+
+.tutorial-btn.primary:hover { filter: brightness(1.06); }
+
+@media (max-width: 768px) {
+  .tutorial-card { padding: 16px 16px 14px; border-radius: 18px; }
+  .tutorial-step { min-height: 72px; }
 }

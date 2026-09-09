@@ -8,6 +8,12 @@
 export const STORAGE_KEYS = {
   TOKEN: 'scms_token',
   USER: 'scms_user',
+  /** 记住账号：存上次登录成功的用户名 */
+  REMEMBER_USER: 'scms_remember_user',
+  /** 页面使用教程已看标记前缀（后接 `路径|tab`） */
+  TUTORIAL_SEEN_PREFIX: 'scms_tutorial_seen:',
+  /** 发布竞赛表单草稿（仅创建模式） */
+  COMPETITION_DRAFT: 'scms_draft_competition',
 } as const
 
 // ===== 分页配置 =====

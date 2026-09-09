@@ -1,5 +1,5 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react'
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminCompetitions from './pages/AdminCompetitions'
@@ -24,15 +24,27 @@ import NotificationCenter from './pages/NotificationCenter'
 import ProfilePage from './pages/ProfilePage'
 import DesktopLayout from './components/DesktopLayout'
 import AuthGuard from './components/AuthGuard'
+import PageErrorBoundary from './components/PageErrorBoundary'
 import { ToastContainer } from './components/Toast'
 import { ConfirmContainer } from './components/ConfirmDialog'
 import { PromptContainer } from './components/PromptDialog'
 import { EditGradeContainer } from './components/EditGradeDialog'
 
 function DashboardLayout() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const homeByPrefix: [string, string][] = [
+    ['/admin', '/admin/dashboard'],
+    ['/teacher', '/teacher/dashboard'],
+    ['/student', '/student/dashboard'],
+  ]
+  const home = homeByPrefix.find(([p]) => location.pathname.startsWith(p))?.[1] ?? '/student/dashboard'
   return (
     <DesktopLayout>
-      <Outlet />
+      {/* key 换路由自动复位错误态；onBack 跳回本端概览 */}
+      <PageErrorBoundary key={location.pathname} onBack={() => navigate(home)}>
+        <Outlet />
+      </PageErrorBoundary>
     </DesktopLayout>
   )
 }
