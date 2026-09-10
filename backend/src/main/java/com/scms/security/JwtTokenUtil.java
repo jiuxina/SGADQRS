@@ -3,7 +3,6 @@ package com.scms.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -43,18 +42,8 @@ public class JwtTokenUtil {
         return getClaimsFromToken(token).getSubject();
     }
 
-    public Long getUserIdFromToken(String token) {
-        return getClaimsFromToken(token).get("userId", Long.class);
-    }
-
-    public String getRoleFromToken(String token) {
-        return getClaimsFromToken(token).get("role", String.class);
-    }
-
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = getUsernameFromToken(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
-    }
+    // 注：token 内的 userId/role 仅作签发记录；鉴权时身份与角色一律按 username 回查 DB（见 JwtAuthenticationFilter），
+    // 故不提供 getUserIdFromToken/getRoleFromToken 读取器，也不提供与 UserDetails 比对的 validateToken 重载——避免"看起来更强的校验却无人调用"的错觉。
 
     public boolean validateToken(String token) {
         try {
@@ -71,9 +60,5 @@ public class JwtTokenUtil {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    private boolean isTokenExpired(String token) {
-        return getClaimsFromToken(token).getExpiration().before(new Date());
     }
 }
