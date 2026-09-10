@@ -33,6 +33,7 @@ public class RecruitService {
         if (dto.getType() == null || (dto.getType() != 1 && dto.getType() != 2)) return Result.error("帖子类型无效");
         if (dto.getCompetitionId() == null) return Result.error("请选择竞赛");
         if (dto.getTitle() == null || dto.getTitle().isBlank()) return Result.error("请填写标题");
+        if (dto.getTitle().length() > 100) return Result.error("标题不能超过 100 字");
         if (dto.getContact() != null && dto.getContact().length() > 100) return Result.error("联系方式不能超过 100 字");
 
         Competition comp = competitionMapper.selectById(dto.getCompetitionId());
@@ -118,10 +119,18 @@ public class RecruitService {
         RecruitPost post = recruitPostMapper.selectById(id);
         if (post == null) return Result.error("帖子不存在");
         if (!meId.equals(post.getUserId())) return Result.error("只能编辑自己的帖子");
-        if (dto.getTitle() != null && !dto.getTitle().isBlank()) post.setTitle(dto.getTitle().trim());
+        // 已下架（满员/提交审核/手动关闭）的帖不可再编辑，防止对已冻结招募信息做暗改
+        if (post.getStatus() == null || post.getStatus() != 1) return Result.error("该帖已关闭，不能再编辑");
+        if (dto.getTitle() != null && !dto.getTitle().isBlank()) {
+            if (dto.getTitle().length() > 100) return Result.error("标题不能超过 100 字");
+            post.setTitle(dto.getTitle().trim());
+        }
         if (dto.getContent() != null) post.setContent(dto.getContent());
         if (dto.getTags() != null) post.setTags(dto.getTags());
-        if (dto.getContact() != null) post.setContact(dto.getContact().isBlank() ? null : dto.getContact().trim());
+        if (dto.getContact() != null) {
+            if (dto.getContact().length() > 100) return Result.error("联系方式不能超过 100 字");
+            post.setContact(dto.getContact().isBlank() ? null : dto.getContact().trim());
+        }
         if (dto.getDeadline() != null) post.setDeadline(dto.getDeadline());
         recruitPostMapper.updateById(post);
         return Result.success("更新成功", post);

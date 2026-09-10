@@ -84,6 +84,32 @@ public class GlobalExceptionHandler {
         return Result.error(413, "文件超过上传大小限制");
     }
 
+    /**
+     * 唯一键冲突（并发双击报名/注册等"查后插"窗口的 DB 兜底）：应用层预检拦不住的竞态
+     * 原本落兜底 500，这里映射为结构化 400，客户端可安全提示重试。DuplicateKey 优先于父类匹配。
+     */
+    @ExceptionHandler(org.springframework.dao.DuplicateKeyException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleDuplicateKey(org.springframework.dao.DuplicateKeyException ex) {
+        log.warn("唯一键冲突: {}", ex.getMostSpecificCause().getMessage());
+        return Result.error(400, "内容已被提交（并发重复操作），请刷新后确认");
+    }
+
+    /** 数据完整性错误（漏网的超长/非法值撞 DB 约束）：同样从兜底 500 收敛为 400 */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
+        log.warn("数据完整性错误: {}", ex.getMostSpecificCause().getMessage());
+        return Result.error(400, "提交内容不合法（字段过长或数据不完整），请检查后重试");
+    }
+
+    /** 时间字符串解析失败（未走 Jackson 包装的旁路，如纯日期 'yyyy-MM-dd'）：给 400 而非兜底 500 */
+    @ExceptionHandler(java.time.format.DateTimeParseException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleDateTimeParse(java.time.format.DateTimeParseException ex) {
+        return Result.error(400, "时间格式不正确，请使用 yyyy-MM-dd HH:mm:ss");
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleException(Exception ex) {
