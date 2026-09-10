@@ -490,6 +490,19 @@ cd frontend && npm run build
 
 ## 更新日志
 
+### 2026-09-10 UI 实操复检 8 项缺陷修复（检查与修复记录见 docs/UI实操功能检查报告-2026-09-10.md）
+
+按当日纯浏览器实操复检报告逐项修复 F1–F8（后端行为变更均有 boundary 9b 回归断言锁死，boundary 263→268）：
+
+- **F1 学生顶栏搜索断链**：`StudentCompetitions.tsx` 补 `?search=` → 页内搜索框同步 effect（与 Admin/Teacher 竞赛页同构，D10 修复当时漏了学生页）。
+- **F2 统计趋势图渲染失真**：`AdminStats.tsx` 月份列容器无确定高度导致柱 `height:%` 与点 `bottom:%` 全部塌缩——补 `height:100% + justifyContent:flex-end`，柱/点与数据成比例（DOM 量测验证 12→51px、36→152px）。
+- **F3 邮箱/手机假字段**：`ProfilePage.tsx` 移除两字段（后端 sys_user 无列无 DTO，此前提交恒显示"更新成功"但值不持久）。未动数据库结构。
+- **F4 状态徽章口径矛盾**：`CompetitionService.autoUpdateStatus` 由"仅向上链式修正"改为**全时间双向派生**（未开赛→2、赛期中→3、已过结束→4），库存 status=3 未开赛的行不再显示"进行中"；徽章与筛选/统计三处口径一致。
+- **F5 获奖统计含未发布**：`StatsService` awardDistribution 查询补 `isPublished=1`（前端"获奖数"KPI 即该 Map 求和），与公开主页/成绩单口径统一。
+- **F6 演示公告不幂等**：`gen_demo_data.py` 清理段新增按标题精确删除本脚本两条全员公告（user_id=0 此前不在任何清理 JOIN 覆盖内，重跑一次累积 2 行）；重跑验证公告恒为 6 条（init 4 + demo 2）。
+- **F7 教程遮罩过度拦截**：`DesktopLayout.tsx` 自动弹教程收敛为**仅角色首页（概览）**首次一次；其余页面不再自动弹遮罩，顶栏「使用教程」按钮全页面保留。
+- **F8 冻结队换导师按钮后置守卫**：`StudentTeams.tsx`/`TeamDetail.tsx` 指导老师按钮按 `status∈{0,3}` 前置隐藏（与后端 changeTeacher 守卫同口径；解散按钮 0/1/3 为有意设计"待审核可撤回"，不变）。
+
 ### 2026-09-10 全功能检查 22 项缺陷修复（检查与修复计划见 docs/全功能检查报告-2026-09-10.md）
 
 按当日全栈检查报告（61 端点 × 26 页面全覆盖）逐项修复 D1–D22，行为变更如下（全部有 boundary 9b 回归断言锁死）：

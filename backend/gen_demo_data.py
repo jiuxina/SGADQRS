@@ -268,6 +268,8 @@ L = ['-- 由 backend/gen_demo_data.py 生成：演示数据（先清后插，可
      'SET NAMES utf8mb4;', '', '-- ===== 1. 清理上次演示数据 =====']
 L += [
     f'DELETE FROM sys_notification WHERE user_id IN {DUSER};',
+    # 本脚本生成的全员公告（user_id=0, ref_type=notice）按标题精确清理，重跑不累积；init.sql 的 4 条种子公告标题不同，不受影响
+    "DELETE FROM sys_notification WHERE user_id=0 AND type='announcement' AND title IN ('2026年秋季学期竞赛报名通道已开启','平台使用小贴士');",
     f'DELETE n FROM sys_notification n JOIN competition_team t ON n.ref_type=\'team\' AND n.ref_id=t.id WHERE t.id IN {DTEAM};',
     f'DELETE n FROM sys_notification n JOIN recruit_post p ON n.ref_type=\'recruit\' AND n.ref_id=p.id WHERE p.id IN {DPOST};',
     f'DELETE n FROM sys_notification n JOIN community_request r ON n.ref_type=\'request\' AND n.ref_id=r.id WHERE r.team_id IN {DTEAM} OR r.post_id IN {DPOST};',

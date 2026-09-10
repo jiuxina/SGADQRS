@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDebounce } from '../hooks/useDebounce'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   Search,
@@ -50,6 +50,13 @@ export default function StudentCompetitions() {
   const navigate = useNavigate()
   const [registeringComp, setRegisteringComp] = useState<CompetitionItem | null>(null)
   const isMobile = useIsMobile()
+  const [searchParams] = useSearchParams()
+
+  // 顶栏搜索跳转带来的 ?search= 同步到页内搜索框（与 Admin/Teacher 竞赛页同构）
+  useEffect(() => {
+    const q = searchParams.get('search')
+    if (q) setSearchQuery(q)
+  }, [searchParams])
 
   const fetchData = useCallback(async () => {
     const params: Record<string, unknown> = { current: pagination.current, size: pagination.pageSize, status: 2 }

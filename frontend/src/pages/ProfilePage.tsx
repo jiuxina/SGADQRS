@@ -18,8 +18,6 @@ export default function ProfilePage() {
     nickname: '',
     gender: 0,
     avatar: '',
-    email: '',
-    phone: '',
     bio: '',
     skills: '',
   })
@@ -65,8 +63,6 @@ export default function ProfilePage() {
           nickname: user.nickname || '',
           gender: user.gender || 0,
           avatar: user.avatar || '',
-          email: (user as unknown as Record<string, unknown>).email as string || '',
-          phone: (user as unknown as Record<string, unknown>).phone as string || '',
           bio: user.bio || '',
           skills: user.skills || '',
         })
@@ -86,8 +82,6 @@ export default function ProfilePage() {
         nickname: formData.nickname.trim(),
         gender: formData.gender,
         avatar: formData.avatar,
-        email: formData.email,
-        phone: formData.phone,
         bio: formData.bio,
         skills: formData.skills.trim(),
       })
@@ -304,33 +298,6 @@ export default function ProfilePage() {
               onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
               placeholder="例：C++,算法,数学建模"
               maxLength={255}
-              style={{ width: '100%', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-              邮箱（隐私，社区内不展示）
-            </label>
-            <input
-              className="glass-input"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="请输入邮箱（可选）"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-              手机号（隐私，社区内不展示）
-            </label>
-            <input
-              className="glass-input"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="请输入手机号（可选）"
               style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>

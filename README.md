@@ -14,6 +14,7 @@
 | [docs/课程设计报告.md](docs/课程设计报告.md) | 数据库课程设计方案报告 |
 | [docs/full-link-test-report/](docs/full-link-test-report/) | 全链路测试报告（API 断言 + UI 端到端 + 缺陷修复记录） |
 | [docs/全功能检查报告-2026-09-10.md](docs/全功能检查报告-2026-09-10.md) | 61 端点 × 26 页面全量功能完整性/操作容错检查报告 + D1–D22 缺陷修复结果 |
+| [docs/UI实操功能检查报告-2026-09-10.md](docs/UI实操功能检查报告-2026-09-10.md) | 纯浏览器实操复检：逐功能操作闭环/容错实测 + D1–D22 UI 侧复测 + 新发现 F1–F8 |
 | [docs/frontend-test-plan/](docs/frontend-test-plan/) | 前端验证计划与历史测试报告 |
 
 ---

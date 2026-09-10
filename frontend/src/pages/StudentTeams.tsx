@@ -415,13 +415,16 @@ export default function StudentTeams() {
                               {actingId === team.id ? '提交中...' : team.status === 3 ? '重新提交审核' : '提交审核'}
                             </button>
                           )}
-                          <button
-                            className="btn ghost"
-                            style={{ height: '26px', fontSize: '12px', padding: '0 10px' }}
-                            onClick={(e) => { e.stopPropagation(); openTeacherModal(team) }}
-                          >
-                            指导老师
-                          </button>
+                          {/* 后端 changeTeacher 仅允许 组建中(0)/已拒绝(3)，按钮同口径前置隐藏 */}
+                          {(team.status === 0 || team.status === 3) && (
+                            <button
+                              className="btn ghost"
+                              style={{ height: '26px', fontSize: '12px', padding: '0 10px' }}
+                              onClick={(e) => { e.stopPropagation(); openTeacherModal(team) }}
+                            >
+                              指导老师
+                            </button>
+                          )}
                           {(team.status === 0 || team.status === 1 || team.status === 3) && (
                             <button
                               className="btn ghost"

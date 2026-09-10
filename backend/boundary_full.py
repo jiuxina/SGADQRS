@@ -542,7 +542,7 @@ def main():
     expect_msg('POST', '/auth/login', '登录成功', body={'username': 'bnd_b', 'password': 'bndpass2'}, label='新密码可登录')
     expect_msg('POST', '/auth/login', '账号或密码错误', body={'username': 'bnd_b', 'password': 'bndpass1'}, label='旧密码失效')
 
-    # ---------- 9b. 2026-09-10 修复回归断言（D1/D3/D4/D5/D6/D7/D8/D9/D11/D12/D13/D15/D16/D21） ----------
+    # ---------- 9b. 2026-09-10 修复回归断言（D1/D3/D4/D5/D6/D7/D8/D9/D11/D12/D13/D15/D16/D21 + F4/F5 UI实操复检修复） ----------
     # D1 成绩写侧 publisher 守卫（CX 为 admin 发布的临时竞赛）
     expect_msg('POST', '/result', '只能操作自己发布竞赛的成绩', body={'competitionId': CX, 'studentId': IE, 'score': 77}, tok=T['teacher'], label='非发布教师录入他人竞赛成绩 → 拒(D1)')
     expect_msg('POST', f'/result/publish/{CX}', '只能操作自己发布竞赛的成绩', tok=T['teacher'], label='非发布教师发布他人竞赛成绩 → 拒(D1)')
@@ -581,6 +581,22 @@ def main():
     # D8 竞赛 status 域 + maxMembers 收缩
     expect_msg('PUT', '/competition', '状态值无效', body={'id': CX, 'status': 99}, tok=T['admin'], label='status=99 → 拒(D8)')
     expect_msg('PUT', '/competition', '每队人数上限不能小于现有队伍人数', body={'id': CJ, 'maxMembers': 2}, tok=T['admin'], label='maxMembers 收缩至低于现员 → 拒(D8)')
+    # F4 徽章全时间派生（双向）：库存 status 与时间窗矛盾时输出必须按时间修正，与筛选/统计口径一致
+    CF4a = (mkcomp({'competitionName': 'BND-F4未来进行中', 'status': 3}).get('data') or {}).get('id')
+    temp_comps.append(CF4a); ok(CF4a, 'F4a 建立(库存3但竞赛期在未来)')
+    st, j = call('GET', f'/competition/{CF4a}', T['admin'])
+    ok(code_of(j) == 200 and (j.get('data') or {}).get('status') == 2, 'status=3 未开赛 → 输出派生为2(向下修正)(F4)', (j.get('data') or {}).get('status'))
+    CF4b = (mkcomp({'competitionName': 'BND-F4已过未归档', 'status': 2,
+                    'registrationStart': _d(-20), 'registrationEnd': _d(-15),
+                    'competitionStart': _d(-10), 'competitionEnd': _d(-9)}).get('data') or {}).get('id')
+    temp_comps.append(CF4b); ok(CF4b, 'F4b 建立(库存2但已过结束时间)')
+    st, j = call('GET', f'/competition/{CF4b}', T['admin'])
+    ok(code_of(j) == 200 and (j.get('data') or {}).get('status') == 4, 'status=2 已过赛期 → 输出派生为4(向上修正)(F4)', (j.get('data') or {}).get('status'))
+    # F5 统计获奖口径仅计已发布成绩
+    st, j = call('GET', '/stats/admin', T['admin'])
+    ad_sum = sum(((j.get('data') or {}).get('awardDistribution') or {}).values())
+    db_pub = int(sqlq("select count(*) from scms.competition_result where is_published=1 and award_name is not null") or 0)
+    ok(code_of(j) == 200 and ad_sum == db_pub, f'awardDistribution 求和=已发布获奖行数 {db_pub}(未发布不计)(F5)', ad_sum)
     # D9 注册通道不再产教师
     expect_msg('POST', '/auth/register', '请联系管理员开通', body={'username': 'bnd_tt', 'password': 'bndpass1', 'role': 'teacher'}, label='注册 teacher → 拒(D9)')
     # D11 超长字段全部结构化拒绝（不再是 HTTP 500 兜底）

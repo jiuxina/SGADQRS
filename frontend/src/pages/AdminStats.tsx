@@ -124,7 +124,7 @@ export default function AdminStats() {
               {enrollmentTrends.map((trend, i) => {
                 const heightPct = maxTrendCount > 0 ? (trend.count / maxTrendCount) * 100 : 0
                 return (
-                  <div key={trend.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                  <div key={trend.month} style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', position: 'relative' }}>
                     {/* 数据点 */}
                     <div style={{ position: 'absolute', bottom: `${heightPct}%`, width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary, #6366f1)', border: '2px solid white', boxShadow: '0 1px 3px rgba(0,0,0,0.15)', zIndex: 1 }} />
                     {/* 连接线 */}

@@ -82,9 +82,12 @@ public class StatsService {
         // 参赛队伍统计
         stats.put("totalRegistrations", teamMapper.selectCount(null));
 
-        // 获奖分布（按awardName动态统计）
+        // 获奖分布（按awardName动态统计）：仅计已发布成绩——未发布成绩学生端不可见，
+        // 管理端 KPI「获奖数」若含未发布会与公开主页/成绩单口径矛盾（前端 KPI 即本 Map 求和）。
         List<CompetitionResult> allResults = resultMapper.selectList(
-                new LambdaQueryWrapper<CompetitionResult>().isNotNull(CompetitionResult::getAwardName)
+                new LambdaQueryWrapper<CompetitionResult>()
+                        .isNotNull(CompetitionResult::getAwardName)
+                        .eq(CompetitionResult::getIsPublished, 1)
         );
         Map<String, Long> awardDistribution = allResults.stream()
                 .collect(Collectors.groupingBy(CompetitionResult::getAwardName, LinkedHashMap::new, Collectors.counting()));

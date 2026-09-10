@@ -311,12 +311,14 @@ public class CompetitionService {
     private void autoUpdateStatus(Competition c) {
         if (c.getStatus() != null && c.getStatus() >= 2 && c.getStatus() <= 3) {
             LocalDateTime now = LocalDateTime.now();
-            // 顺序派生：已发布→进行中→已结束（链式判断，跨过结束时间的行直接落到已结束）
-            if (c.getStatus() == 2 && now.isAfter(c.getCompetitionStart())) {
-                c.setStatus(3);
-            }
-            if (c.getStatus() == 3 && now.isAfter(c.getCompetitionEnd())) {
+            // 完全按时间双向派生，与列表筛选/统计口径一致：未开赛=报名中(2)，已开赛未结束=进行中(3)，已过结束=已结束(4)。
+            // 必须向下修正：库存 status=3 的行在竞赛尚未开赛前仍处报名窗口，徽章若沿用库存值会与筛选结果矛盾。
+            if (c.getCompetitionEnd() != null && now.isAfter(c.getCompetitionEnd())) {
                 c.setStatus(4);
+            } else if (c.getCompetitionStart() != null && now.isAfter(c.getCompetitionStart())) {
+                c.setStatus(3);
+            } else {
+                c.setStatus(2);
             }
         }
     }

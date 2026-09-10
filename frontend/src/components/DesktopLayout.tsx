@@ -188,14 +188,16 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
     document.title = `${pageTitle}${unreadCount > 0 ? ` (${unreadCount})` : ''} · 赛友 TeamUp`
   }, [pageTitle, unreadCount])
 
-  /* 每个页面（按教程标题去重）首次访问自动播一次使用教程 */
+  /* 仅角色首页（概览）首次访问自动播一次使用教程；其余页面不再以遮罩拦截首次操作，
+     需要时经顶栏「使用教程」按钮手动打开（按钮在全部页面保留） */
   const tutorialSeenKey = `${STORAGE_KEYS.TUTORIAL_SEEN_PREFIX}${tutorial.title}`
+  const isRoleHome = location.pathname === `/${role}/dashboard`
   useEffect(() => {
-    if (!localStorage.getItem(tutorialSeenKey)) {
+    if (isRoleHome && !localStorage.getItem(tutorialSeenKey)) {
       localStorage.setItem(tutorialSeenKey, '1')
       setTutorialOpen(true)
     }
-  }, [tutorialSeenKey])
+  }, [tutorialSeenKey, isRoleHome])
 
   const handleLogout = () => {
     logout()
