@@ -20,18 +20,26 @@ public class NotificationService {
 
     private final NotificationMapper notificationMapper;
 
-    /** 发送个人通知 */
+    /**
+     * 发送个人通知：尽力而为。通知是业务动作的附属品，其插入失败（超长/瞬时故障）不得回滚
+     * 已完成的审核/入队/发布等业务；失败记 error 日志便于排查。
+     */
     public void send(Long userId, String type, String title, String content, String refType, Long refId) {
-        Notification n = new Notification();
-        n.setUserId(userId);
-        n.setType(type);
-        n.setTitle(title);
-        n.setContent(content);
-        n.setRefType(refType);
-        n.setRefId(refId);
-        n.setIsRead(0);
-        n.setIsTop(0);
-        notificationMapper.insert(n);
+        try {
+            Notification n = new Notification();
+            n.setUserId(userId);
+            n.setType(type);
+            n.setTitle(title != null && title.length() > 100 ? title.substring(0, 100) : title);
+            n.setContent(content != null && content.length() > 500 ? content.substring(0, 500) : content);
+            n.setRefType(refType);
+            n.setRefId(refId);
+            n.setIsRead(0);
+            n.setIsTop(0);
+            notificationMapper.insert(n);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(NotificationService.class)
+                    .error("站内通知发送失败(userId={}, refType={}, refId={})", userId, refType, refId, e);
+        }
     }
 
     /** 我的收件箱（公告在 announcements 接口单独拉取） */

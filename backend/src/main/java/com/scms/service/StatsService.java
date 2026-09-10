@@ -51,21 +51,32 @@ public class StatsService {
         long disabledUsers = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getStatus, 0));
         stats.put("disabledUsers", disabledUsers);
 
-        // 竞赛统计
+        // 竞赛统计：口径与列表/详情一致按"时间派生"计数（库存 status 从不按时间落库，等值计数会长期偏错）
+        LocalDateTime now = LocalDateTime.now();
         long totalCompetitions = competitionMapper.selectCount(null);
-        long publishedCompetitions = competitionMapper.selectCount(new LambdaQueryWrapper<Competition>().eq(Competition::getStatus, 2));
-        long ongoingCompetitions = competitionMapper.selectCount(new LambdaQueryWrapper<Competition>().eq(Competition::getStatus, 3));
+        long publishedCompetitions = competitionMapper.selectCount(
+                new LambdaQueryWrapper<Competition>().in(Competition::getStatus, 2, 3)
+                        .ge(Competition::getCompetitionEnd, now));
+        long ongoingCompetitions = competitionMapper.selectCount(
+                new LambdaQueryWrapper<Competition>().in(Competition::getStatus, 2, 3)
+                        .lt(Competition::getCompetitionStart, now)
+                        .ge(Competition::getCompetitionEnd, now));
         stats.put("totalCompetitions", totalCompetitions);
         stats.put("publishedCompetitions", publishedCompetitions);
         stats.put("ongoingCompetitions", ongoingCompetitions);
 
-        // 竞赛状态分布（全量统计，用于仪表盘图表）
+        // 竞赛状态分布（派生态：报名中/进行中/已结束 按时间窗口归桶）
         Map<Integer, Long> competitionByStatus = new LinkedHashMap<>();
-        for (int s = 0; s <= 4; s++) {
-            if (s == 1) continue;
-            competitionByStatus.put(s, competitionMapper.selectCount(
-                    new LambdaQueryWrapper<Competition>().eq(Competition::getStatus, s)));
-        }
+        competitionByStatus.put(0, competitionMapper.selectCount(
+                new LambdaQueryWrapper<Competition>().eq(Competition::getStatus, 0)));
+        competitionByStatus.put(2, competitionMapper.selectCount(
+                new LambdaQueryWrapper<Competition>().in(Competition::getStatus, 2, 3)
+                        .ge(Competition::getCompetitionStart, now)));
+        competitionByStatus.put(3, ongoingCompetitions);
+        competitionByStatus.put(4, competitionMapper.selectCount(
+                new LambdaQueryWrapper<Competition>()
+                        .eq(Competition::getStatus, 4)
+                        .or(w -> w.in(Competition::getStatus, 2, 3).lt(Competition::getCompetitionEnd, now))));
         stats.put("competitionByStatus", competitionByStatus);
 
         // 参赛队伍统计
@@ -100,10 +111,10 @@ public class StatsService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime sevenDaysLater = now.plusDays(7);
 
-        // 报名即将截止（已发布状态，报名结束在7天内）
+        // 报名即将截止（对外有效竞赛（库存2/3），报名结束在7天内）
         List<Competition> regDeadlines = competitionMapper.selectList(
                 new LambdaQueryWrapper<Competition>()
-                        .eq(Competition::getStatus, 2)
+                        .in(Competition::getStatus, 2, 3)
                         .between(Competition::getRegistrationEnd, now, sevenDaysLater)
                         .orderByAsc(Competition::getRegistrationEnd)
         );
@@ -116,10 +127,11 @@ public class StatsService {
             result.add(item);
         }
 
-        // 竞赛即将结束（进行中状态，竞赛结束在7天内）
+        // 竞赛即将结束（进行中派生态：库存2/3且已开赛未结束，竞赛结束在7天内；库存3永不出现，等值查询会恒空）
         List<Competition> compDeadlines = competitionMapper.selectList(
                 new LambdaQueryWrapper<Competition>()
-                        .eq(Competition::getStatus, 3)
+                        .in(Competition::getStatus, 2, 3)
+                        .lt(Competition::getCompetitionStart, now)
                         .between(Competition::getCompetitionEnd, now, sevenDaysLater)
                         .orderByAsc(Competition::getCompetitionEnd)
         );
@@ -145,10 +157,10 @@ public class StatsService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime sevenDaysLater = now.plusDays(7);
 
-        // 竞赛即将开始（已发布状态，竞赛开始在7天内）
+        // 竞赛即将开始（对外有效竞赛（库存2/3），竞赛开始在7天内）
         List<Competition> upcomingStarts = competitionMapper.selectList(
                 new LambdaQueryWrapper<Competition>()
-                        .eq(Competition::getStatus, 2)
+                        .in(Competition::getStatus, 2, 3)
                         .between(Competition::getCompetitionStart, now, sevenDaysLater)
                         .orderByAsc(Competition::getCompetitionStart)
         );

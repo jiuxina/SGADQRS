@@ -57,6 +57,16 @@ public class ExportController {
         exportService.exportResults(response, competitionId, awardLevel, isPublished, publisherId);
     }
 
+    @Operation(summary = "导出用户列表（管理员）")
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void exportUsers(
+            @RequestParam(required = false) Integer userType,
+            @RequestParam(required = false) String keyword,
+            HttpServletResponse response) throws IOException {
+        exportService.exportUsers(response, userType, keyword);
+    }
+
     @Operation(summary = "导出学生成绩单")
     @GetMapping("/student-transcript")
     public void exportStudentTranscript(

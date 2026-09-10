@@ -68,8 +68,7 @@ public class ExportService {
             excelList.add(e);
         }
 
-        setResponseHeader(response, "竞赛列表");
-        EasyExcel.write(response.getOutputStream(), CompetitionExcel.class).sheet("竞赛列表").doWrite(excelList);
+        writeExcel(response, "竞赛列表", "竞赛列表", CompetitionExcel.class, excelList);
     }
 
     // ===== 团队导出 =====
@@ -102,8 +101,7 @@ public class ExportService {
             excelList.add(e);
         }
 
-        setResponseHeader(response, "团队列表");
-        EasyExcel.write(response.getOutputStream(), TeamExcel.class).sheet("团队列表").doWrite(excelList);
+        writeExcel(response, "团队列表", "团队列表", TeamExcel.class, excelList);
     }
 
     // ===== 成绩导出 =====
@@ -136,8 +134,7 @@ public class ExportService {
             excelList.add(e);
         }
 
-        setResponseHeader(response, "成绩列表");
-        EasyExcel.write(response.getOutputStream(), ResultExcel.class).sheet("成绩列表").doWrite(excelList);
+        writeExcel(response, "成绩列表", "成绩列表", ResultExcel.class, excelList);
     }
 
     // ===== 用户导出 =====
@@ -166,8 +163,7 @@ public class ExportService {
             excelList.add(e);
         }
 
-        setResponseHeader(response, "用户列表");
-        EasyExcel.write(response.getOutputStream(), UserExcel.class).sheet("用户列表").doWrite(excelList);
+        writeExcel(response, "用户列表", "用户列表", UserExcel.class, excelList);
     }
 
     // ===== 学生成绩单导出 =====
@@ -197,11 +193,24 @@ public class ExportService {
             excelList.add(e);
         }
 
-        setResponseHeader(response, "成绩单_" + studentName);
-        EasyExcel.write(response.getOutputStream(), ResultExcel.class).sheet("成绩单").doWrite(excelList);
+        writeExcel(response, "成绩单_" + studentName, "成绩单", ResultExcel.class, excelList);
     }
 
     // ===== 工具方法 =====
+
+    /**
+     * 先在内存中完成整个工作簿序列化，成功后才写响应流：
+     * 中途出错时无任何字节已提交给客户端，可正常返回错误信封，而不是半截损坏的 xlsx。
+     */
+    private <T> void writeExcel(HttpServletResponse response, String fileName, String sheetName,
+                                Class<T> clazz, List<T> rows) throws IOException {
+        java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+        EasyExcel.write(buf, clazz).sheet(sheetName).doWrite(rows);
+        setResponseHeader(response, fileName);
+        response.setContentLength(buf.size());
+        response.getOutputStream().write(buf.toByteArray());
+        response.getOutputStream().flush();
+    }
 
     private void setResponseHeader(HttpServletResponse response, String fileName) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
