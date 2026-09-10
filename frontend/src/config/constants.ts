@@ -3,6 +3,15 @@
  * 集中管理所有魔法数字和配置值
  */
 
+// ===== 路由 =====
+
+/** 各角色的落地首页：AuthGuard 越权回落与未知路径兜底共用，勿再各写一份 */
+export const ROLE_HOME: Record<string, string> = {
+  admin: '/admin/dashboard',
+  teacher: '/teacher/dashboard',
+  student: '/student/dashboard',
+}
+
 // ===== 存储键名 =====
 
 export const STORAGE_KEYS = {

@@ -308,7 +308,7 @@ export default function AdminUsers() {
       const result = await fileApi.upload(file)
       setEditForm((f) => ({ ...f, avatar: result.url }))
     } catch (e) {
-      console.error('更新用户状态失败:', e)
+      console.error('头像上传失败:', e)
       toast.error('头像上传失败')
     } finally {
       setUploading(false)
@@ -323,7 +323,7 @@ export default function AdminUsers() {
       await exportApi.users(params)
       toast.success('导出成功')
     } catch (e) {
-      console.error('删除用户失败:', e)
+      console.error('导出用户失败:', e)
       toast.error('导出失败')
     }
   }

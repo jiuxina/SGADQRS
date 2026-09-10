@@ -15,9 +15,6 @@ export const recruitApi = {
     keyword?: string
   }) => request.get<PageResult<RecruitPostItem>>('/recruit/list', { params }),
 
-  /** 我的帖子 */
-  mine: () => request.get<RecruitPostItem[]>('/recruit/mine'),
-
   /** 帖子详情 */
   detail: (id: number) => request.get<RecruitPostItem>(`/recruit/${id}`),
 

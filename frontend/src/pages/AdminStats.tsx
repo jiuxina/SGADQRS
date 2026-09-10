@@ -8,30 +8,19 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import type { EnrollmentTrend, CompetitionRanking } from '../api/types'
 import { toast } from '../components/toastUtils'
 
-function getDefaultStartDate(): string {
-  const d = new Date()
-  d.setMonth(d.getMonth() - 6)
-  return d.toISOString().slice(0, 10)
-}
-
-function getDefaultEndDate(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export default function AdminStats() {
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
-  const [startDate, setStartDate] = useState(getDefaultStartDate)
-  const [endDate, setEndDate] = useState(getDefaultEndDate)
   const isMobile = useIsMobile()
 
   const fetchStats = useCallback(() => {
     setLoading(true)
-    statsApi.admin({ startDate, endDate })
+    // 统计为全量实时口径；原先的日期范围参数后端不支持（静默失效），已移除避免误导
+    statsApi.admin()
       .then((data) => setStats(data as Record<string, unknown>))
       .catch((e) => { toast.error('加载统计数据失败'); console.error(e) })
       .finally(() => setLoading(false))
-  }, [startDate, endDate])
+  }, [])
 
   useEffect(() => { fetchStats() }, [fetchStats])
 
@@ -73,7 +62,7 @@ export default function AdminStats() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = `统计数据_${startDate}_${endDate}.csv`
+    link.download = `统计数据_${new Date().toISOString().slice(0, 10)}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -83,19 +72,9 @@ export default function AdminStats() {
 
   return (
     <>
-      {/* 日期筛选 + 导出 */}
+      {/* 导出 */}
       <motion.div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginBottom: '12px' }}
         variants={instant} initial="hidden" animate="visible">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>开始日期</label>
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-            style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', fontSize: '13px', color: 'var(--text-primary)' }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>结束日期</label>
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-            style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', fontSize: '13px', color: 'var(--text-primary)' }} />
-        </div>
         <div style={{ flex: 1 }} />
         <button onClick={handleExport}
           style={{ padding: '7px 16px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--primary, #6366f1)', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>

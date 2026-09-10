@@ -9,10 +9,7 @@ export const userApi = {
   /** 用户统计 */
   stats: () => request.get<UserStats>('/user/stats'),
 
-  /** 用户详情 */
-  getById: (id: number) => request.get<UserItem>(`/user/${id}`),
-
-  /** 社区公开资料（未解锁仅脱敏卡） */
+  /** 社区公开资料（组队 2.0 起资料全开放） */
   publicProfile: (id: number) => request.get<PublicProfile>(`/user/public/${id}`),
 
   /** 本人更新社区资料 */

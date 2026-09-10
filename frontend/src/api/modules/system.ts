@@ -11,7 +11,7 @@ export const noticeApi = {
 }
 
 export const statsApi = {
-  admin: (params?: { startDate?: string; endDate?: string }) => request.get('/stats/admin', { params }),
+  admin: () => request.get('/stats/admin'),
   upcoming: () => request.get('/stats/upcoming'),
 }
 

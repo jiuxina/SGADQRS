@@ -1,5 +1,7 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react'
 import { Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useAuthStore } from './store/authStore'
+import { ROLE_HOME } from './config/constants'
 import LoginPage from './pages/LoginPage'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminCompetitions from './pages/AdminCompetitions'
@@ -89,6 +91,13 @@ class GlobalErrorBoundary extends Component<{ children: ReactNode }, { hasError:
   }
 }
 
+/** 未知路径兜底：未登录去登录页；已登录回落本角色首页，不再把带有效会话的用户弹回登录页 */
+function FallbackRoute() {
+  const { isAuthenticated, user } = useAuthStore()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <Navigate to={user && ROLE_HOME[user.role] ? ROLE_HOME[user.role] : '/login'} replace />
+}
+
 function App() {
   return (
     <GlobalErrorBoundary>
@@ -133,7 +142,7 @@ function App() {
           <Route path="/student/notifications" element={<AuthGuard allowedRoles={['student']}><NotificationCenter /></AuthGuard>} />
           <Route path="/student/u/:id" element={<AuthGuard allowedRoles={['student', 'teacher', 'admin']}><UserProfilePage /></AuthGuard>} />
         </Route>
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<FallbackRoute />} />
       </Routes>
 
       {/* Global overlays */}
