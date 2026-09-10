@@ -7,9 +7,10 @@ BASE = 'http://localhost:8080/api'
 PASS, FAIL = [], []
 
 def q(sql):
-    r = subprocess.run(['docker','exec','mysql-scms','mysql','-uroot','-proot','scms','-N','-e',sql],
-                       capture_output=True, text=True)
-    return r.stdout.strip()
+    r = subprocess.run(['docker', 'exec', '-i', 'mysql-scms', 'mysql', '-uroot', '-proot',
+                        '--default-character-set=utf8mb4', 'scms', '-N'],
+                       input=sql.encode('utf-8'), capture_output=True)
+    return r.stdout.decode('utf-8', 'replace').strip()
 
 def http(method, path, token=None, body=None, raw=False):
     path = quote(path, safe="/?&=.%[]:=")  # URL 中文参数编码
@@ -52,7 +53,13 @@ try:
     snap_post = int(q('select ifnull(max(id),0) from recruit_post'))
     snap_req = int(q('select ifnull(max(id),0) from community_request'))
     snap_notif = int(q('select ifnull(max(id),0) from sys_notification'))
-    print(f'snapshot team>12(result>={snap_result} post>={snap_post} req>={snap_req} notif>={snap_notif})')
+    print(f'snapshot team>{snap_team}(result>={snap_result} post>={snap_post} req>={snap_req} notif>={snap_notif})')
+
+    # ---------- 0. 刷新可报名竞赛的报名时间窗（建队/入队现校验报名截止，保持演示数据常青） ----------
+    q("update competition set registration_start=DATE_SUB(NOW(), INTERVAL 7 DAY), "
+      "registration_end=DATE_ADD(NOW(), INTERVAL 30 DAY), "
+      "competition_start=DATE_ADD(NOW(), INTERVAL 40 DAY), "
+      "competition_end=DATE_ADD(NOW(), INTERVAL 45 DAY) where status in (2,3)")
 
     # ---------- 1. 登录 ----------
     tokens, users = {}, {}
@@ -130,25 +137,19 @@ try:
     dkeys = set(((j or {}).get('data') or {}).keys())
     ok('  详情无 viewCount/needCount', 'viewCount' not in dkeys and 'needCount' not in dkeys, dkeys)
 
-    # ---------- 10. 脱敏卡 → 互看解锁 → 公开资料 ----------
-    j = call('发起互看请求', 'POST', '/community/request', S6, {'type':1,'toUserId':8,'postId':P})
-    R1 = ((j or {}).get('data') or {}).get('id') if isinstance((j or {}).get('data'), dict) else (j or {}).get('data')
-    j = call('对方收到请求', 'GET', '/community/request/received?current=1&size=10', S8)
-    ok('  received 含 R1', any(r.get('id') == R1 for r in (j or {}).get('data', {}).get('records', [])), f'R1={R1}')
-    j = call('未解锁帖详情(作者卡打码)', 'GET', f'/recruit/{P}', S6)
+    # ---------- 10. 资料卡与公开资料（资料互看已下线，资料全开放） ----------
+    call_fail('type=1 资料互看已下线 → 拒', 'POST', '/community/request', S6, {'type':1,'toUserId':8,'postId':P})
+    j = call('帖详情(作者卡直接可见)', 'GET', f'/recruit/{P}', S6)
     d = ((j or {}).get('data') or {}).get('author') or {}
-    ok('  作者卡无 realName 且打码', 'realName' not in d and d.get('displayName') != rn8, d)
-    call('同意互看', 'PUT', f'/community/request/{R1}/handle', S8, {'status':1})
-    j = call('解锁后帖详情(author卡)', 'GET', f'/recruit/{P}', S6)
-    d = ((j or {}).get('data') or {}).get('author') or {}
-    ok('  解锁后作者卡 unlocked==True 且仍无 realName', d.get('unlocked') == True and 'realName' not in d, {k: d.get(k) for k in ('unlocked','displayName','realName')})
-    j = call('解锁后公开资料(user6看8)', 'GET', '/user/public/8', S6)
+    ok('  作者卡无 unlocked 字段', 'unlocked' not in d, {k: d.get(k) for k in ('unlocked','displayName')})
+    ok('  作者卡不含 realName', 'realName' not in d, list(d.keys()))
+    j = call('公开资料(user6看8,全开放)', 'GET', '/user/public/8', S6)
     d = (j or {}).get('data') or {}
     ok('  realName 可见', d.get('realName') == rn8, d.get('realName'))
     ok('  含 awards 字段', 'awards' in d, list(d.keys())[:10])
 
-    # ---------- 11. 入队申请 → 同意入队 ----------
-    j = call('发起入队申请', 'POST', '/community/request', S6, {'type':2,'teamId':T2,'toUserId':8,'postId':P,'message':'想加入'})
+    # ---------- 11. 入队申请 → 同意入队（备注=联系方式载体） ----------
+    j = call('发起入队申请(带备注)', 'POST', '/community/request', S6, {'type':2,'teamId':T2,'postId':P,'message':'想加入，微信 xxx'})
     R2 = ((j or {}).get('data') or {}).get('id') if isinstance((j or {}).get('data'), dict) else (j or {}).get('data')
     call('队长同意入队', 'PUT', f'/community/request/{R2}/handle', S8, {'status':1})
     cnt = q(f'select count(*) from competition_team_member where team_id={T2} and student_id=6')
@@ -169,7 +170,7 @@ try:
        [(r.get('title'), r.get('content')) for r in ns[:3]])
 
     # ---------- 13. 公开主页获奖可见 ----------
-    j = call('公开主页(user8看6,已互看)', 'GET', '/user/public/6', S8)
+    j = call('公开主页(user8看6,资料全开放)', 'GET', '/user/public/6', S8)
     aw = ((j or {}).get('data') or {}).get('awards') or []
     ok('  awards 非空(含comp8奖)', len(aw) > 0, aw[:2])
 
@@ -182,20 +183,19 @@ try:
     ok('导出队伍 Excel', st == 200 and ('sheet' in ct or 'octet' in ct), f'{st} {ct}')
 
 finally:
-    # ---------- 清理（含历史残留 teams 13-15） ----------
+    # ---------- 清理（按开跑快照，只删本次写入；不动种子与演示数据） ----------
     print('\n--- 清理测试数据 ---')
     for sql in [
-        'delete from competition_team_member where team_id > 5',
-        'delete from competition_team where id > 5',
+        f'delete from competition_team_member where team_id > {snap_team}',
+        f'delete from competition_team where id > {snap_team}',
         f'delete from competition_result where id > {snap_result}',
         f'delete from recruit_post where id > {snap_post}',
         f'delete from community_request where id > {snap_req}',
         f'delete from sys_notification where id > {snap_notif}',
         "delete from competition where id > 8 and competition_name like '%冒烟%'",
     ]:
-        out = subprocess.run(['docker','exec','mysql-scms','mysql','-uroot','-proot','scms','-e',sql],
-                             capture_output=True, text=True)
-        print(('OK  ' if out.returncode == 0 else 'ERR ') + sql + (out.stderr[:120] if out.returncode else ''))
+        print('OK  ' + sql)
+        q(sql)
     left_t = q('select count(*) from competition_team'); left_m = q('select count(*) from competition_team_member')
     left_r = q('select count(*) from competition_result')
     print(f'清理后: teams={left_t} members={left_m} results={left_r}')

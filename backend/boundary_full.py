@@ -195,10 +195,13 @@ def main():
     st, j = call('GET', '/user/5', tok=T['stu'])
     ok('password' not in json.dumps(j), 'GET /user/{id} 响应不含 password 字段', list(((j.get("data") or {}) if isinstance(j, dict) else {}).keys())[:12])
 
-    # ---------- 4. 竞赛边界（临时竞赛上测） ----------
-    base_comp = {'competitionName': 'BND-主测试', 'organizer': 'BND', 'registrationStart': '2026-09-01 00:00:00',
-                 'registrationEnd': '2026-09-20 23:59:59', 'competitionStart': '2026-09-21 00:00:00', 'competitionEnd': '2026-09-22 00:00:00',
-                 'maxMembers': 3}
+    # ---------- 4. 竞赛边界（临时竞赛上测；报名时间窗动态生成，建队/入队会校验截止时间） ----------
+    from datetime import datetime, timedelta
+    def _d(days, sec='00:00:00'):
+        return (datetime.now() + timedelta(days=days)).strftime(f'%Y-%m-%d {sec}')
+    base_comp = {'competitionName': 'BND-主测试', 'organizer': 'BND',
+                 'registrationStart': _d(-1), 'registrationEnd': _d(30, '23:59:59'),
+                 'competitionStart': _d(40), 'competitionEnd': _d(41), 'maxMembers': 3}
     def mkcomp(over=None, tok=None):
         b = dict(base_comp)
         b.update(over or {})
@@ -212,12 +215,12 @@ def main():
     temp_comps = [c for c in [CX, CY, CZ, CD, CE] if c]
 
     expect_msg('POST', '/competition', '报名截止时间不能早于报名开始时间',
-               body={**base_comp, 'competitionName': 'BND-bad', 'registrationEnd': '2026-08-01 00:00:00'}, tok=T['admin'], label='报名 end<start 拒绝')
+               body={**base_comp, 'competitionName': 'BND-bad', 'registrationEnd': _d(-2)}, tok=T['admin'], label='报名 end<start 拒绝')
     expect_msg('POST', '/competition', '比赛开始时间不能早于报名截止时间',
-               body={**base_comp, 'competitionName': 'BND-bad', 'competitionStart': '2026-06-01 00:00:00', 'competitionEnd': '2026-06-02 00:00:00'},
+               body={**base_comp, 'competitionName': 'BND-bad', 'competitionStart': _d(-5), 'competitionEnd': _d(-4)},
                tok=T['admin'], label='比赛 start<报名end 拒绝')
     expect_msg('POST', '/competition', '比赛结束时间不能早于比赛开始时间',
-               body={**base_comp, 'competitionName': 'BND-bad', 'competitionEnd': '2026-09-19 00:00:00'}, tok=T['admin'], label='比赛 end<start 拒绝')
+               body={**base_comp, 'competitionName': 'BND-bad', 'competitionEnd': _d(39)}, tok=T['admin'], label='比赛 end<start 拒绝')
     for mv, desc in [(0, 'max=0'), (-1, 'max=-1'), (100, 'max=100'), (99, 'max=99 通过边界')]:
         st, j = call('POST', '/competition', T['admin'], {**base_comp, 'competitionName': 'BND-bad', 'maxMembers': mv})
         if mv in (99,):
@@ -344,53 +347,42 @@ def main():
     st, j = call('GET', '/recruit/list?current=1&size=10&competitionId=' + str(CX), T['stu'])
     ok(any((r.get('id') == POST1_ID) for r in (j.get('data') or {}).get('records', [])), '招募帖出现在广场', msg_of(j))
 
-    # ---------- 7. 社区请求：互看 / 申请 / 邀请 与容量并发 ----------
+    # ---------- 7. 社区请求：申请 / 邀请 与容量并发（资料互看已下线，资料全开放） ----------
     expect_msg('POST', '/community/request', '请求类型无效', body={'type': 9, 'toUserId': IA}, tok=B, label='type=9 拒绝')
     expect_msg('POST', '/community/request', '请求类型无效', body={'toUserId': IA}, tok=B, label='type 缺失拒绝')
-    expect_msg('POST', '/community/request', '请指定对方', body={'type': 1}, tok=B, label='互看缺 toUserId')
-    expect_msg('POST', '/community/request', '不能对自己', body={'type': 1, 'toUserId': IB}, tok=B, label='对自己发起互看 → 拒')
-    expect_msg('POST', '/community/request', '对方不存在', body={'type': 1, 'toUserId': 999999}, tok=B, label='互看不存在用户 → 拒')
-    st, j = call('POST', '/community/request', B, {'type': 1, 'toUserId': IA, 'message': 'bnd'})
-    R_BA = (j.get('data') or {}).get('id'); ok(R_BA, 'B→A 互看请求创建', msg_of(j))
-    expect_msg('POST', '/community/request', '已发送过互看请求', body={'type': 1, 'toUserId': IA}, tok=B, label='重复互看请求 → 防重')
-    expect_msg('PUT', f'/community/request/{R_BA}/handle', '无效的处理结果', body={'status': 0}, tok=A, label='handle status=0 → 无效')
-    expect_msg('PUT', f'/community/request/{R_BA}/handle', '无权处理该请求', body={'status': 1}, tok=C, label='无关人处理 → 无权')
-    expect_msg('PUT', '/community/request/999999/handle', '请求不存在', body={'status': 1}, tok=A, label='处理不存在请求')
-    expect_msg('PUT', f'/community/request/{R_BA}/handle', '已同意互看', body={'status': 1}, tok=A, label='A 同意互看 B')
-    expect_msg('PUT', f'/community/request/{R_BA}/handle', '该请求已处理', body={'status': 2}, tok=A, label='重复处理 → 该请求已处理')
-    expect_msg('GET', f'/user/public/{IB}', '', tok=A, label='互看后 public profile 调用成功')
+    expect_msg('POST', '/community/request', '请求类型无效', body={'type': 1, 'toUserId': IA}, tok=B, label='type=1 资料互看已下线 → 拒')
     st, j = call('GET', f'/user/public/{IB}', A)
-    ok('realName' in json.dumps(j), '互看解锁后 public profile 含 realName', list((j.get('data') or {}).keys())[:10])
-    st, j = call('GET', f'/user/public/{IC}', A)
-    ok('realName' not in json.dumps(j), '未互看用户 public profile 不含 realName(脱敏)', msg_of(j))
-    # 入队申请链路 + 互看前置
-    expect_msg('POST', '/community/request', '请指定招募帖', body={'type': 2, 'toUserId': IA}, tok=D, label='申请缺 postId')
-    expect_msg('POST', '/community/request', '招募帖不存在或已关闭', body={'type': 2, 'postId': 999999, 'toUserId': IA}, tok=D, label='不存在帖子申请')
+    ok('realName' in json.dumps(j), 'public profile 全开放含 realName', list((j.get('data') or {}).keys())[:10])
+    expect_msg('PUT', '/community/request/999999/handle', '请求不存在', body={'status': 1}, tok=A, label='处理不存在请求')
+    # handle 守卫：用一条将被拒绝的申请
+    st, j = call('POST', '/community/request', B, {'type': 2, 'postId': POST1_ID, 'message': 'guard'})
+    RG = (j.get('data') or {}).get('id'); ok(RG, 'B 入队申请创建(handle 守卫用)', msg_of(j))
+    expect_msg('PUT', f'/community/request/{RG}/handle', '无效的处理结果', body={'status': 0}, tok=A, label='handle status=0 → 无效')
+    expect_msg('PUT', f'/community/request/{RG}/handle', '无权处理该请求', body={'status': 1}, tok=C, label='无关人处理 → 无权')
+    expect_msg('PUT', f'/community/request/{RG}/handle', '已拒绝', body={'status': 2}, tok=A, label='A 拒绝 B 申请(守卫用)')
+    expect_msg('PUT', f'/community/request/{RG}/handle', '该请求已处理', body={'status': 2}, tok=A, label='重复处理 → 该请求已处理')
+    # 入队申请链路
+    expect_msg('POST', '/community/request', '请指定招募帖', body={'type': 2}, tok=D, label='申请缺 postId')
+    expect_msg('POST', '/community/request', '招募帖不存在或已关闭', body={'type': 2, 'postId': 999999}, tok=D, label='不存在帖子申请')
     st, j = call('GET', f'/recruit/{POST1_ID}', B)
     ok(code_of(j) == 200, '非作者可读帖子详情', code_of(j))
-    expect_msg('POST', '/community/request', '该帖子是招募帖，不能申请加入' if False else '请先与对方互看资料',
-               body={'type': 2, 'postId': POST1_ID, 'toUserId': IA, 'message': 'hi'}, tok=D, label='未互看直接申请入队 → 先互看')
     # 求组帖不能申请
     st, j = call('GET', '/recruit/list?current=1&size=20&competitionId=' + str(CX), A)
     bqz = next((r['id'] for r in (j.get('data') or {}).get('records', []) if r.get('type') == 2), None)
     if bqz:
-        expect_msg('POST', '/community/request', '求组帖', body={'type': 2, 'postId': bqz, 'toUserId': IB}, tok=C, label='申请加入求组帖 → 拒')
+        expect_msg('POST', '/community/request', '求组帖', body={'type': 2, 'postId': bqz}, tok=C, label='申请加入求组帖 → 拒')
     # 自己队申请
-    expect_msg('POST', '/community/request', '自己的队伍', body={'type': 2, 'postId': POST1_ID, 'toUserId': IA}, tok=A, label='申请加入自己的队伍 → 拒')
-    # B 已互看 A → B 申请入 TX(1/3→2/3)
-    st, j = call('POST', '/community/request', B, {'type': 2, 'postId': POST1_ID, 'toUserId': IA, 'message': 'b'})
-    RB2 = (j.get('data') or {}).get('id'); ok(RB2, 'B 入队申请创建', msg_of(j))
+    expect_msg('POST', '/community/request', '自己的队伍', body={'type': 2, 'postId': POST1_ID}, tok=A, label='申请加入自己的队伍 → 拒')
+    # B 申请入 TX(1/3→2/3)：无需先互看，直接申请
+    st, j = call('POST', '/community/request', B, {'type': 2, 'postId': POST1_ID, 'message': 'b'})
+    RB2 = (j.get('data') or {}).get('id'); ok(RB2, 'B 入队申请创建(直接申请成功)', msg_of(j))
     expect_msg('PUT', f'/community/request/{RB2}/handle', '已同意加入', body={'status': 1}, tok=A, label='同意 B 入队 TX(2/3)')
     # 重复入队守卫
-    expect_msg('POST', '/community/request', '你已在队伍中', body={'type': 2, 'postId': POST1_ID, 'toUserId': IA}, tok=B, label='已在队再申请 → 你已在队伍中')
-    # C、D 与 A 互看
-    for u in [C, D]:
-        st, j = call('POST', '/community/request', u, {'type': 1, 'toUserId': IA})
-        rid = (j.get('data') or {}).get('id'); call('PUT', f'/community/request/{rid}/handle', A, {'status': 1})
+    expect_msg('POST', '/community/request', '你已在队伍中', body={'type': 2, 'postId': POST1_ID}, tok=B, label='已在队再申请 → 你已在队伍中')
     # 容量并发：TX=2/3 仅剩 1 席，C/D 同时被处理，恰好 1 人成功
-    st, j1 = call('POST', '/community/request', C, {'type': 2, 'postId': POST1_ID, 'toUserId': IA, 'message': 'c'})
+    st, j1 = call('POST', '/community/request', C, {'type': 2, 'postId': POST1_ID, 'message': 'c'})
     RC = (j1.get('data') or {}).get('id'); ok(RC, 'C 入队申请创建', msg_of(j1))
-    st, j2 = call('POST', '/community/request', D, {'type': 2, 'postId': POST1_ID, 'toUserId': IA, 'message': 'd'})
+    st, j2 = call('POST', '/community/request', D, {'type': 2, 'postId': POST1_ID, 'message': 'd'})
     RD = (j2.get('data') or {}).get('id'); ok(RD, 'D 入队申请创建', msg_of(j2))
     res = {}
     def handle(rid, key):
@@ -417,20 +409,13 @@ def main():
     st, j = call('GET', f'/recruit/{POST1_ID}', A)
     ok((j.get('data') or {}).get('status') == 0, '满员后关联招募帖自动下架(closePostIfFull)', (j.get('data') or {}).get('status'))
     # 满员+帖关后再来申请者 → 已关闭守卫
-    st, j = call('POST', '/community/request', E, {'type': 1, 'toUserId': IA})
-    rE = (j.get('data') or {}).get('id'); call('PUT', f'/community/request/{rE}/handle', A, {'status': 1})
-    expect_msg('POST', '/community/request', '已关闭', body={'type': 2, 'postId': POST1_ID, 'toUserId': IA, 'message': 'e'}, tok=E, label='满员下架后申请 → 招募帖不存在或已关闭')
+    expect_msg('POST', '/community/request', '已关闭', body={'type': 2, 'postId': POST1_ID, 'message': 'e'}, tok=E, label='满员下架后申请 → 招募帖不存在或已关闭')
     # 邀请
     st, j = call('POST', '/recruit', E, {'type': 2, 'competitionId': CY, 'title': 'BND-E求组', 'content': 'e'})
     PE = (j.get('data') or {}).get('id') if isinstance(j.get('data'), dict) else j.get('data')
     ok(PE, 'E 在 compY 发求组帖', msg_of(j))
-    st, j = call('POST', '/community/request', E, {'type': 1, 'toUserId': IC})
-    st, j = call('GET', '/community/request/received?current=1&size=20&type=1&status=0', C)
-    rid = next((r['id'] for r in (j.get('data') or {}).get('records', []) if r['fromUserId'] == IE), None)
-    if rid:
-        call('PUT', f'/community/request/{rid}/handle', C, {'status': 1})
-    expect_msg('POST', '/community/request', '只有队长可以', body={'type': 3, 'teamId': TT2, 'postId': PE, 'toUserId': ID}, tok=E, label='非队长邀请 → 拒')
-    expect_msg('POST', '/community/request', '队伍与该竞赛不匹配', body={'type': 3, 'teamId': TX, 'postId': PE, 'toUserId': IE}, tok=A, label='队伍与帖竞赛不匹配 → 拒')
+    expect_msg('POST', '/community/request', '只有队长可以', body={'type': 3, 'teamId': TT2, 'postId': PE}, tok=E, label='非队长邀请 → 拒')
+    expect_msg('POST', '/community/request', '队伍与该竞赛不匹配', body={'type': 3, 'teamId': TX, 'postId': PE}, tok=A, label='队伍与帖竞赛不匹配 → 拒')
     st, j = call('POST', '/community/request', C, {'type': 3, 'teamId': TT2, 'postId': PE, 'toUserId': IE, 'message': 'inv'})
     RINV = (j.get('data') or {}).get('id'); ok(RINV, 'C 向 E 发出入队邀请(受邀人=求组帖作者)', msg_of(j))
     expect_msg('PUT', f'/community/request/{RINV}/handle', '已接受邀请', body={'status': 1}, tok=E, label='E 接受邀请入队')
