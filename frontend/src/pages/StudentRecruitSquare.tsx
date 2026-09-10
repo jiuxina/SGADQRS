@@ -17,8 +17,8 @@ import { formatDate } from '../utils/format'
 import { staggerContainer, staggerItem, fadeSlideUp } from '../motion/variants'
 
 /**
- * 招募广场：按竞赛浏览组队招募/求组帖，脱敏展示发布者，
- * 点击进入详情后进行互看资料 → 申请/邀请入队。
+ * 招募广场：按竞赛浏览组队招募/求组帖（含发布者联系方式），
+ * 点击进入详情后直接申请/邀请入队，可附备注快速沟通。
  */
 export default function StudentRecruitSquare() {
   const navigate = useNavigate()

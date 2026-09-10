@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDebounce } from '../hooks/useDebounce'
 import { motion, AnimatePresence } from 'motion/react'
-import { Search, Plus, Download, Trash2, Ban } from 'lucide-react'
+import { Search, Plus, Download, Trash2, Ban, CheckCircle2 } from 'lucide-react'
 import { TableSkeleton, LoadingBar } from '../components/PageSkeleton'
 import DigitRoller from '../components/DigitRoller'
 import { fadeInList, fadeSlideUp } from '../motion/variants'
@@ -114,12 +114,27 @@ export default function AdminUsers() {
     const confirmed = await confirmDialog({ message: `确定要禁用选中的 ${ids.length} 个用户吗？`, variant: 'warning' })
     if (!confirmed) return
     try {
-      await userApi.batchDisable(ids)
+      await userApi.batchDisable(ids, 0)
       setSelectedIds(new Set())
       loadData()
       toast.success(`成功禁用 ${ids.length} 个用户`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '批量禁用失败')
+    }
+  }
+
+  const handleBatchEnable = async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    const confirmed = await confirmDialog({ message: `确定要启用选中的 ${ids.length} 个用户吗？`, variant: 'info' })
+    if (!confirmed) return
+    try {
+      await userApi.batchDisable(ids, 1)
+      setSelectedIds(new Set())
+      loadData()
+      toast.success(`成功启用 ${ids.length} 个用户`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '批量启用失败')
     }
   }
 
@@ -414,6 +429,13 @@ export default function AdminUsers() {
                   onClick={handleBatchDisable}
                 >
                   <Ban size={12} strokeWidth={1.5} /> 批量禁用
+                </button>
+                <button
+                  className="text-btn"
+                  style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)' }}
+                  onClick={handleBatchEnable}
+                >
+                  <CheckCircle2 size={12} strokeWidth={1.5} /> 批量启用
                 </button>
                 <button
                   className="text-btn red"

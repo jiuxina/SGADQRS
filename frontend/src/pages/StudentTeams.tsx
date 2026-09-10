@@ -12,7 +12,6 @@ import {
   Handshake,
   Inbox,
   Send,
-  Unlock,
 } from 'lucide-react'
 import ListMeta from '../components/ListMeta'
 import EmptyState from '../components/EmptyState'
@@ -53,7 +52,6 @@ const teamStatusClass: Record<number, string> = {
 }
 
 const reqTypeLabel: Record<number, string> = {
-  1: '互看资料',
   2: '入队申请',
   3: '入队邀请',
 }
@@ -70,13 +68,13 @@ const reqStatusClass: Record<number, string> = {
   2: 'fail',
 }
 
-type TabKey = 'teams' | 'received2' | 'received3' | 'unlock' | 'sent'
+type TabKey = 'teams' | 'received2' | 'received3' | 'sent'
 
 export default function StudentTeams() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const [urlTab, setPageTab] = usePageTab(PAGE_TABS)
-  // URL 带 ?tab=received2/received3/unlock/sent 时直达内层请求标签(供消息中心/铃铛跳转)
+  // URL 带 ?tab=received2/received3/sent 时直达内层请求标签(供消息中心/铃铛跳转)
   const pageTab = isTeamInnerTab(urlTab) ? 'teams' : urlTab
   const [tab, setTab] = useState<TabKey>(() => (isTeamInnerTab(urlTab) ? (urlTab as TabKey) : 'teams'))
   // 站内导航(组件不重新挂载)时同步 URL → 内层标签
@@ -118,8 +116,12 @@ export default function StudentTeams() {
 
   const isMobile = useIsMobile()
 
-  // 创建接口只接受 已发布(2)/进行中(3) 的竞赛，下拉只列可报名项，避免选到已结束/待审核的竞赛必然报错
-  const joinableComps = competitions.filter((c) => c.status === 2 || c.status === 3)
+  // 创建接口只接受 已发布(2)/进行中(3) 且未过报名截止的竞赛，下拉只列可报名项，避免选到必然报错
+  const joinableComps = competitions.filter((c) => {
+    if (c.status !== 2 && c.status !== 3) return false
+    if (c.registrationEnd && new Date(c.registrationEnd) < new Date()) return false
+    return true
+  })
 
   const loadTeams = useCallback(async () => {
     setLoading(true)
@@ -137,7 +139,7 @@ export default function StudentTeams() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.current, pagination.pageSize])
 
-  const reqType = tab === 'received2' ? 2 : tab === 'received3' ? 3 : tab === 'unlock' ? 1 : undefined
+  const reqType = tab === 'received2' ? 2 : tab === 'received3' ? 3 : undefined
   const reqBox: 'received' | 'sent' = tab === 'sent' ? 'sent' : 'received'
 
   const loadRequests = useCallback(async () => {
@@ -290,7 +292,6 @@ export default function StudentTeams() {
     { key: 'teams', label: '我的队伍', icon: Users },
     { key: 'received2', label: '收到的申请', icon: Inbox },
     { key: 'received3', label: '收到的邀请', icon: Handshake },
-    { key: 'unlock', label: '互看请求', icon: Unlock },
     { key: 'sent', label: '我发出的', icon: Send },
   ]
 
@@ -645,6 +646,7 @@ export default function StudentTeams() {
                           padding: '10px 12px', borderRadius: '12px', background: 'rgba(0,122,255,0.05)',
                           lineHeight: 1.6,
                         }}>
+                          <span style={{ fontWeight: '600', color: 'var(--text-tertiary)' }}>备注：</span>
                           “{req.message}”
                         </div>
                       )}
@@ -692,9 +694,7 @@ export default function StudentTeams() {
 
           {requests.length === 0 && !reqLoading && (
             <EmptyState icon={Inbox} text={
-              tab === 'unlock' ? '暂无互看请求，去招募广场认识新队友吧'
-                : tab === 'sent' ? '还没有发出过请求'
-                  : '暂无待处理请求'
+              tab === 'sent' ? '还没有发出过请求' : '暂无待处理请求'
             } />
           )}
         </>

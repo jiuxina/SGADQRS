@@ -94,6 +94,8 @@ export default function TeacherCompetitionCreate() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const isMobile = useIsMobile()
   const hasUnsavedChanges = useRef(false)
+  // 编辑模式记录竞赛原状态：发布时草稿(0)/历史遗留审核中(1)提升为已发布(2)，进行中(3)/已结束(4)保持不变
+  const originalStatusRef = useRef<number>(2)
 
   // 恢复草稿提示
   useEffect(() => {
@@ -141,6 +143,7 @@ export default function TeacherCompetitionCreate() {
           location: comp.location ?? '',
           maxMembers: String(comp.maxMembers ?? 5),
         })
+        originalStatusRef.current = comp.status ?? 2
         if (comp.awards) setAwards(comp.awards)
         if (comp.coverImage) setCoverImage(comp.coverImage)
         if (comp.attachments) setAttachments(comp.attachments)
@@ -269,6 +272,11 @@ export default function TeacherCompetitionCreate() {
     if (!validate()) return
     setSubmitting(true)
     try {
+      // Lean 版无竞赛审核环节：创建/发布直接进入「已发布(2)」；
+      // 编辑时草稿(0)与历史遗留审核中(1)治愈为 2，进行中(3)/已结束(4)保持原状态避免回退
+      const nextStatus = isEdit
+        ? (originalStatusRef.current === 0 || originalStatusRef.current === 1 ? 2 : originalStatusRef.current)
+        : 2
       const payload = {
         ...(isEdit ? { id: editId } : {}),
         competitionName: form.name,
@@ -284,7 +292,7 @@ export default function TeacherCompetitionCreate() {
         maxMembers: Number(form.maxMembers) || 1,
         awards: awards.length > 0 ? JSON.stringify(awards) : undefined,
         attachments: attachments.length > 0 ? JSON.stringify(attachments) : undefined,
-        status: 1,
+        status: nextStatus,
       }
       if (isEdit) {
         await competitionApi.update(payload)
@@ -293,9 +301,10 @@ export default function TeacherCompetitionCreate() {
       }
       hasUnsavedChanges.current = false
       if (!isEdit) localStorage.removeItem(STORAGE_KEYS.COMPETITION_DRAFT)
+      toast.success(isEdit ? '保存成功' : '发布成功，学生现在可以报名了')
       navigate(-1)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '提交失败')
+      toast.error(err instanceof Error ? err.message : '发布失败')
     } finally {
       setSubmitting(false)
     }
@@ -322,7 +331,7 @@ export default function TeacherCompetitionCreate() {
             {isEdit ? '编辑竞赛' : '发布新竞赛'}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-            {isEdit ? '修改竞赛信息并保存' : '填写竞赛信息并提交审核'}
+            {isEdit ? '修改竞赛信息并保存' : '填写竞赛信息，发布后学生即可报名'}
           </div>
         </div>
       </motion.div>
@@ -590,7 +599,11 @@ export default function TeacherCompetitionCreate() {
               保存草稿
             </button>
             <button className="btn filled-primary" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? '提交中...' : '提交审核'}
+              {submitting
+                ? '提交中...'
+                : isEdit
+                  ? (originalStatusRef.current === 0 || originalStatusRef.current === 1 ? '保存并发布' : '保存修改')
+                  : '发布竞赛'}
             </button>
           </div>
         </motion.div>

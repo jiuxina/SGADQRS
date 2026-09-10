@@ -253,7 +253,7 @@ export default function ProfilePage() {
         <div style={{ display: 'grid', gap: '12px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-              真实姓名（仅互看解锁后对队友可见）
+              真实姓名
             </label>
             <input
               className="glass-input"

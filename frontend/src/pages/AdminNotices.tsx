@@ -5,6 +5,7 @@ import StarterKit from '@tiptap/starter-kit'
 import LinkExtension from '@tiptap/extension-link'
 import { Plus, Pencil, Send, RotateCcw, Trash2, Pin, X, Link, Search } from 'lucide-react'
 import ListMeta from '../components/ListMeta'
+import { formatDateTime } from '../utils/format'
 import { fadeInList, fadeSlideUp, panelSlideIn } from '../motion/variants'
 import { noticeApi } from '../api'
 import type { NoticeItem } from '../api/types'
@@ -321,7 +322,7 @@ export default function AdminNotices() {
                       </span>
                     </td>
                     <td style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
-                      {notice.publishTime || '—'}
+                      {formatDateTime(notice.publishTime || notice.createTime)}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px' }}>

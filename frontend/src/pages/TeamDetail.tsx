@@ -22,14 +22,14 @@ import { getStatusBadge } from '../utils/statusBadge'
 import { formatDate } from '../utils/format'
 import { getAvatarSrc } from '../components/UserCardMini'
 import { fadeSlideUp } from '../motion/variants'
-import type { TeamItem, CompetitionItem, UserItem } from '../api/types'
+import type { TeamItem, TeamMember, CompetitionItem, UserItem } from '../api/types'
 
 const hoverBg = 'rgba(0,122,255,0.06)'
 
 /**
  * 队伍详情子页（学生/教师/管理员共用）：
  * 展示队伍完整信息与成员名单，成员可点进个人主页；
- * 队长可在此提交审核、指定指导老师、解散队伍。
+ * 队长可在此提交审核、指定指导老师、移除成员、转让队长、解散队伍；普通成员可退队。
  */
 export default function TeamDetail() {
   const { id } = useParams<{ id: string }>()
@@ -103,6 +103,57 @@ export default function TeamDetail() {
       navigate(backPath)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '解散失败')
+    }
+  }
+
+  const handleLeave = async () => {
+    if (!team) return
+    const confirmed = await confirmDialog({
+      message: `确定要退出队伍「${team.teamName}」吗？退出后需重新申请才能加入。`,
+      variant: 'danger',
+      confirmText: '退出',
+    })
+    if (!confirmed) return
+    try {
+      await registrationApi.leaveTeam(team.id)
+      toast.success('已退出队伍')
+      navigate(backPath)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '退队失败')
+    }
+  }
+
+  const handleRemoveMember = async (m: TeamMember) => {
+    if (!team) return
+    const confirmed = await confirmDialog({
+      message: `确定要将「${m.studentName ?? `用户#${m.studentId}`}」移出队伍吗？`,
+      variant: 'danger',
+      confirmText: '移除',
+    })
+    if (!confirmed) return
+    try {
+      await registrationApi.removeMember(team.id, m.studentId)
+      toast.success('已移除该成员')
+      loadTeam()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '移除失败')
+    }
+  }
+
+  const handleTransferLeader = async (m: TeamMember) => {
+    if (!team) return
+    const name = m.studentName ?? `用户#${m.studentId}`
+    const confirmed = await confirmDialog({
+      message: `确定将队长转让给「${name}」吗？转让后你将成为普通成员。`,
+      confirmText: '转让',
+    })
+    if (!confirmed) return
+    try {
+      await registrationApi.transferLeader(team.id, m.studentId)
+      toast.success(`队长已转让给 ${name}`)
+      loadTeam()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '转让失败')
     }
   }
 
@@ -267,6 +318,13 @@ export default function TeamDetail() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {team.members.map((m) => {
               const name = m.studentName ?? m.studentUsername ?? `用户#${m.studentId}`
+              const isLeaderRow = m.studentId === team.leaderId
+              const isSelfRow = !!user && m.studentId === user.id
+              // 名单冻结规则：提交审核后(1/2)不可退队/移除；转让队长在已通过(2)后同样冻结
+              const rosterEditable = team.status === 0 || team.status === 3
+              const showRemove = isLeader && !isLeaderRow && rosterEditable
+              const showTransfer = isLeader && !isLeaderRow && team.status !== 2
+              const showLeave = !isLeader && isSelfRow && rosterEditable
               return (
                 <div
                   key={m.id}
@@ -287,16 +345,50 @@ export default function TeamDetail() {
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {m.studentId === team.leaderId && <Crown size={12} strokeWidth={1.5} style={{ color: '#f59e0b' }} />}
+                      {isLeaderRow && <Crown size={12} strokeWidth={1.5} style={{ color: '#f59e0b' }} />}
                       <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{name}</span>
-                      {m.studentId === team.leaderId && (
+                      {isLeaderRow && (
                         <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: '600' }}>队长</span>
+                      )}
+                      {isSelfRow && !isLeaderRow && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>（我）</span>
                       )}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
                       学号 {m.studentUsername ?? '-'}
                     </div>
                   </div>
+                  {(showRemove || showTransfer || showLeave) && (
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                      {showTransfer && (
+                        <button
+                          className="btn ghost"
+                          style={{ height: '24px', fontSize: '11px', padding: '0 8px' }}
+                          onClick={() => handleTransferLeader(m)}
+                        >
+                          转让队长
+                        </button>
+                      )}
+                      {showRemove && (
+                        <button
+                          className="btn ghost"
+                          style={{ height: '24px', fontSize: '11px', padding: '0 8px', color: 'var(--danger)' }}
+                          onClick={() => handleRemoveMember(m)}
+                        >
+                          移除
+                        </button>
+                      )}
+                      {showLeave && (
+                        <button
+                          className="btn ghost"
+                          style={{ height: '24px', fontSize: '11px', padding: '0 8px', color: 'var(--danger)' }}
+                          onClick={handleLeave}
+                        >
+                          退队
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', flexShrink: 0 }}>
                     {formatDate(m.joinTime)} 加入
                   </span>
