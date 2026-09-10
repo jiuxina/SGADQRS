@@ -36,11 +36,11 @@ export const userApi = {
   /** 重置密码 */
   resetPassword: (id: number) => request.put(`/user/reset-password/${id}`),
 
-  /** 批量删除用户 */
-  batchDelete: (ids: number[]) => request.post('/user/batch-delete', { ids }),
+  /** 批量删除用户（后端 @RequestBody List<Long>，需裸数组） */
+  batchDelete: (ids: number[]) => request.post('/user/batch-delete', ids),
 
-  /** 批量禁用用户 */
-  batchDisable: (ids: number[]) => request.post('/user/batch-disable', { ids }),
+  /** 批量禁用/启用用户（后端 BatchUserDTO 要求 status：0-禁用 1-启用） */
+  batchDisable: (ids: number[], status: number) => request.post('/user/batch-disable', { ids, status }),
 }
 
 export type { UserCard }

@@ -142,7 +142,7 @@ export interface TeamMember {
 
 // ===== 社区：资料卡 =====
 
-/** 脱敏资料卡（未解锁状态下的可见信息） */
+/** 资料卡（资料互看机制已下线，对所有登录用户开放） */
 export interface UserCard {
   id: number
   displayName: string
@@ -155,10 +155,9 @@ export interface UserCard {
   bioBrief: string | null
   userType: number
   role: string
-  unlocked: boolean
 }
 
-/** 公开资料（解锁后含完整信息与获奖记录） */
+/** 公开资料（含完整信息与获奖记录） */
 export interface PublicProfile extends UserCard {
   username?: string
   realName?: string
@@ -190,6 +189,8 @@ export interface RecruitPostItem {
   content: string | null
   teamId: number | null
   tags: string | null
+  /** 联系方式（微信/QQ/邮箱等，选填） */
+  contact: string | null
   deadline: string | null
   /** 1-招募中 0-已关闭 */
   status: number
@@ -205,14 +206,15 @@ export interface RecruitPostDTO {
   title: string
   content?: string
   tags?: string
+  contact?: string
   deadline?: string
 }
 
-// ===== 社区：请求（互看/申请/邀请） =====
+// ===== 社区：请求（申请/邀请） =====
 
 export interface CommunityRequestItem {
   id: number
-  /** 1-资料互看 2-入队申请 3-入队邀请 */
+  /** 2-入队申请 3-入队邀请（1-资料互看已下线） */
   type: number
   postId: number | null
   teamId: number | null

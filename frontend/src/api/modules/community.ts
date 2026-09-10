@@ -2,8 +2,8 @@ import { request } from '../request'
 import type { CommunityRequestItem, PageResult } from '../types'
 
 export const communityApi = {
-  /** 发起请求：1-资料互看 2-入队申请 3-入队邀请 */
-  createRequest: (data: { type: number; postId?: number; teamId?: number; toUserId?: number; message?: string }) =>
+  /** 发起请求：2-入队申请 3-入队邀请（可附备注/联系方式） */
+  createRequest: (data: { type: 2 | 3; postId?: number; teamId?: number; message?: string }) =>
     request.post<CommunityRequestItem>('/community/request', data),
 
   /** 处理请求：1-同意 2-拒绝 */

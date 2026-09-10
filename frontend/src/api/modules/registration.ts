@@ -19,6 +19,17 @@ export const registrationApi = {
   /** 解散队伍（队长本人，限组建中/待审核） */
   disbandTeam: (id: number) => request.delete(`/registration/team/${id}`),
 
+  /** 成员退队（本人操作，限组建中/已拒绝；队长须先转让或解散） */
+  leaveTeam: (id: number) => request.put(`/registration/team/${id}/leave`),
+
+  /** 队长移除成员（限组建中/已拒绝） */
+  removeMember: (id: number, studentId: number) =>
+    request.delete(`/registration/team/${id}/member/${studentId}`),
+
+  /** 队长转让（新队长须为在队成员；已通过审核的队伍不可转让） */
+  transferLeader: (id: number, studentId: number) =>
+    request.put(`/registration/team/${id}/leader/${studentId}`),
+
   /** 竞赛参赛者名单（已通过队伍的全部成员，供成绩录入） */
   participants: (competitionId: number) =>
     request.get<ParticipantRow[]>('/registration/participants', { params: { competitionId } }),
