@@ -3,7 +3,7 @@ import type { NotificationItem } from '../api/types'
 /** 通知跳转映射所需的字段 */
 export type NotificationRef = Pick<NotificationItem, 'refType' | 'refId' | 'title'>
 
-const INNER_TAB_KEYS = ['received2', 'received3', 'unlock', 'sent']
+const INNER_TAB_KEYS = ['received2', 'received3', 'sent']
 
 /** URL ?tab= 是否指向组队中心的内层请求标签 */
 export function isTeamInnerTab(tab: string | null): boolean {
@@ -15,7 +15,7 @@ export function isTeamInnerTab(tab: string | null): boolean {
  * 返回空字符串表示该消息没有对应落地页(如公告,内容已直接展示)。
  *
  * refType 语义(与后端 NotificationService 发送点一致):
- * - request: 社区互动请求(资料互看 / 入队申请 / 入队邀请),refId=请求ID
+ * - request: 社区互动请求(入队申请 / 入队邀请),refId=请求ID
  * - recruit: 招募帖,refId=帖子ID → 招募广场
  * - team:    队伍参赛审核结果,refId=队伍ID → 我的队伍
  * - user:    成绩已发布,refId=学生ID → 成绩单
@@ -26,10 +26,6 @@ export function notificationTarget(n: NotificationRef): string {
   switch (n.refType) {
     case 'request': {
       if (title.includes('已通过') || title.includes('已接受')) return '/student/teams'
-      if (title.includes('互看')) {
-        // 「收到资料互看请求」发给接收者→互看请求页;已同意/被拒绝发给发起者→我发出的
-        return title.includes('收到') ? '/student/teams?tab=unlock' : '/student/teams?tab=sent'
-      }
       if (title.includes('入队邀请')) {
         return title.includes('收到') ? '/student/teams?tab=received3' : '/student/teams?tab=sent'
       }

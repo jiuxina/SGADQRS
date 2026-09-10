@@ -13,6 +13,19 @@ export function formatDate(dateStr: string | null | undefined): string {
 }
 
 /**
+ * 日期时间格式化
+ * @param dateStr ISO 日期字符串
+ * @returns 格式化后的字符串 (YYYY-MM-DD HH:mm)，无效输入返回 '-'
+ */
+export function formatDateTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return '-'
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return `${formatDate(dateStr)} ${hm}`
+}
+
+/**
  * 解析封面图片 URL
  * @param url 原始 URL（可能是相对路径或绝对路径）
  * @returns 完整的图片 URL，无图片返回 null
