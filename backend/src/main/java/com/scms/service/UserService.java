@@ -11,9 +11,13 @@ import com.scms.dto.BatchUserDTO;
 import com.scms.dto.UserStatsDTO;
 import com.scms.entity.Competition;
 import com.scms.entity.CompetitionResult;
+import com.scms.entity.CompetitionTeam;
+import com.scms.entity.CompetitionTeamMember;
 import com.scms.entity.User;
 import com.scms.mapper.CompetitionMapper;
 import com.scms.mapper.CompetitionResultMapper;
+import com.scms.mapper.CompetitionTeamMapper;
+import com.scms.mapper.CompetitionTeamMemberMapper;
 import com.scms.mapper.UserMapper;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,10 +40,15 @@ public class UserService {
     private final CardService cardService;
     private final CompetitionResultMapper competitionResultMapper;
     private final CompetitionMapper competitionMapper;
+    private final CompetitionTeamMapper teamMapper;
+    private final CompetitionTeamMemberMapper teamMemberMapper;
 
-    public Result<?> listUsers(int current, int size, String keyword, Integer userType) {
+    /** 用户列表：仅管理员可全量检索；其他角色强制只返回教师行且裁剪为选导师所需字段（防止全校账号枚举） */
+    public Result<?> listUsers(int current, int size, String keyword, Integer userType, String roleCode) {
         Page<User> page = Pages.of(current, size);
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        boolean isAdmin = "admin".equals(roleCode);
+        if (!isAdmin) userType = 2;
         if (StringUtils.hasText(keyword)) {
             wrapper.and(w -> w.like(User::getUsername, keyword)
                     .or().like(User::getRealName, keyword));
@@ -48,6 +57,14 @@ public class UserService {
         wrapper.orderByDesc(User::getCreateTime);
 
         Page<User> result = userMapper.selectPage(page, wrapper);
+        if (!isAdmin) {
+            for (User u : result.getRecords()) {
+                u.setStatus(null); u.setCreateTime(null); u.setUpdateTime(null);
+                u.setNickname(null); u.setBio(null); u.setSkills(null);
+                u.setAvatar(null); u.setGender(null);
+                u.setMajorName(null); u.setClassName(null);
+            }
+        }
         return Result.success(new PageResult<>(result));
     }
 
@@ -158,6 +175,12 @@ public class UserService {
     public Result<?> updateUser(UserDTO dto) {
         User user = userMapper.selectById(dto.getId());
         if (user == null) return Result.error("用户不存在");
+        // 与 createUser 同口径的长度/域/强度校验：更新路径此前缺失，超长与非法值会落到 DB 约束 500
+        if (dto.getRealName() != null && dto.getRealName().length() > 50) return Result.error("姓名不能超过 50 字");
+        if (dto.getUserType() != null && dto.getUserType() != 1 && dto.getUserType() != 2 && dto.getUserType() != 3) {
+            return Result.error("用户类型不能为空");
+        }
+        if (StringUtils.hasText(dto.getPassword()) && dto.getPassword().length() < 6) return Result.error("密码至少6位");
 
         if (StringUtils.hasText(dto.getRealName())) user.setRealName(dto.getRealName());
         if (dto.getGender() != null) user.setGender(dto.getGender());
@@ -173,18 +196,55 @@ public class UserService {
         return Result.success("更新成功", null);
     }
 
+    /** 删除前置守卫：不能删自己；队长/有未完成队伍的账号须先处理队伍，防止悬空 leaderId 与孤儿成员行 */
+    private String deleteBlockReason(Long id) {
+        Long leading = teamMapper.selectCount(new LambdaQueryWrapper<CompetitionTeam>()
+                .eq(CompetitionTeam::getLeaderId, id));
+        if (leading != null && leading > 0) return "该账号仍在担任队长，请先解散或转让队伍";
+        List<CompetitionTeam> pendingTeams = teamMapper.selectList(new LambdaQueryWrapper<CompetitionTeam>()
+                .in(CompetitionTeam::getStatus, 0, 1));
+        if (!pendingTeams.isEmpty()) {
+            List<Long> teamIds = new ArrayList<>();
+            pendingTeams.forEach(t -> teamIds.add(t.getId()));
+            Long pendingMember = teamMemberMapper.selectCount(new LambdaQueryWrapper<CompetitionTeamMember>()
+                    .eq(CompetitionTeamMember::getStudentId, id)
+                    .in(CompetitionTeamMember::getTeamId, teamIds));
+            if (pendingMember != null && pendingMember > 0) return "该账号存在组建中/待审核的队伍，请先退出或解散";
+        }
+        return null;
+    }
+
     @Transactional
-    public Result<?> deleteUser(Long id) {
+    public Result<?> deleteUser(Long id, Long meId) {
         if (id == null || userMapper.selectById(id) == null) return Result.error("用户不存在");
+        if (id.equals(meId)) return Result.error("不能删除当前登录账号");
+        String blocked = deleteBlockReason(id);
+        if (blocked != null) return Result.error(blocked);
         userMapper.deleteById(id);
         return Result.success("删除成功", null);
     }
 
     @Transactional
-    public Result<?> batchDeleteUsers(List<Long> ids) {
+    public Result<?> batchDeleteUsers(List<Long> ids, Long meId) {
         if (ids == null || ids.isEmpty()) return Result.error("用户ID列表不能为空");
-        userMapper.deleteBatchIds(ids);
-        return Result.success("批量删除成功", null);
+        List<Long> deletable = new ArrayList<>();
+        int skippedSelf = 0;
+        int skippedBusy = 0;
+        for (Long id : ids) {
+            if (id == null) continue;
+            if (id.equals(meId)) { skippedSelf++; continue; }
+            if (userMapper.selectById(id) == null) continue;
+            if (deleteBlockReason(id) != null) { skippedBusy++; continue; }
+            deletable.add(id);
+        }
+        if (deletable.isEmpty()) {
+            return Result.error("没有可删除的用户（当前账号不可删除；担任队长或有未完成队伍的账号须先处理队伍）");
+        }
+        userMapper.deleteBatchIds(deletable);
+        StringBuilder msg = new StringBuilder("已删除 " + deletable.size() + " 个用户");
+        if (skippedSelf > 0) msg.append("，跳过当前登录账号 1 个");
+        if (skippedBusy > 0) msg.append("，跳过仍有队伍关联的账号 ").append(skippedBusy).append(" 个");
+        return Result.success(msg.toString(), null);
     }
 
     @Transactional
@@ -204,6 +264,8 @@ public class UserService {
         Integer status = dto.getStatus();
         if (ids == null || ids.isEmpty()) return Result.error("用户ID列表不能为空");
         if (status == null) return Result.error("状态不能为空");
+        // 与单条 toggleUserStatus 同域校验：防止写入 5 这类启用/禁用之外的非法状态
+        if (status != 0 && status != 1) return Result.error("状态参数无效");
 
         List<User> users = userMapper.selectBatchIds(ids);
         if (users.isEmpty()) return Result.error("未找到指定用户");

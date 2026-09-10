@@ -62,6 +62,8 @@ public class AuthService {
     }
 
     public Result<?> register(LoginDTO dto) {
+        // 注册通道仅面向学生：教师账号由管理员开通（自助教师=发布竞赛/录成绩入口，防无审核提权）
+        if ("teacher".equals(dto.getRole())) return Result.error("教师账号请联系管理员开通，注册仅支持学生");
         // 边界：与改密/建用户一致的最低强度与列宽限制，防弱口令与 DB 约束 500
         if (dto.getUsername() == null || dto.getUsername().length() > 50) return Result.error("用户名不能超过 50 字");
         if (dto.getPassword() == null || dto.getPassword().length() < 6) return Result.error("密码至少6位");
@@ -77,7 +79,7 @@ public class AuthService {
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setRealName(dto.getUsername());
-        user.setUserType("teacher".equals(dto.getRole()) ? 2 : 1);
+        user.setUserType(1);
 
         userMapper.insert(user);
 

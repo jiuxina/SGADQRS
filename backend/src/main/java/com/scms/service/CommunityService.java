@@ -38,6 +38,8 @@ public class CommunityService {
     public Result<?> createRequest(CommunityRequestDTO dto, Long meId) {
         if (dto.getType() == null || dto.getType() < 2 || dto.getType() > 3) return Result.error("请求类型无效");
         String message = dto.getMessage();
+        // 列宽 VARCHAR(500)：超长须在应用层结构化拒绝，避免落到 DB 报 500
+        if (message != null && message.length() > 500) return Result.error("留言不能超过 500 字");
 
         // type=2/3 均基于招募帖
         if (dto.getPostId() == null) return Result.error("请指定招募帖");
@@ -53,6 +55,7 @@ public class CommunityService {
             Long teamId = post.getTeamId();
             if (teamId == null) return Result.error("该招募未关联队伍");
             if (isInTeam(teamId, meId)) return Result.error("你已在队伍中");
+            if (hasPendingRequest(meId, 2, teamId, post.getId())) return Result.error("已有待处理的申请，请等待队长处理，勿重复提交");
             String preErr = precheckJoinable(teamId, meId, true);
             if (preErr != null) return Result.error(preErr);
 
@@ -74,6 +77,7 @@ public class CommunityService {
             Long invitee = post.getUserId();
             if (invitee.equals(meId)) return Result.error("不能邀请自己");
             if (isInTeam(teamId, invitee)) return Result.error("对方已在队伍中");
+            if (hasPendingRequest(meId, 3, teamId, post.getId())) return Result.error("已向对方发出待处理的邀请，勿重复发送");
             String preErr = precheckJoinable(teamId, invitee, false);
             if (preErr != null) return Result.error(preErr);
 
@@ -182,6 +186,17 @@ public class CommunityService {
         return req;
     }
 
+    /** 同一发起人对该帖/队是否已有待处理的同类型请求（防刷屏与重复通知） */
+    private boolean hasPendingRequest(Long fromUserId, int type, Long teamId, Long postId) {
+        Long count = requestMapper.selectCount(new LambdaQueryWrapper<CommunityRequest>()
+                .eq(CommunityRequest::getFromUserId, fromUserId)
+                .eq(CommunityRequest::getType, type)
+                .eq(CommunityRequest::getTeamId, teamId)
+                .eq(CommunityRequest::getPostId, postId)
+                .eq(CommunityRequest::getStatus, 0));
+        return count != null && count > 0;
+    }
+
     private boolean isInTeam(Long teamId, Long userId) {
         Long count = teamMemberMapper.selectCount(
                 new LambdaQueryWrapper<CompetitionTeamMember>()
@@ -191,10 +206,12 @@ public class CommunityService {
         return count != null && count > 0;
     }
 
-    /** 发送申请/邀请前的快失败预校验：报名时间窗、满员、已在其他队伍（最终闸门仍在 addMemberToTeam）；返回错误文案或 null */
+    /** 发送申请/邀请前的快失败预校验：名单冻结、报名时间窗、满员、已在其他队伍（最终闸门仍在 addMemberToTeam）；返回错误文案或 null */
     private String precheckJoinable(Long teamId, Long studentId, boolean forSelf) {
         CompetitionTeam team = teamMapper.selectById(teamId);
         if (team == null) return "队伍不存在";
+        Integer st = team.getStatus();
+        if (st != null && st != 0 && st != 3) return "该队伍名单已提交审核，暂不接受变更";
         Competition comp = competitionMapper.selectById(team.getCompetitionId());
         if (comp == null) return "所属竞赛不存在";
         String windowErr = registrationService.checkRegistrationWindow(comp);

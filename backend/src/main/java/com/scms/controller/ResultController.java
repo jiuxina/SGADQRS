@@ -43,29 +43,29 @@ public class ResultController {
     @Operation(summary = "录入成绩")
     @PostMapping
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public Result<?> save(@RequestBody ResultDTO dto) {
-        return resultService.saveResult(dto);
+    public Result<?> save(@RequestBody ResultDTO dto, @AuthenticationPrincipal LoginUser loginUser) {
+        return resultService.saveResult(dto, loginUser.getUserId(), loginUser.getRoleCode());
     }
 
     @Operation(summary = "批量录入成绩")
     @PostMapping("/batch")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public Result<?> batch(@RequestBody BatchResultDTO dto) {
-        return resultService.saveBatchResults(dto);
+    public Result<?> batch(@RequestBody BatchResultDTO dto, @AuthenticationPrincipal LoginUser loginUser) {
+        return resultService.saveBatchResults(dto, loginUser.getUserId(), loginUser.getRoleCode());
     }
 
     @Operation(summary = "更新成绩")
     @PutMapping
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public Result<?> update(@RequestBody ResultDTO dto) {
-        return resultService.updateResult(dto);
+    public Result<?> update(@RequestBody ResultDTO dto, @AuthenticationPrincipal LoginUser loginUser) {
+        return resultService.updateResult(dto, loginUser.getUserId(), loginUser.getRoleCode());
     }
 
     @Operation(summary = "发布成绩")
     @PostMapping("/publish/{competitionId}")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public Result<?> publish(@PathVariable Long competitionId) {
-        return resultService.publishResults(competitionId);
+    public Result<?> publish(@PathVariable Long competitionId, @AuthenticationPrincipal LoginUser loginUser) {
+        return resultService.publishResults(competitionId, loginUser.getUserId(), loginUser.getRoleCode());
     }
 
     @Operation(summary = "学生成绩统计")

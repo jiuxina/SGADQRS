@@ -18,13 +18,15 @@ public class NoticeController {
 
     private final SystemService systemService;
 
-    @Operation(summary = "公告列表")
+    @Operation(summary = "公告列表（管理员；草稿公告不得经此下发，学生端公告走 /notification/announcements）")
     @GetMapping("/list")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<?> list(@RequestParam(defaultValue = "1") int current,
                           @RequestParam(defaultValue = "10") int size,
                           @RequestParam(required = false) Integer noticeType,
-                          @RequestParam(required = false) Integer status) {
-        return systemService.listNotices(current, size, noticeType, status);
+                          @RequestParam(required = false) Integer status,
+                          @RequestParam(required = false) String keyword) {
+        return systemService.listNotices(current, size, noticeType, status, keyword);
     }
 
     @Operation(summary = "发布公告")

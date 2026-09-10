@@ -24,13 +24,14 @@ public class UserController {
 
     private final UserService userService;
 
-    @Operation(summary = "用户列表")
+    @Operation(summary = "用户列表（非管理员仅返回教师简表，用于组队选导师）")
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") int current,
                           @RequestParam(defaultValue = "10") int size,
                           @RequestParam(required = false) String keyword,
-                          @RequestParam(required = false) Integer userType) {
-        return userService.listUsers(current, size, keyword, userType);
+                          @RequestParam(required = false) Integer userType,
+                          @AuthenticationPrincipal LoginUser loginUser) {
+        return userService.listUsers(current, size, keyword, userType, loginUser.getRoleCode());
     }
 
     @Operation(summary = "用户统计")
@@ -40,13 +41,14 @@ public class UserController {
         return userService.getUserStats();
     }
 
-    @Operation(summary = "用户详情")
+    @Operation(summary = "用户详情（管理员）")
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<?> getById(@PathVariable Long id) {
         return userService.getUserById(id);
     }
 
-    @Operation(summary = "社区公开资料（未解锁仅脱敏卡）")
+    @Operation(summary = "社区公开资料（组队 2.0 起资料全开放）")
     @GetMapping("/public/{id}")
     public Result<?> publicProfile(@PathVariable Long id,
                                    @AuthenticationPrincipal LoginUser loginUser) {
@@ -84,15 +86,15 @@ public class UserController {
     @Operation(summary = "删除用户")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<?> delete(@PathVariable Long id) {
-        return userService.deleteUser(id);
+    public Result<?> delete(@PathVariable Long id, @AuthenticationPrincipal LoginUser loginUser) {
+        return userService.deleteUser(id, loginUser.getUserId());
     }
 
     @Operation(summary = "批量删除用户")
     @PostMapping("/batch-delete")
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<?> batchDelete(@RequestBody List<Long> ids) {
-        return userService.batchDeleteUsers(ids);
+    public Result<?> batchDelete(@RequestBody List<Long> ids, @AuthenticationPrincipal LoginUser loginUser) {
+        return userService.batchDeleteUsers(ids, loginUser.getUserId());
     }
 
     @Operation(summary = "禁用/启用用户")

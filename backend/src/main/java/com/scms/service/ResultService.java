@@ -57,6 +57,15 @@ public class ResultService {
         return Result.success(new PageResult<>(result));
     }
 
+    /** 归属守卫：教师只能对本人发布的竞赛录入/修改/发布成绩，管理员不限（与 CompetitionService 编辑守卫同口径） */
+    private Result<?> publisherGuard(Competition comp, Long userId, String role) {
+        if (comp == null) return Result.error("竞赛不存在");
+        if ("teacher".equals(role) && !userId.equals(comp.getPublisherId())) {
+            return Result.error("只能操作自己发布竞赛的成绩");
+        }
+        return null;
+    }
+
     /** 边界校验：竞赛存在、分数/名次范围、同竞赛同人（或同队）不重复录入；通过返回 null */
     private Result<?> validateResult(Long competitionId, Long studentId, Long teamId,
                                      BigDecimal score, Integer ranking, Long excludeId) {
@@ -86,10 +95,14 @@ public class ResultService {
     }
 
     @Transactional
-    public Result<?> saveResult(ResultDTO dto) {
+    public Result<?> saveResult(ResultDTO dto, Long userId, String role) {
+        // 授权先于数据校验：越权请求不得借由参数错误路径泄露竞赛内已有哪些学生
+        Result<?> denied = publisherGuard(competitionMapper.selectById(dto.getCompetitionId()), userId, role);
+        if (denied != null) return denied;
         Result<?> invalid = validateResult(dto.getCompetitionId(), dto.getStudentId(), dto.getTeamId(),
                 dto.getScore(), dto.getRanking(), null);
         if (invalid != null) return invalid;
+        if (dto.getRemark() != null && dto.getRemark().length() > 500) return Result.error("备注不能超过 500 字");
         CompetitionResult result = new CompetitionResult();
         result.setCompetitionId(dto.getCompetitionId());
         result.setStudentId(dto.getStudentId());
@@ -106,19 +119,25 @@ public class ResultService {
     }
 
     @Transactional
-    public Result<?> saveBatchResults(BatchResultDTO dto) {
+    public Result<?> saveBatchResults(BatchResultDTO dto, Long userId, String role) {
         if (dto.getCompetitionId() == null) {
             return Result.error("竞赛ID不能为空");
         }
         if (dto.getResults() == null || dto.getResults().isEmpty()) {
             return Result.error("成绩列表不能为空");
         }
+        Result<?> denied = publisherGuard(competitionMapper.selectById(dto.getCompetitionId()), userId, role);
+        if (denied != null) return denied;
 
-        List<CompetitionResult> saved = new ArrayList<>();
+        // 两遍式"先全量校验、后全量插入"：return 式错误不会触发事务回滚，
+        // 若边插边校验，中途遇到非法行时已插入的行会被提交（部分成功，违背整批语义）。
         for (BatchResultDTO.Item item : dto.getResults()) {
             Result<?> invalid = validateResult(dto.getCompetitionId(), item.getStudentId(), item.getTeamId(),
                     item.getScore(), item.getRanking(), null);
             if (invalid != null) return invalid;
+        }
+        List<CompetitionResult> saved = new ArrayList<>();
+        for (BatchResultDTO.Item item : dto.getResults()) {
             CompetitionResult result = new CompetitionResult();
             result.setCompetitionId(dto.getCompetitionId());
             result.setStudentId(item.getStudentId());
@@ -135,11 +154,14 @@ public class ResultService {
     }
 
     @Transactional
-    public Result<?> updateResult(ResultDTO dto) {
+    public Result<?> updateResult(ResultDTO dto, Long userId, String role) {
         CompetitionResult result = resultMapper.selectById(dto.getId());
         if (result == null) return Result.error("成绩记录不存在");
+        Result<?> denied = publisherGuard(competitionMapper.selectById(result.getCompetitionId()), userId, role);
+        if (denied != null) return denied;
         if (dto.getScore() != null && (dto.getScore().compareTo(BigDecimal.ZERO) < 0 || dto.getScore().compareTo(BigDecimal.valueOf(100000)) > 0)) return Result.error("分数超出合理范围");
         if (dto.getRanking() != null && dto.getRanking() < 1) return Result.error("名次不能小于 1");
+        if (dto.getRemark() != null && dto.getRemark().length() > 500) return Result.error("备注不能超过 500 字");
 
         if (dto.getScore() != null) result.setScore(dto.getScore());
         if (dto.getRanking() != null) result.setRanking(dto.getRanking());
@@ -156,10 +178,13 @@ public class ResultService {
     }
 
     @Transactional
-    public Result<?> publishResults(Long competitionId) {
+    public Result<?> publishResults(Long competitionId, Long userId, String role) {
         // 边界：发布必须针对真实存在的竞赛，防止对不存在 id 静默返回"暂无"
         if (competitionId == null) return Result.error("请指定竞赛");
-        if (competitionMapper.selectById(competitionId) == null) return Result.error("竞赛不存在");
+        Competition comp = competitionMapper.selectById(competitionId);
+        if (comp == null) return Result.error("竞赛不存在");
+        Result<?> denied = publisherGuard(comp, userId, role);
+        if (denied != null) return denied;
         List<CompetitionResult> results = resultMapper.selectList(
                 new LambdaQueryWrapper<CompetitionResult>()
                         .eq(CompetitionResult::getCompetitionId, competitionId)
@@ -175,8 +200,7 @@ public class ResultService {
         });
 
         // 通知相关学生的获奖记录已可查看
-        Competition comp = competitionMapper.selectById(competitionId);
-        String compName = comp != null ? comp.getCompetitionName() : "竞赛";
+        String compName = comp.getCompetitionName();
         java.util.Set<Long> notified = new java.util.HashSet<>();
         for (CompetitionResult r : results) {
             if (r.getStudentId() != null && notified.add(r.getStudentId())) {

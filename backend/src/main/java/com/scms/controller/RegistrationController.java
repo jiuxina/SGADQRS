@@ -35,8 +35,8 @@ public class RegistrationController {
         Long memberId = null;
         Long publisherId = null;
         if ("teacher".equals(loginUser.getRoleCode())) {
-            if (teacherId != null) {
-                // 指导团队：显式按指导老师过滤
+            if (teacherId != null && teacherId.equals(loginUser.getUserId())) {
+                // 指导团队：仅允许按本人过滤；传入其他教师的 id 一律忽略，回落本人发布范围，防教师横向拉取他人队伍名单
                 tid = teacherId;
             } else {
                 // 我发布竞赛的团队：默认限定在本人发布的竞赛范围内
@@ -48,11 +48,12 @@ public class RegistrationController {
         return registrationService.listTeams(current, size, competitionId, status, publisherId, tid, memberId, keyword);
     }
 
-    @Operation(summary = "竞赛参赛者名单（已通过队伍的全部成员，供成绩录入）")
+    @Operation(summary = "竞赛参赛者名单（已通过队伍的全部成员，供成绩录入；教师仅限本人发布的竞赛）")
     @GetMapping("/participants")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public Result<?> participants(@RequestParam Long competitionId) {
-        return registrationService.listParticipants(competitionId);
+    public Result<?> participants(@RequestParam Long competitionId, @AuthenticationPrincipal LoginUser loginUser) {
+        Long publisherId = "teacher".equals(loginUser.getRoleCode()) ? loginUser.getUserId() : null;
+        return registrationService.listParticipants(competitionId, publisherId);
     }
 
     @Operation(summary = "参赛队伍详情（队员、指导老师/竞赛发布教师、管理员可见）")

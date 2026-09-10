@@ -57,9 +57,14 @@ public class RegistrationService {
         return Result.success(new PageResult<>(result));
     }
 
-    /** 某竞赛的参赛者名单（已通过队伍的全部在队成员，含1人队），供成绩录入使用 */
-    public Result<?> listParticipants(Long competitionId) {
+    /** 某竞赛的参赛者名单（已通过队伍的全部在队成员，含1人队），供成绩录入使用；教师仅限本人发布的竞赛（与成绩写侧守卫同口径） */
+    public Result<?> listParticipants(Long competitionId, Long publisherId) {
         if (competitionId == null) return Result.error("请指定竞赛");
+        Competition comp = competitionMapper.selectById(competitionId);
+        if (comp == null) return Result.error("竞赛不存在");
+        if (publisherId != null && !publisherId.equals(comp.getPublisherId())) {
+            return Result.error("只能查看自己发布竞赛的参赛者名单");
+        }
         List<CompetitionTeam> teams = teamMapper.selectList(
                 new LambdaQueryWrapper<CompetitionTeam>()
                         .eq(CompetitionTeam::getCompetitionId, competitionId)
@@ -148,6 +153,11 @@ public class RegistrationService {
         CompetitionTeam team = teamMapper.selectByIdForUpdate(teamId);
         if (team == null) return Result.error("队伍不存在");
         if (!leaderId.equals(team.getLeaderId())) return Result.error("只有队长可以指定指导老师");
+        // 与名单冻结同口径：提交审核后（含已通过）不可再更换指导老师
+        Integer st = team.getStatus();
+        if (st != null && st != 0 && st != 3) {
+            return Result.error("提交审核后不可更换指导老师（被驳回后可调整）");
+        }
         if (teacherId != null) {
             User teacher = userMapper.selectById(teacherId);
             if (teacher == null || teacher.getUserType() == null || teacher.getUserType() != 2) {
@@ -217,13 +227,18 @@ public class RegistrationService {
     }
 
     /**
-     * 将学生加入队伍（社区申请/邀请同意后走此入口）：校验容量与防重，成员直接生效。
+     * 将学生加入队伍（社区申请/邀请同意后走此入口）：校验状态冻结、容量与防重，成员直接生效。
      * 边界：对队伍行加悲观锁（FOR UPDATE），容量检查与插入串行化，防并发同意导致超员；须在事务内调用。
      */
     @Transactional
     public Result<?> addMemberToTeam(Long teamId, Long studentId) {
         CompetitionTeam team = teamMapper.selectByIdForUpdate(teamId);
         if (team == null) return Result.error("团队不存在");
+        // 与退队/移除同口径的名单冻结：提交审核(1)/已通过(2)后不得再进人（积压申请须在驳回后处理）
+        Integer st = team.getStatus();
+        if (st != null && st != 0 && st != 3) {
+            return Result.error("名单已提交审核，不可再变更（被驳回后可继续调整）");
+        }
         Competition comp = competitionMapper.selectById(team.getCompetitionId());
         if (comp == null) return Result.error("所属竞赛不存在");
         String windowErr = checkRegistrationWindow(comp);
@@ -304,7 +319,7 @@ public class RegistrationService {
         return Result.success("已移除该成员", null);
     }
 
-    /** 队长转让：新队长须为在队成员；已通过(2)审核的队伍不可转让（需联系管理员） */
+    /** 队长转让：新队长须为在队成员；已通过(2)审核的队伍不可转让（需联系管理员）（注：转让不改名单，仍允许在待审核(1)时进行） */
     @Transactional
     public Result<?> transferLeader(Long teamId, Long meId, Long newLeaderId) {
         CompetitionTeam team = teamMapper.selectByIdForUpdate(teamId);
