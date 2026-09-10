@@ -1,6 +1,6 @@
-# SCMS 学生竞赛信息管理系统 — 前端
+# 赛友 TeamUp — 前端
 
-Student Competition Information Management System
+学生竞赛信息管理与组队社区系统（原 SCMS）的 React SPA。
 
 ## 技术栈
 
@@ -21,46 +21,52 @@ Student Competition Information Management System
 ```
 frontend/src/
 ├── api/           # API 请求层
-│   ├── modules/   # 按功能分组的 API 模块
+│   ├── modules/   # 按功能分组的 API 模块（10 个）
 │   │   ├── auth.ts          # 认证
+│   │   ├── community.ts     # 社区请求（入队申请/邀请）
 │   │   ├── competition.ts   # 竞赛
-│   │   ├── registration.ts  # 报名
-│   │   ├── result.ts        # 成绩
 │   │   ├── export.ts        # 导出
-│   │   ├── system.ts        # 系统
-│   │   └── user.ts          # 用户
+│   │   ├── notification.ts  # 站内通知
+│   │   ├── recruit.ts       # 招募/求组帖
+│   │   ├── registration.ts  # 参赛队伍（建队/提交/成员流动）
+│   │   ├── result.ts        # 成绩
+│   │   ├── system.ts        # 公告+统计+文件上传
+│   │   └── user.ts          # 用户 + 社区公开资料
 │   ├── request.ts  # Axios 实例 + JWT 拦截器
 │   └── types.ts    # 接口类型定义
-├── components/     # 通用组件
+├── components/     # 通用组件（34 个 + 4 个弹窗配套 utils）
 │   ├── GlassModal.tsx       # 玻璃态模态框
-│   ├── EmptyState.tsx       # 空状态占位
-│   ├── ListMeta.tsx         # 列表计数
-│   ├── PageSkeleton.tsx     # 页面加载骨架
-│   ├── QuickActions.tsx     # 快捷操作面板
-│   ├── UpcomingReminders.tsx # 待办提醒
-│   ├── Pagination.tsx       # 分页
-│   ├── ConfirmDialog.tsx    # 确认对话框
-│   ├── Toast.tsx            # 轻提示
+│   ├── DesktopLayout.tsx    # 主布局（侧边栏悬浮展开/移动壳/顶栏/标题与 favicon 角标）
+│   ├── TutorialOverlay.tsx  # 页面使用教程遮罩（config/tutorials.ts 驱动）
+│   ├── EntryModal.tsx       # 创建/加入队伍弹窗
+│   ├── RecruitPostModal.tsx / RecruitDetailModal.tsx # 发帖/帖子详情（含联系方式）
+│   ├── UserCardMini.tsx     # 嵌入式用户资料卡
+│   ├── NotificationBell.tsx / UnreadFavicon.tsx # 未读铃铛 / favicon 角标
+│   ├── PageErrorBoundary.tsx # 页面级错误边界
+│   ├── EmptyState.tsx / ListMeta.tsx / PageSkeleton.tsx / Pagination.tsx
+│   ├── Toast.tsx / ConfirmDialog.tsx / PromptDialog.tsx / EditGradeDialog.tsx # 全局弹窗
 │   ├── AuthGuard.tsx        # 路由守卫
-│   ├── RegistrationModal.tsx  # 报名弹窗（共享）
 │   ├── RejectReasonModal.tsx  # 拒绝原因弹窗
-│   └── ... (共 29 个组件)
-├── config/         # 环境变量封装
-│   └── env.ts      # 读取 VITE_* 环境变量
-├── hooks/          # 自定义 Hooks (useFetch, usePagination, useDebounce 等)
+│   └── ... (动画类：ConfettiEffect, CountdownTimer, SuccessCheck, FailureEffect, DigitRoller, AnimatedCounter 等)
+├── config/         # 环境、常量与教程文案
+│   ├── env.ts      # 读取 VITE_* 环境变量
+│   ├── constants.ts # 存储 key、分页、动画常量
+│   └── tutorials.ts # 全端页面使用教程分步文案
+├── hooks/          # 自定义 Hooks (useFetch, usePagination, useDebounce, useIsMobile 等)
 ├── motion/         # 动画配置
-├── pages/          # 页面组件 (按角色分)
-│   ├── admin/      # 管理员页面
-│   ├── teacher/    # 教师页面
-│   └── student/    # 学生页面
+├── pages/          # 26 个页面组件（文件名以 Admin/Teacher/Student 前缀分组，TeamDetail/UserProfilePage 三端共用）
 ├── store/          # Zustand 状态
-│   └── authStore.ts  # 认证状态
+│   ├── authStore.ts          # 认证状态
+│   └── notificationStore.ts  # 未读数轮询（铃铛/标题/favicon 角标）
 ├── types/          # 类型声明
 ├── utils/          # 工具函数
-│   ├── format.ts        # formatDate, resolveCoverUrl, formatFileSize
-│   └── statusBadge.ts   # getStatusBadge (竞赛/报名状态)
-├── App.tsx         # 路由定义
-├── main.tsx        # 入口
+│   ├── format.ts        # formatDate/formatDateTime, resolveCoverUrl, formatFileSize
+│   ├── statusBadge.ts   # getStatusBadge (竞赛/学生视角/队伍状态)
+│   ├── notification.ts  # 通知 refType → 页面跳转映射
+│   ├── date.ts / export.ts
+├── e2e/            # Playwright 用例 (teamup.spec.ts, baseURL 3000)
+├── App.tsx         # 路由定义 + 全局弹窗容器 + 错误边界
+├── main.tsx        # 入口 + 打包字体引入
 └── index.css       # 全局样式 + 设计系统
 ```
 
@@ -84,7 +90,7 @@ frontend/src/
 
 ### 共享工具函数
 
-日期格式化、封面图片 URL 解析、文件大小格式化统一使用 `src/utils/format.ts`。状态徽章映射（竞赛状态、报名状态）统一使用 `src/utils/statusBadge.ts`。不要在页面文件中重复定义这些函数。
+日期格式化（formatDate/formatDateTime）、封面图片 URL 解析、文件大小格式化统一使用 `src/utils/format.ts`。状态徽章映射（竞赛状态、学生视角竞赛状态、队伍状态）统一使用 `src/utils/statusBadge.ts`。通知点击跳转映射统一使用 `src/utils/notification.ts`。不要在页面文件中重复定义这些函数。
 
 ### 错误处理
 
@@ -118,6 +124,15 @@ npm run preview  # 预览构建产物
 ```
 
 ## 更新日志
+
+### 2026-09 社区化与体验重构（摘要，完整记录见根目录 AGENT.md 更新日志）
+
+1. **TeamUp 社区化 + Lean**：报名与队伍合一；新增组队中心（StudentTeams 内层四 tab：我的队伍/招募广场/收到的申请/邀请）、招募广场（StudentRecruitSquare + RecruitPostModal/RecruitDetailModal）、社区请求、消息中心（NotificationCenter）、社区公开主页（UserProfilePage）；`/student/registration`、`RegistrationModal` 等旧报名概念随之后端删表而移除，旧路由改为重定向。
+2. **桌面端体验**：侧边栏图标胶囊悬浮横向展开（68→208px）、页面级错误边界（PageErrorBoundary）、路由切换回顶、标签页标题+未读数、favicon 未读角标（notificationStore/UnreadFavicon）、登录回跳与记住账号。
+3. **页面使用教程**：config/tutorials.ts + TutorialOverlay 全端分步教程，每页首次访问自动弹出。
+4. **全站字体对标 iOS**：打包 Inter Variable + Noto Sans SC（unicode-range 分片按需加载）。
+5. **组队 2.0**：队伍详情成员行内联退队/移除/转让操作；发帖表单新增联系方式；资料互看机制下线——帖子弹窗/个人主页移除解锁门控与脱敏展示。
+6. **全链路测试修复**：批量禁用/删除 API 参数、教师建赛状态机死角、全局弹层 exit 动画残留等（详见 docs/full-link-test-report/）。
 
 ### 2026-06-16 全面优化
 
