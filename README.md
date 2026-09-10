@@ -7,10 +7,12 @@
 | 文档 | 用途 |
 |------|------|
 | 本文件（README.md） | **全栈部署与运行手册（面向 AI Agent，命令均可在 Git Bash 直接执行）** |
-| [AGENT.md](AGENT.md) | AI 代理的项目上下文、架构约定、编码规范 |
+| [AGENT.md](AGENT.md) | AI 代理的项目上下文、架构约定、编码规范、更新日志 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 完整开发文档（数据库/后端/前端/API 参考/踩坑记录） |
-| [docs/ER-DIAGRAM.md](docs/ER-DIAGRAM.md) | 数据库 ER 图 |
-| [docs/UI设计规范.md](docs/UI设计规范.md) | iOS 26 Liquid Glass 设计规范 |
+| [docs/ER-DIAGRAM.md](docs/ER-DIAGRAM.md) | 数据库 ER 图（以 init.sql 为准） |
+| [docs/UI设计规范.md](docs/UI设计规范.md) | 界面设计规范（Liquid Glass 风格取舍原则） |
+| [docs/课程设计报告.md](docs/课程设计报告.md) | 数据库课程设计方案报告 |
+| [docs/full-link-test-report/](docs/full-link-test-report/) | 全链路测试报告（API 断言 + UI 端到端 + 缺陷修复记录） |
 | [docs/frontend-test-plan/](docs/frontend-test-plan/) | 前端验证计划与历史测试报告 |
 
 ---
@@ -25,7 +27,7 @@
 | MySQL 8 | Docker 容器 `mysql-scms` | localhost:3306 | root/root，库名 `scms`，重启策略 unless-stopped |
 | 上传/静态文件 | 本地磁盘 | `./uploads/`、`./public/` | **相对后端进程启动目录解析**，务必从 `backend/` 目录启动（见 §5.2） |
 
-前端 dev server 已配置代理：`/api/**`（含 `/api/ws` WebSocket）→ `http://localhost:8080`，因此浏览器端只访问 3000 端口即可，不存在跨域问题。
+前端 dev server 已配置代理：`/api/**` → `http://localhost:8080`，因此浏览器端只访问 3000 端口即可，不存在跨域问题。（`vite.config.ts` 中的 `/api/ws` 条目是 WebSocket 方案下线后的历史遗留配置，无害；站内消息现为 REST 轮询。）
 
 ## 2. 环境要求（本机实测）
 
@@ -35,7 +37,7 @@
 | Maven | 3.8+ | 3.9.16，已在 PATH | 若 `mvn` 不可用，尝试 `C:\tools\maven\apache-maven-3.9.16\bin\mvn.cmd` 或 `C:\apache-maven\apache-maven-3.9.16\bin\mvn.cmd` |
 | Node.js | 18+ | v22.19.0 | |
 | Docker Desktop | 任意近期版本 | 已安装 | **必须先启动 Docker Desktop，容器才会运行** |
-| Python | 3.x（仅跑冒烟脚本需要） | 3.12 | 标准库实现，无需 pip 安装 |
+| Python | 3.x（跑回归/演示脚本需要） | 3.12 | 标准库实现，无需 pip 安装 |
 
 ---
 
@@ -107,10 +109,11 @@ docker run -d --name mysql-scms -p 3306:3306 \
 | 场景 | 操作 |
 |------|------|
 | 全新安装 | `docker exec -i mysql-scms mysql -uroot -proot < backend/sql/init.sql`（自带建库建表 + 演示数据） |
-| 旧版 SCMS 库（无社区表） | 依次执行 `upgrade-teamup.sql` → `upgrade-lean.sql` → `upgrade-lean2.sql`（导入方式同上，逐个执行） |
-| 已是当前结构 | 无需操作；判断依据：`docker exec mysql-scms mysql -uroot -proot -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='scms';"` 应为 8 |
+| 旧版 SCMS 库（无社区表） | 依次执行 `upgrade-teamup.sql` → `upgrade-lean.sql` → `upgrade-lean2.sql` → `upgrade-teamup2.sql`（导入方式同上，逐个执行） |
+| 已是当前结构 | 无需操作；判断依据：表数为 8，且 `recruit_post` 已有 `contact` 列、`competition_team_member` 已有 `competition_id` 列——`docker exec mysql-scms mysql -uroot -proot -N -e "SHOW COLUMNS FROM scms.recruit_post LIKE 'contact';"` 有一行输出即已含最新版 |
+| 灌演示数据 | `python backend/gen_demo_data.py`（生成 `backend/sql/demo-data.sql` 并导入 docker mysql-scms，先清后插、可重复执行，结束跑 19 项强校验；演示账号密码同种子 123456） |
 
-当前 schema 共 **8 张表**：`sys_user`（用户）、`competition`（竞赛）、`competition_team`（参赛队伍，单人赛=1 人队）、`competition_team_member`（队员）、`competition_result`（成绩）、`recruit_post`（招募/求组帖）、`community_request`（互看/入队申请/邀请）、`sys_notification`（站内通知，`user_id=0` 为全员公告）。
+当前 schema 共 **8 张表**：`sys_user`（用户）、`competition`（竞赛）、`competition_team`（参赛队伍，单人赛=1 人队）、`competition_team_member`（队员，冗余 `competition_id` + 双唯一键在库层强制"一人一赛一队"）、`competition_result`（成绩）、`recruit_post`（招募/求组帖，可留联系方式）、`community_request`（入队申请/邀请；原"资料互看"机制已下线，存量 type=1 数据仅作历史）、`sys_notification`（站内通知，`user_id=0` 为全员公告）。
 
 > **Agent 注意**：数据库结构变更必须先获得用户明确确认，并同步更新 `init.sql`、升级脚本与文档（见 AGENT.md）。禁止为测试随意删除/修改种子数据。
 
@@ -167,7 +170,7 @@ npm run dev        # http://localhost:3000
 | `start-all.bat` | dev | `mvn spring-boot:run` + `npm run dev`，各开一个 cmd 窗口 |
 | `stop-all.bat` | — | 按窗口标题杀进程 |
 
-脚本假设 MySQL 已在 3306 运行且 root/root 可连；Docker Desktop 未启动时请先手动处理。
+脚本假设 MySQL 已在 3306 运行且 root/root 可连；Docker Desktop 未启动时请先手动处理。注意 `start.bat` 的建库兜底只自动执行 `upgrade-teamup.sql`，对更老的库不完整——建议按 §3 手动逐步部署。
 
 ## 6. 测试与验证
 
@@ -175,9 +178,12 @@ npm run dev        # http://localhost:3000
 # 后端全链路冒烟（需后端 8080 + mysql-scms 运行；自动清理本次写入的数据）
 python backend/smoke_full.py
 
-# 边界与容错全量回归（需后端 8080 + mysql-scms 运行；临时数据+自清理+种子完整性校验，233 断言）
+# 边界与容错全量回归（需后端 8080 + mysql-scms 运行；临时数据+自清理+种子完整性校验，227 断言）
 python backend/boundary_full.py
 # 注：backend/boundary_test.sh 为历史遗留脚本，会污染演示数据，请勿直接运行
+
+# 成员流动专项回归（退队/移除/转让/招募帖联系方式/报名截止拦截；开头自清理残留，可重复执行）
+python backend/smoke_member_flow.py
 
 # 前端 e2e（需前端 3000 + 后端 8080 运行）
 cd frontend && npx playwright test          # 用例：frontend/e2e/teamup.spec.ts
@@ -217,7 +223,8 @@ server {
         proxy_pass http://localhost:8080/api/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_http_version 1.1;               # /api/ws 需要
+        # WebSocket 方案已下线，站内消息为 REST 轮询；upgrade 头为历史遗留配置，可按需删除
+        proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
     }
@@ -255,16 +262,19 @@ SGADQRS/
 │   ├── src/main/java/com/scms/    # controller/dto/entity/mapper/service/security/export/util
 │   ├── src/main/resources/application.yml
 │   ├── public/                    # 种子海报（随 /public/** 提供，启动目录敏感）
-│   ├── sql/                       # init.sql + upgrade-teamup/lean/lean2.sql
+│   ├── sql/                       # init.sql + upgrade-teamup/lean/lean2/teamup2.sql + demo-data.sql（演示数据，脚本生成）
 │   ├── smoke_full.py              # 全链路冒烟脚本（自动清理）
+│   ├── boundary_full.py           # 边界与容错回归（227 断言，临时数据+自清理+种子守卫）
+│   ├── smoke_member_flow.py       # 成员流动/联系方式专项回归
+│   ├── gen_demo_data.py           # 演示数据生成器（生成并导入 demo-data.sql，幂等+自校验）
 │   └── target/                    # 构建产物（git 忽略，不入库）
 ├── frontend/
 │   ├── src/                       # api/components/config/hooks/pages/store/utils
 │   ├── e2e/teamup.spec.ts         # Playwright 用例
-│   ├── scripts/                 # 一次性调试/截图/审计脚本（node scripts/xxx.mjs）
-│   ├── e2e / playwright.config.ts
-│   └── .env*                       # 环境变量
-├── docs/                          # ER 图、UI 规范、历史测试报告（frontend-test-plan/）
+│   ├── scripts/                   # 一次性调试/截图/审计脚本（node scripts/xxx.mjs）
+│   ├── playwright.config.ts
+│   └── .env*                      # 环境变量
+├── docs/                          # ER 图、UI 规范、课程设计报告、测试报告（full-link-test-report/、frontend-test-plan/、user-report/）、答辩 PPT（defense-ppt/）
 └── uploads/                       # 用户上传文件（运行时数据，勿删）
 ```
 
