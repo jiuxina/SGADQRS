@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import { AlertTriangle, HelpCircle, X } from 'lucide-react'
 import { setGlobalConfirm } from './confirmDialogUtils'
 import type { ConfirmOptions } from './confirmDialogUtils'
@@ -64,13 +64,13 @@ export function ConfirmContainer() {
   const Icon = styles.icon
 
   return (
-    <AnimatePresence>
-      {state && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          style={{
+    // 不用 AnimatePresence 退出动画：退出动画被挂起时弹窗会以 opacity:0 残留，
+    // 造成确认框堆叠、点击被旧蒙层吞掉；这里选择关闭即卸载（进入动画保留）。
+    state && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{
             position: 'fixed',
             inset: 0,
             zIndex: 99999,
@@ -86,7 +86,6 @@ export function ConfirmContainer() {
           <motion.div
             initial={{ scale: 0.85, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.85, opacity: 0, y: 20 }}
             transition={{ type: 'spring', stiffness: 350, damping: 28 }}
             style={{
               width: window.innerWidth < 768 ? 'calc(100vw - 32px)' : '380px',
@@ -165,7 +164,6 @@ export function ConfirmContainer() {
             </div>
           </motion.div>
         </motion.div>
-      )}
-    </AnimatePresence>
+    )
   )
 }

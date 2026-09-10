@@ -1,4 +1,4 @@
-import { Lock, Unlock, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { env } from '../config/env'
 import type { UserCard } from '../api/types'
 
@@ -19,8 +19,7 @@ interface UserCardMiniProps {
 }
 
 /**
- * 社区脱敏资料卡：未解锁只展示昵称/学院/专业/技能/简介摘要，
- * 真实姓名与获奖记录须互看解锁后在公开主页查看。
+ * 社区资料卡：展示昵称/学院/专业/技能/简介摘要，真实姓名与获奖记录在公开主页查看。
  */
 export default function UserCardMini({ card, onOpenProfile, compact = false }: UserCardMiniProps) {
   if (!card) return null
@@ -46,15 +45,6 @@ export default function UserCardMini({ card, onOpenProfile, compact = false }: U
           <span style={{ fontSize: compact ? '13px' : '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
             {card.displayName}
           </span>
-          {card.unlocked ? (
-            <span title="已互看资料" style={{ display: 'inline-flex', color: '#34c759' }}>
-              <Unlock size={12} strokeWidth={2} />
-            </span>
-          ) : (
-            <span title="未互看资料" style={{ display: 'inline-flex', color: 'var(--text-tertiary)' }}>
-              <Lock size={11} strokeWidth={2} />
-            </span>
-          )}
         </div>
         <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
           {[card.deptName, card.majorName, card.className].filter(Boolean).join(' · ') || '暂无院系信息'}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Clock, MapPin } from 'lucide-react'
+import { Users, Clock, MapPin, Phone } from 'lucide-react'
 import GlassModal from './GlassModal'
 import UserCardMini from './UserCardMini'
 import RecruitPostModal from './RecruitPostModal'
@@ -19,8 +19,8 @@ interface RecruitDetailModalProps {
 }
 
 /**
- * 帖子详情 + 发布者资料卡（两步制交互核心）：
- * 未解锁 → 「互看资料」；已解锁 → 招募帖可「申请加入」、求组帖（队长）可「邀请加入」。
+ * 帖子详情 + 发布者资料卡：
+ * 招募帖可直接「申请加入」、求组帖（队长）可直接「邀请加入」，申请/邀请可附备注（常写联系方式）快速沟通。
  */
 export default function RecruitDetailModal({ postId, onClose, onChanged }: RecruitDetailModalProps) {
   const navigate = useNavigate()
@@ -51,9 +51,9 @@ export default function RecruitDetailModal({ postId, onClose, onChanged }: Recru
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId])
 
-  // 已解锁且是求组帖：加载我任队长的同竞赛队伍供邀请
+  // 求组帖：加载我任队长的同竞赛队伍供邀请
   useEffect(() => {
-    if (!post || post.type !== 2 || !post.author?.unlocked) return
+    if (!post || post.type !== 2) return
     registrationApi.teamList({ current: 1, size: 100, competitionId: post.competitionId })
       .then((res) => setMyLeaderTeams(res.records.filter((t) => t.leaderId === user?.id)))
       .catch(() => setMyLeaderTeams([]))
@@ -61,7 +61,7 @@ export default function RecruitDetailModal({ postId, onClose, onChanged }: Recru
 
   const isMine = post && user?.id === post.userId
 
-  const sendRequest = async (payload: { type: number; toUserId?: number; postId?: number; teamId?: number; message?: string }, okMsg: string) => {
+  const sendRequest = async (payload: { type: 2 | 3; postId?: number; teamId?: number; message?: string }, okMsg: string) => {
     setActing(true)
     try {
       await communityApi.createRequest(payload)
@@ -75,22 +75,11 @@ export default function RecruitDetailModal({ postId, onClose, onChanged }: Recru
     }
   }
 
-  const handleUnlock = async () => {
-    if (!post) return
-    const message = await promptDialog({
-      message: '附上一句自我介绍（可选），对方同意后你们将互相解锁完整资料与获奖记录',
-      placeholder: '例：你好，我也想参加这个比赛，交换下资料？',
-      confirmText: '发送互看请求',
-    })
-    if (message === null) return
-    sendRequest({ type: 1, toUserId: post.userId, message: message || undefined }, '互看请求已发送，等待对方同意')
-  }
-
   const handleApply = async () => {
     if (!post) return
     const message = await promptDialog({
-      message: '向队长介绍你自己（可选）',
-      placeholder: '例：我是xxx，擅长xxx，曾获xxx',
+      message: '向队长介绍你自己，可附上微信/QQ 等联系方式方便快速沟通（选填）',
+      placeholder: '例：我是xxx，擅长xxx，微信 xxx',
       confirmText: '发送入队申请',
     })
     if (message === null) return
@@ -100,8 +89,8 @@ export default function RecruitDetailModal({ postId, onClose, onChanged }: Recru
   const handleInvite = async () => {
     if (!post || !inviteTeamId) return toast.warning('请选择要邀请对方加入的队伍')
     const message = await promptDialog({
-      message: '向对方发出邀请（可选）',
-      placeholder: '例：看了你的资料很匹配，来我们队吧！',
+      message: '向对方发出邀请，可附上联系方式方便对方联系你（选填）',
+      placeholder: '例：看了你的资料很匹配，来我们队吧！我的微信 xxx',
       confirmText: '发送邀请',
     })
     if (message === null) return
@@ -158,6 +147,17 @@ export default function RecruitDetailModal({ postId, onClose, onChanged }: Recru
               </div>
             )}
 
+            {post.contact && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)',
+                padding: '10px 12px', borderRadius: '12px', background: 'rgba(52,199,89,0.08)',
+              }}>
+                <Phone size={13} strokeWidth={1.5} style={{ color: '#34c759', flexShrink: 0 }} />
+                <span style={{ fontWeight: '600', color: 'var(--text-tertiary)', flexShrink: 0 }}>联系方式：</span>
+                <span style={{ fontWeight: '600', userSelect: 'all' }}>{post.contact}</span>
+              </div>
+            )}
+
             {post.tags && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {post.tags.split(',').map((t) => t.trim()).filter(Boolean).map((t) => (
@@ -210,36 +210,30 @@ export default function RecruitDetailModal({ postId, onClose, onChanged }: Recru
                   <button className="btn ghost" onClick={() => setShowEdit(true)}>编辑</button>
                 </>
               ) : post.status === 1 && (
-                post.author?.unlocked ? (
-                  post.type === 1 ? (
-                    <button className="btn primary filled-primary" onClick={handleApply} disabled={acting}>
-                      {acting ? '发送中...' : '申请加入'}
-                    </button>
-                  ) : myLeaderTeams.length > 0 && (
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <select className="glass-search" value={inviteTeamId} onChange={(e) => setInviteTeamId(e.target.value)}
-                        style={{ width: '180px', marginBottom: 0, fontSize: '12px' }}>
-                        <option value="">选择我的队伍</option>
-                        {myLeaderTeams.map((t) => (
-                          <option key={t.id} value={t.id}>{t.teamName}（{t.members.length} 人）</option>
-                        ))}
-                      </select>
-                      <button className="btn primary filled-primary" onClick={handleInvite} disabled={acting || !inviteTeamId}>
-                        {acting ? '发送中...' : '邀请加入'}
-                      </button>
-                    </div>
-                  )
-                ) : (
-                  <button className="btn primary filled-primary" onClick={handleUnlock} disabled={acting}>
-                    {acting ? '发送中...' : '🔓 互看资料'}
+                post.type === 1 ? (
+                  <button className="btn primary filled-primary" onClick={handleApply} disabled={acting}>
+                    {acting ? '发送中...' : '申请加入'}
                   </button>
+                ) : myLeaderTeams.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select className="glass-search" value={inviteTeamId} onChange={(e) => setInviteTeamId(e.target.value)}
+                      style={{ width: '180px', marginBottom: 0, fontSize: '12px' }}>
+                      <option value="">选择我的队伍</option>
+                      {myLeaderTeams.map((t) => (
+                        <option key={t.id} value={t.id}>{t.teamName}（{t.members.length} 人）</option>
+                      ))}
+                    </select>
+                    <button className="btn primary filled-primary" onClick={handleInvite} disabled={acting || !inviteTeamId}>
+                      {acting ? '发送中...' : '邀请加入'}
+                    </button>
+                  </div>
                 )
               )}
             </div>
 
-            {!isMine && post.status === 1 && post.author && !post.author.unlocked && (
+            {!isMine && post.status === 1 && post.type === 2 && myLeaderTeams.length === 0 && (
               <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', textAlign: 'center' }}>
-                对方同意互看后，你可以查看 TA 的完整资料与获奖记录，再决定是否申请/邀请入队
+                你需要先在该竞赛中创建队伍并担任队长，才能邀请对方加入
               </div>
             )}
           </div>

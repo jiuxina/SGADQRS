@@ -267,18 +267,16 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
           >
             <Menu size={22} strokeWidth={1.8} />
           </button>
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={pageTitle}
-              className="mobile-header-title"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 28, mass: 0.7 }}
-            >
-              {pageTitle}
-            </motion.span>
-          </AnimatePresence>
+          {/* 标题即时切换：不用退出动画，避免退出动画被挂起时标题停留在上一页 */}
+          <motion.span
+            key={pageTitle}
+            className="mobile-header-title"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28, mass: 0.7 }}
+          >
+            {pageTitle}
+          </motion.span>
           <button className="mobile-menu-btn" onClick={() => setTutorialOpen(true)} aria-label="使用教程" title="使用教程">
             <CircleHelp size={20} strokeWidth={1.8} />
           </button>
@@ -491,17 +489,15 @@ export default function DesktopLayout({ children, title }: DesktopLayoutProps) {
         <header className="desktop-header">
           <span />
 <div className="desktop-header-title">
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={pageTitle}
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -16 }}
-                  transition={{ type: 'spring', stiffness: 320, damping: 28, mass: 0.7 }}
-                >
-                  {pageTitle}
-                </motion.span>
-              </AnimatePresence>
+              {/* 标题即时切换：不用退出动画，避免退出动画被挂起时标题停留在上一页 */}
+              <motion.span
+                key={pageTitle}
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 28, mass: 0.7 }}
+              >
+                {pageTitle}
+              </motion.span>
             </div>
           <div className="desktop-header-actions">
             <div className="search-wrap" style={{ width: '200px' }}>

@@ -17,8 +17,9 @@ interface RecruitPostModalProps {
 
 /**
  * 发布/编辑招募帖：
- * type=1 组队招募（可关联我任队长的队伍，未选则自动建队）
+ * type=1 组队招募（关联我任队长的队伍）
  * type=2 求组（我找队）
+ * 均可留联系方式，配合申请/邀请备注快速沟通。
  */
 export default function RecruitPostModal({ open, onClose, onSaved, editPost, fixedCompetitionId }: RecruitPostModalProps) {
   const user = useAuthStore((s) => s.user)
@@ -30,6 +31,7 @@ export default function RecruitPostModal({ open, onClose, onSaved, editPost, fix
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [tags, setTags] = useState('')
+  const [contact, setContact] = useState('')
   const [deadline, setDeadline] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -62,6 +64,7 @@ export default function RecruitPostModal({ open, onClose, onSaved, editPost, fix
       setTitle(editPost.title)
       setContent(editPost.content || '')
       setTags(editPost.tags || '')
+      setContact(editPost.contact || '')
       setDeadline(editPost.deadline ? editPost.deadline.slice(0, 16) : '')
     } else {
       setType(1)
@@ -70,6 +73,7 @@ export default function RecruitPostModal({ open, onClose, onSaved, editPost, fix
       setTitle('')
       setContent('')
       setTags('')
+      setContact('')
       setDeadline('')
     }
   }, [open, editPost, fixedCompetitionId])
@@ -82,6 +86,7 @@ export default function RecruitPostModal({ open, onClose, onSaved, editPost, fix
     if (!competitionId) return toast.warning('请选择竞赛')
     if (!title.trim()) return toast.warning('请填写标题')
     if (noTeamForComp) return toast.warning('你在该竞赛还没有担任队长的队伍，请先创建队伍或改用「我想找队」类型')
+    if (type === 1 && !editPost && !teamId) return toast.warning('请选择要关联的队伍')
     setSaving(true)
     try {
       const payload = {
@@ -90,6 +95,7 @@ export default function RecruitPostModal({ open, onClose, onSaved, editPost, fix
         title: title.trim(),
         content: content.trim() || undefined,
         tags: tags.trim() || undefined,
+        contact: contact.trim() || undefined,
         deadline: deadline ? `${deadline}:00` : undefined,
         teamId: type === 1 && teamId ? Number(teamId) : undefined,
       }
@@ -152,7 +158,7 @@ export default function RecruitPostModal({ open, onClose, onSaved, editPost, fix
           <div>
             <label style={labelStyle}>关联队伍</label>
             <select className="glass-search" value={teamId} onChange={(e) => setTeamId(e.target.value)} style={{ ...inputStyle }}>
-              <option value="">自动为我创建一支新队伍</option>
+              <option value="">请选择要关联的队伍</option>
               {compTeams.map((t) => (
                 <option key={t.id} value={t.id}>{t.teamName}（{t.members.length} 人）</option>
               ))}
@@ -183,6 +189,12 @@ export default function RecruitPostModal({ open, onClose, onSaved, editPost, fix
           <label style={labelStyle}>方向标签（逗号分隔）</label>
           <input className="glass-search" placeholder="例：算法,Python,论文写作"
             value={tags} onChange={(e) => setTags(e.target.value)} maxLength={255} style={{ ...inputStyle }} />
+        </div>
+
+        <div>
+          <label style={labelStyle}>联系方式（选填）</label>
+          <input className="glass-search" placeholder="微信 / QQ / 邮箱等，方便对方直接联系你"
+            value={contact} onChange={(e) => setContact(e.target.value)} maxLength={100} style={{ ...inputStyle }} />
         </div>
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>

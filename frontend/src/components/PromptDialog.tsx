@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import { X, Edit3 } from 'lucide-react'
 import { setGlobalPrompt } from './promptDialogUtils'
 import type { PromptOptions } from './promptDialogUtils'
@@ -51,12 +51,11 @@ export function PromptContainer() {
   if (!state) return null
 
   return (
-    <AnimatePresence>
-      {state && (
+    // 不用 AnimatePresence 退出动画：退出动画被挂起时弹窗会以 opacity:0 残留并堆叠；关闭即卸载。
+    state && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
           style={{
             position: 'fixed',
             inset: 0,
@@ -73,7 +72,6 @@ export function PromptContainer() {
           <motion.div
             initial={{ scale: 0.85, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.85, opacity: 0, y: 20 }}
             transition={{ type: 'spring', stiffness: 350, damping: 28 }}
             style={{
               width: window.innerWidth < 768 ? 'calc(100vw - 32px)' : '380px',
@@ -165,7 +163,6 @@ export function PromptContainer() {
             </div>
           </motion.div>
         </motion.div>
-      )}
-    </AnimatePresence>
+    )
   )
 }

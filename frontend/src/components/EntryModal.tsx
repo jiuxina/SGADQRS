@@ -9,7 +9,7 @@ import type { UserItem } from '../api/types'
 interface EntryModalProps {
   open: boolean
   onClose: () => void
-  competition: { id: number; competitionName: string; maxMembers: number } | null
+  competition: { id: number; competitionName: string; maxMembers: number; registrationStart?: string | null; registrationEnd?: string | null } | null
   onSuccess: () => void
 }
 
@@ -46,7 +46,13 @@ export default function EntryModal({ open, onClose, competition, onSuccess }: En
 
   if (!competition) return null
 
+  // 与后端报名时间窗校验一致：未开始/已截止均不可报名
+  const regNotOpen = !!competition.registrationStart && new Date(competition.registrationStart) > new Date()
+  const regClosed = !!competition.registrationEnd && new Date(competition.registrationEnd) < new Date()
+
   const handleSubmit = async () => {
+    if (regNotOpen) return toast.warning('该竞赛报名尚未开始')
+    if (regClosed) return toast.warning('该竞赛报名已截止')
     const name = isSolo ? (user?.realName || '我的参赛队') : teamName.trim()
     if (!name) {
       toast.warning('请输入队伍名称')
@@ -78,6 +84,15 @@ export default function EntryModal({ open, onClose, competition, onSuccess }: En
     <GlassModal open={open} onClose={onClose} title={isSolo ? '确认报名' : '创建参赛队伍'} maxWidth="420px">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{competition.competitionName}</div>
+
+        {(regNotOpen || regClosed) && (
+          <div style={{
+            padding: '10px 12px', borderRadius: '12px', fontSize: '12px', lineHeight: 1.7,
+            background: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.2)', color: 'var(--text-secondary)',
+          }}>
+            {regClosed ? '该竞赛报名已截止，无法报名。' : '该竞赛报名尚未开始，届时再来报名吧。'}
+          </div>
+        )}
 
         {isSolo ? (
           <div style={{
@@ -141,7 +156,7 @@ export default function EntryModal({ open, onClose, competition, onSuccess }: En
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
           <button className="btn ghost" onClick={onClose}>取消</button>
-          <button className="btn primary filled-primary" onClick={handleSubmit} disabled={submitting}>
+          <button className="btn primary filled-primary" onClick={handleSubmit} disabled={submitting || regNotOpen || regClosed}>
             {submitting ? '提交中...' : isSolo ? '确认报名' : '创建队伍'}
           </button>
         </div>
