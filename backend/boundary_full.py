@@ -285,6 +285,7 @@ def main():
     ok(code_of(j) == 200, '管理员可见任意队伍', code_of(j))
     # 状态机
     expect_msg('PUT', f'/registration/team/{TX}/submit', '已提交审核', tok=A, label='TX 提交 → 1')
+    expect_msg('PUT', f'/registration/team/{TX}/teacher', '提交审核后不可更换指导老师', tok=A, body={'teacherId': IB}, label='提交后换导师 → 拒(D16 修复)')
     expect_msg('PUT', f'/registration/team/{TX}/submit', '当前状态不可提交', tok=A, label='重复提交 → 拒')
     expect_msg('PUT', f'/registration/team/{TSOLO}/submit', '当前状态不可提交', tok=A, label='单人队(1)重复提交 → 拒')
     st, j = call('PUT', f'/registration/team/{TX}/audit', T['admin'])
@@ -354,17 +355,28 @@ def main():
     st, j = call('GET', f'/user/public/{IB}', A)
     ok('realName' in json.dumps(j), 'public profile 全开放含 realName', list((j.get('data') or {}).keys())[:10])
     expect_msg('PUT', '/community/request/999999/handle', '请求不存在', body={'status': 1}, tok=A, label='处理不存在请求')
+
+    # 入队链改用组建中(status=0)的新队：提交审核后名单冻结，不能在已审核队上测入队/并发
+    st, j = call('POST', '/competition', T['admin'], {**base_comp, 'competitionName': 'BND-入队专用', 'maxMembers': 3})
+    CJ = (j.get('data') or {}).get('id'); temp_comps.append(CJ); ok(CJ, '入队专用竞赛 CJ 建立')
+    st, j = call('POST', '/registration/team', A, {'competitionId': CJ, 'teamName': 'BND-入队队'})
+    TXJ = (j.get('data') or {}).get('id'); ok(TXJ and j['data']['status'] == 0, 'A 建 status=0 入队队 TXJ', msg_of(j))
+    st, j = call('POST', '/recruit', A, {'type': 1, 'competitionId': CJ, 'teamId': TXJ, 'title': 'BND-入队帖', 'content': 'x'})
+    POSTJ = j.get('data'); POSTJ_ID = POSTJ.get('id') if isinstance(POSTJ, dict) else POSTJ
+    ok(POSTJ_ID, 'TXJ 关联招募帖 POSTJ', msg_of(j))
     # handle 守卫：用一条将被拒绝的申请
-    st, j = call('POST', '/community/request', B, {'type': 2, 'postId': POST1_ID, 'message': 'guard'})
+    st, j = call('POST', '/community/request', B, {'type': 2, 'postId': POSTJ_ID, 'message': 'guard'})
     RG = (j.get('data') or {}).get('id'); ok(RG, 'B 入队申请创建(handle 守卫用)', msg_of(j))
     expect_msg('PUT', f'/community/request/{RG}/handle', '无效的处理结果', body={'status': 0}, tok=A, label='handle status=0 → 无效')
     expect_msg('PUT', f'/community/request/{RG}/handle', '无权处理该请求', body={'status': 1}, tok=C, label='无关人处理 → 无权')
+    # 重复申请守卫（同人同队同类型已有待处理须被拒）
+    expect_msg('POST', '/community/request', '待处理', body={'type': 2, 'postId': POSTJ_ID, 'message': 'dup'}, tok=B, label='同人同队重复申请 → 拒')
     expect_msg('PUT', f'/community/request/{RG}/handle', '已拒绝', body={'status': 2}, tok=A, label='A 拒绝 B 申请(守卫用)')
     expect_msg('PUT', f'/community/request/{RG}/handle', '该请求已处理', body={'status': 2}, tok=A, label='重复处理 → 该请求已处理')
     # 入队申请链路
     expect_msg('POST', '/community/request', '请指定招募帖', body={'type': 2}, tok=D, label='申请缺 postId')
     expect_msg('POST', '/community/request', '招募帖不存在或已关闭', body={'type': 2, 'postId': 999999}, tok=D, label='不存在帖子申请')
-    st, j = call('GET', f'/recruit/{POST1_ID}', B)
+    st, j = call('GET', f'/recruit/{POSTJ_ID}', B)
     ok(code_of(j) == 200, '非作者可读帖子详情', code_of(j))
     # 求组帖不能申请
     st, j = call('GET', '/recruit/list?current=1&size=20&competitionId=' + str(CX), A)
@@ -372,17 +384,17 @@ def main():
     if bqz:
         expect_msg('POST', '/community/request', '求组帖', body={'type': 2, 'postId': bqz}, tok=C, label='申请加入求组帖 → 拒')
     # 自己队申请
-    expect_msg('POST', '/community/request', '自己的队伍', body={'type': 2, 'postId': POST1_ID}, tok=A, label='申请加入自己的队伍 → 拒')
-    # B 申请入 TX(1/3→2/3)：无需先互看，直接申请
-    st, j = call('POST', '/community/request', B, {'type': 2, 'postId': POST1_ID, 'message': 'b'})
+    expect_msg('POST', '/community/request', '自己的队伍', body={'type': 2, 'postId': POSTJ_ID}, tok=A, label='申请加入自己的队伍 → 拒')
+    # B 申请入 TXJ(1/3→2/3)：无需先互看，直接申请
+    st, j = call('POST', '/community/request', B, {'type': 2, 'postId': POSTJ_ID, 'message': 'b'})
     RB2 = (j.get('data') or {}).get('id'); ok(RB2, 'B 入队申请创建(直接申请成功)', msg_of(j))
-    expect_msg('PUT', f'/community/request/{RB2}/handle', '已同意加入', body={'status': 1}, tok=A, label='同意 B 入队 TX(2/3)')
+    expect_msg('PUT', f'/community/request/{RB2}/handle', '已同意加入', body={'status': 1}, tok=A, label='同意 B 入队 TXJ(2/3)')
     # 重复入队守卫
-    expect_msg('POST', '/community/request', '你已在队伍中', body={'type': 2, 'postId': POST1_ID}, tok=B, label='已在队再申请 → 你已在队伍中')
-    # 容量并发：TX=2/3 仅剩 1 席，C/D 同时被处理，恰好 1 人成功
-    st, j1 = call('POST', '/community/request', C, {'type': 2, 'postId': POST1_ID, 'message': 'c'})
+    expect_msg('POST', '/community/request', '你已在队伍中', body={'type': 2, 'postId': POSTJ_ID}, tok=B, label='已在队再申请 → 你已在队伍中')
+    # 容量并发：TXJ=2/3 仅剩 1 席，C/D 同时被处理，恰好 1 人成功
+    st, j1 = call('POST', '/community/request', C, {'type': 2, 'postId': POSTJ_ID, 'message': 'c'})
     RC = (j1.get('data') or {}).get('id'); ok(RC, 'C 入队申请创建', msg_of(j1))
-    st, j2 = call('POST', '/community/request', D, {'type': 2, 'postId': POST1_ID, 'message': 'd'})
+    st, j2 = call('POST', '/community/request', D, {'type': 2, 'postId': POSTJ_ID, 'message': 'd'})
     RD = (j2.get('data') or {}).get('id'); ok(RD, 'D 入队申请创建', msg_of(j2))
     res = {}
     def handle(rid, key):
@@ -393,7 +405,7 @@ def main():
     ok(len(succ) == 1, f'最后 1 席并发处理恰好 1 人成功(实际成功 {len(succ)} 人)', {k: msg_of(res[k][1]) for k in res})
     if len(succ) == 2:
         finding('!! 并发同意入队出现超员(addMemberToTeam 容量检查与插入非原子)')
-    cnt = sqlq(f'select count(*) from scms.competition_team_member where team_id={TX}')
+    cnt = sqlq(f'select count(*) from scms.competition_team_member where team_id={TXJ}')
     ok(cnt == '3', f'并发后成员数恰为 3(实为 {cnt})', cnt)
     # 败者重试 → 队伍人数已满(请求已处理?败者请求也被置 1?验证语义)
     loser = 'd' if succ == ['c'] else 'c'
@@ -401,15 +413,27 @@ def main():
     st, j = call('PUT', f'/community/request/{LR}/handle', A, {'status': 1})
     ok('队伍人数已满' in msg_of(j) or '已处理' in msg_of(j), f'败者重试 → {"队伍人数已满" if "队伍人数已满" in msg_of(j) else "该请求已处理"}(两态之一，无静默超员)', msg_of(j))
     lst = sqlq(f'select status from scms.community_request where id={LR}')
-    lmember = sqlq(f'select count(*) from scms.competition_team_member where team_id={TX} and student_id={IC if loser=="c" else ID}')
+    lmember = sqlq(f'select count(*) from scms.competition_team_member where team_id={TXJ} and student_id={IC if loser=="c" else ID}')
     if lst == '1' and lmember == '0':
         finding('入队失败(满员)但请求状态仍被置为“已同意”→ 申请单与成员表状态错位(用户看到已通过实际未入队)')
     ok(lst in ('0', '1', '2'), f'败者请求状态有界(={lst})', lst)
     # 满员自动下架招募帖 closePostIfFull
-    st, j = call('GET', f'/recruit/{POST1_ID}', A)
+    st, j = call('GET', f'/recruit/{POSTJ_ID}', A)
     ok((j.get('data') or {}).get('status') == 0, '满员后关联招募帖自动下架(closePostIfFull)', (j.get('data') or {}).get('status'))
     # 满员+帖关后再来申请者 → 已关闭守卫
-    expect_msg('POST', '/community/request', '已关闭', body={'type': 2, 'postId': POST1_ID, 'message': 'e'}, tok=E, label='满员下架后申请 → 招募帖不存在或已关闭')
+    expect_msg('POST', '/community/request', '已关闭', body={'type': 2, 'postId': POSTJ_ID, 'message': 'e'}, tok=E, label='满员下架后申请 → 招募帖不存在或已关闭')
+    # D2 冻结回归：并发败者 LR 仍是待处理(status=0)。队长提交 TXJ(满员队仍可提交？否——提交不限容量，0→1)后，
+    # 处理该积压申请必须命中"名单已提交审核"冻结闸门，而非因满员/静默进人。
+    pend = sqlq(f'select id from scms.community_request where team_id={TXJ} and status=0 order by id limit 1')
+    if not pend:
+        # 败者请求可能已被系统置 1(错位场景)：新建一条独立队精确验证冻结
+        st, j = call('POST', '/registration/team', B, {'competitionId': CJ, 'teamName': 'BND-冻结验证'})
+        ok(code_of(j) != 200, 'B 不能加入 TXJ 所在竞赛第二队(一人一赛一队)', msg_of(j))
+    else:
+        # TXJ 满员，直接提交→1（提交只校验状态不校验容量）
+        expect_msg('PUT', f'/registration/team/{TXJ}/submit', '已提交审核', tok=A, label='满员队提交 → 1')
+        st, j = call('PUT', f'/community/request/{pend}/handle', A, {'status': 1})
+        ok('名单已提交审核' in msg_of(j), '提交后处理积压入队申请 → 冻结闸门拦截(D2 修复)', f'http={st} msg={msg_of(j)}')
     # 邀请
     st, j = call('POST', '/recruit', E, {'type': 2, 'competitionId': CY, 'title': 'BND-E求组', 'content': 'e'})
     PE = (j.get('data') or {}).get('id') if isinstance(j.get('data'), dict) else j.get('data')
@@ -457,6 +481,9 @@ def main():
     st, j = call('POST', '/result/batch', T['admin'], {'competitionId': CX, 'results': [
         {'studentId': IA, 'score': 70}, {'studentId': IB, 'score': -1}, {'studentId': IC, 'score': 999999999999}]})
     ok(code_of(j) != 200, '批量含非法行 → 整批拒绝(事务)或明确报错', f'code={code_of(j)} msg={msg_of(j)}')
+    # 全有或全无：失败批次中首行合法数据不得被部分提交（return 式错误不触发回滚的真实缺陷修复回归）
+    part = int(sqlq(f'select count(*) from scms.competition_result where competition_id={CX} and student_id={IA}') or 0)
+    ok(part == 0, f'失败批量零残留(首行未被部分提交)(修复回归, 实查 {part} 行)', part)
     st, j = call('GET', f'/result/list?current=1&size=50&competitionId={CX}', A)
     rows = (j.get('data') or {}).get('records', [])
     ok(code_of(j) == 200 and all(r.get('isPublished') == 1 for r in rows), '未发布前学生列表无未发布记录', f'{len(rows)} rows')
@@ -514,6 +541,70 @@ def main():
     expect_msg('PUT', '/user/password', '密码修改成功', body={'oldPassword': 'bndpass1', 'newPassword': 'bndpass2'}, tok=B, label='改密成功')
     expect_msg('POST', '/auth/login', '登录成功', body={'username': 'bnd_b', 'password': 'bndpass2'}, label='新密码可登录')
     expect_msg('POST', '/auth/login', '账号或密码错误', body={'username': 'bnd_b', 'password': 'bndpass1'}, label='旧密码失效')
+
+    # ---------- 9b. 2026-09-10 修复回归断言（D1/D3/D4/D5/D6/D7/D8/D9/D11/D12/D13/D15/D16/D21） ----------
+    # D1 成绩写侧 publisher 守卫（CX 为 admin 发布的临时竞赛）
+    expect_msg('POST', '/result', '只能操作自己发布竞赛的成绩', body={'competitionId': CX, 'studentId': IE, 'score': 77}, tok=T['teacher'], label='非发布教师录入他人竞赛成绩 → 拒(D1)')
+    expect_msg('POST', f'/result/publish/{CX}', '只能操作自己发布竞赛的成绩', tok=T['teacher'], label='非发布教师发布他人竞赛成绩 → 拒(D1)')
+    # D3 用户导出端点接线
+    st, j = call('GET', '/export/users', T['admin'])
+    ok(st == 200, 'admin GET /export/users → 200(D3 断链修复)', f'http={st}')
+    expect_http('GET', '/export/users', 403, tok=T['stu'], label='学生导出用户 → 403')
+    # D4 非管理员用户列表收窄为教师简表；/user/{id} 仅管理员
+    st, j = call('GET', '/user/list?current=1&size=50', T['stu'])
+    recs = (j.get('data') or {}).get('records') or []
+    ok(code_of(j) == 200 and recs and all(r.get('userType') == 2 for r in recs) and all('status' not in r or r.get('status') is None for r in recs)
+       and all(r.get('username') != 'admin' for r in recs), '学生 /user/list 仅教师简表(无 status/无学生行)(D4)', [list(r.keys())[:6] for r in recs[:1]])
+    expect_http('GET', '/user/5', 403, tok=T['stu'], label='学生 GET /user/{id} → 403(D4)')
+    st, j = call('GET', '/user/list?current=1&size=5', T['admin'])
+    ok((j.get('data') or {}).get('records') and (j.get('data') or {}).get('records')[0].get('status') is not None, '管理员列表字段完整(不受收窄影响)', '')
+    # D5 participants 归属守卫（竞赛 3 由 uid3 发布，本教师为 uid2）
+    expect_msg('GET', '/registration/participants?competitionId=3', '只能查看自己发布竞赛的参赛者名单', tok=T['teacher'], label='教师拉他人竞赛名单 → 拒(D5)')
+    # D6 教师列表不再出现他人草稿（CD=admin 发布的草稿）；本人草稿仍可见
+    st, j = call('GET', '/competition/list?current=1&size=200', T['teacher'])
+    ids_t = [r['id'] for r in (j.get('data') or {}).get('records', [])]
+    ok(CD not in ids_t, '他人草稿不出现在教师列表(D6)', f'CD={CD}')
+    st, j = call('POST', '/competition', T['teacher'], {**base_comp, 'competitionName': 'BND-教师草稿', 'status': 0})
+    CTD = (j.get('data') or {}).get('id'); temp_comps.append(CTD); ok(CTD, '教师自建草稿 CTD')
+    st, j = call('GET', '/competition/list?current=1&size=200', T['teacher'])
+    ids_t = [r['id'] for r in (j.get('data') or {}).get('records', [])]
+    ok(CTD in ids_t, '教师可见自己的草稿(D6)', f'CTD={CTD}')
+    # D7 公告列表仅管理员 + keyword 生效
+    expect_http('GET', '/notice/list', 403, tok=T['stu'], label='学生 /notice/list → 403(D7)')
+    st, j = call('POST', '/notice', T['admin'], {'noticeTitle': 'BND-keyword公告', 'noticeContent': 'kw'})
+    NID2 = j.get('data'); NID2 = NID2.get('id') if isinstance(NID2, dict) else NID2
+    st, j = call('GET', '/notice/list?current=1&size=50&keyword=BND-keyword', T['admin'])
+    ok(any((r.get('noticeTitle') == 'BND-keyword公告') for r in (j.get('data') or {}).get('records', [])), '公告 keyword 命中(D10)', (j.get('data') or {}).get('total'))
+    st, j = call('GET', '/notice/list?current=1&size=50&keyword=zzz绝对不存在', T['admin'])
+    ok((j.get('data') or {}).get('total') == 0, '公告 keyword 过滤真实生效(D10)', (j.get('data') or {}).get('total'))
+    call('DELETE', f'/notice/{NID2}', T['admin'])
+    # D8 竞赛 status 域 + maxMembers 收缩
+    expect_msg('PUT', '/competition', '状态值无效', body={'id': CX, 'status': 99}, tok=T['admin'], label='status=99 → 拒(D8)')
+    expect_msg('PUT', '/competition', '每队人数上限不能小于现有队伍人数', body={'id': CJ, 'maxMembers': 2}, tok=T['admin'], label='maxMembers 收缩至低于现员 → 拒(D8)')
+    # D9 注册通道不再产教师
+    expect_msg('POST', '/auth/register', '请联系管理员开通', body={'username': 'bnd_tt', 'password': 'bndpass1', 'role': 'teacher'}, label='注册 teacher → 拒(D9)')
+    # D11 超长字段全部结构化拒绝（不再是 HTTP 500 兜底）
+    expect_msg('POST', '/recruit', '标题不能超过 100 字', body={'type': 2, 'competitionId': CX, 'title': 'T' * 101}, tok=T['stu'], label='招募标题 101 → 结构化(D11)')
+    expect_msg('POST', '/community/request', '留言不能超过 500 字', body={'type': 2, 'postId': 999999, 'message': 'x' * 501}, tok=T['stu'], label='申请留言 501 → 结构化(D11)')
+    expect_msg('POST', '/notice', '公告标题不能超过 100 字', body={'noticeTitle': 't' * 101, 'noticeContent': 'x'}, tok=T['admin'], label='公告标题 101 → 结构化(D11)')
+    expect_msg('PUT', '/user', '姓名不能超过 50 字', body={'id': IB, 'realName': 'r' * 60}, tok=T['admin'], label='更新用户姓名 60 → 结构化(D11)')
+    expect_msg('POST', '/result', '备注不能超过 500 字', body={'competitionId': CX, 'studentId': IA, 'score': 50, 'remark': 'z' * 501}, tok=T['admin'], label='成绩备注 501 → 结构化(D11)')
+    # D13 批量禁用状态域
+    expect_msg('POST', '/user/batch-disable', '状态参数无效', body={'ids': [IB], 'status': 5}, tok=T['admin'], label='batch-disable status=5 → 拒(D13)')
+    # D15 已下架帖不可编辑
+    expect_msg('PUT', f'/recruit/{POSTJ_ID}', '该帖已关闭，不能再编辑', body={'title': 'BND-改关闭帖'}, tok=A, label='编辑已下架帖 → 拒(D15)')
+    # D21 删除守卫：不能删自己；有队长职务的账号被挡
+    expect_msg('DELETE', '/user/1', '不能删除当前登录账号', tok=T['admin'], label='admin 删自己 → 拒(D21)')
+    expect_msg('DELETE', f'/user/{IA}', '担任队长', tok=T['admin'], label='删仍任队长的账号 → 拒(D21)')
+    # D12 并发同名注册：一个成功、另一个结构化 400（唯一键冲突不再 500）
+    race = {}
+    def reg_race(): race['r'] = call('POST', '/auth/register', body={'username': 'bnd_race', 'password': 'bndpass1', 'role': 'student'})
+    th = [threading.Thread(target=reg_race) for _ in range(2)]
+    [t.start() for t in th]; [t.join() for t in th]
+    rows_race = int(sqlq("select count(*) from scms.sys_user where username='bnd_race'") or 0)
+    ok(rows_race == 1, '并发注册最终仅 1 行落库(数据一致)', rows_race)
+    ok(race['r'][0] != 500, '并发注册败者不再收到 500 兜底(D12 修复)', f'http={race["r"][0]} msg={msg_of(race["r"][1])}')
+    sqlq("delete from sys_user where username='bnd_race'")
 
     # ---------- 10. 公告/通知容错 ----------
     expect_msg('POST', '/notice', '公告标题不能为空', body={'noticeTitle': '', 'noticeContent': 'x'}, http=400, tok=T['admin'], label='公告缺标题 400')

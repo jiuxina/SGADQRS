@@ -87,15 +87,17 @@ try:
     j = call('  comp6 详情复查', 'GET', '/competition/6', S6)
     ok('  comp6 hasRegistered==True', (j or {}).get('data', {}).get('hasRegistered') == True)
 
-    # ---------- 4. 团队建队 → 提交 → 管理员审核 ----------
+    # ---------- 4. 团队建队 → 换导师 → 提交 → 管理员审核 ----------
     j = call('建队 comp8(指定老师2)', 'POST', '/registration/team', S4,
              {'competitionId':8,'teamName':'TEST-冒烟小队','teamSlogan':'全链路冒烟','teacherId':2})
     T1 = ((j or {}).get('data') or {}).get('id')
+    # 换导师须在提交审核前（提交后名单与导师一并冻结，见 boundary D16 断言）
+    j = call('更换指导老师为3', 'PUT', f'/registration/team/{T1}/teacher', S4, {'teacherId':3})
     j = call('队长提交审核', 'PUT', f'/registration/team/{T1}/submit', S4)
     j = call('管理员审核通过', 'PUT', f'/registration/team/{T1}/audit?status=2&auditRemark=冒烟通过', A)
     j = call('队伍列表(admin)', 'GET', '/registration/teams?current=1&size=50&competitionId=8', A)
     rec = next((r for r in (j or {}).get('data', {}).get('records', []) if r.get('id') == T1), {})
-    ok('  T1 status==2 且 teacherId==2', rec.get('status') == 2 and rec.get('teacherId') == 2, rec)
+    ok('  T1 status==2 且 teacherId==3', rec.get('status') == 2 and rec.get('teacherId') == 3, rec)
 
     # ---------- 5. 权限与守卫 ----------
     call_fail('学生无权审核', 'PUT', f'/registration/team/{T1}/audit?status=3', S6)
@@ -106,11 +108,8 @@ try:
     rows = (j or {}).get('data') or []
     ok('  名单含 student4/teamId', any(r.get('studentId') == 4 and r.get('teamId') == T1 for r in rows), rows[:3])
 
-    # ---------- 7. 更换指导老师 ----------
-    call('更换指导老师为3', 'PUT', f'/registration/team/{T1}/teacher', S4, {'teacherId':3})
-    j = call('  队伍列表复查', 'GET', '/registration/teams?current=1&size=50&competitionId=8', A)
-    rec = next((r for r in (j or {}).get('data', {}).get('records', []) if r.get('id') == T1), {})
-    ok('  teacherId==3', rec.get('teacherId') == 3, rec.get('teacherId'))
+    # ---------- 7. 提交审核后换导师被拒（名单冻结语义，见 D16 修复） ----------
+    call_fail('已通过队换导师被拒', 'PUT', f'/registration/team/{T1}/teacher', S4, {'teacherId':2})
 
     # ---------- 8. 旧端点已删 ----------
     call_fail('POST /registration/join 已删', 'POST', '/registration/join', S4, {'invitationCode':'x'})

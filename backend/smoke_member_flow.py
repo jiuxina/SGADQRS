@@ -46,11 +46,17 @@ for u, uid in [('admin', 1), ('S20220001', 6), ('S20220002', 7)]:
     mark(f'登录 {u} -> id={uid}', j['data']['user']['id'] == uid)
 A, S6, U7 = T[1], T[6], T[7]
 
+# 硬清理 NEWFEAT-* 全套残留：/recruit DELETE 只是软下架，此前每跑一次净积累一份帖/请求/通知。
+# 顺序：通知 → 请求 → 成员 → 队伍 → 帖（子查询引用后文数据，须先删引用方）。
+def hard_clean_newfeat():
+    q("delete from sys_notification where (ref_type='request' and ref_id in (select id from community_request where post_id in (select id from recruit_post where title like 'NEWFEAT-%') or team_id in (select id from competition_team where team_name like 'NEWFEAT-%'))) or (ref_type='team' and ref_id in (select id from competition_team where team_name like 'NEWFEAT-%')) or content like '%NEWFEAT%' or title like '%NEWFEAT%'")
+    q("delete from community_request where post_id in (select id from recruit_post where title like 'NEWFEAT-%') or team_id in (select id from competition_team where team_name like 'NEWFEAT-%')")
+    q("delete m from competition_team_member m join competition_team t on m.team_id=t.id where t.team_name like 'NEWFEAT-%'")
+    q("delete from competition_team where team_name like 'NEWFEAT-%'")
+    q("delete from recruit_post where title like 'NEWFEAT-%'")
+
 # 预清理上次残留（按队名/标题定位，恢复过期的演示报名窗口）
-for tid in q("select id from competition_team where team_name like 'NEWFEAT-验证队%'").splitlines():
-    call('清理残留队伍', 'DELETE', f'/registration/team/{tid.strip()}', S6, None)
-for pid in q("select id from recruit_post where title like 'NEWFEAT-%'").splitlines():
-    call('清理残留帖子', 'DELETE', f'/recruit/{pid.strip()}', U7, None)
+hard_clean_newfeat()
 q("update competition set registration_end=DATE_ADD(NOW(), INTERVAL 30 DAY) where status in (2,3) and registration_end < NOW()")
 
 # U7 在 comp8(已发布,max3) 建队
@@ -98,8 +104,9 @@ expect_fail('报名已截止 → 建队拒', 'POST', '/registration/team', S6,
             {'competitionId': 4, 'teamName': 'NEWFEAT-晚了的队'}, '报名已截止')
 call('恢复 comp4 截止', 'PUT', '/competition', A, {'id': 4, 'registrationEnd': orig['registrationEnd']})
 
-# 清理（当前队长是 S6）
+# 清理（当前队长是 S6）：解散/关帖各自验证 API 行为，随后统一硬删，保证本次退出零残留
 call('S6 解散验证队', 'DELETE', f'/registration/team/{TID}', S6, None)
 call('关闭招募帖', 'DELETE', f'/recruit/{PID}', U7, None)
+hard_clean_newfeat()
 print(f'\n===== 新功能验证 通过 {len(P)} / 失败 {len(F)} =====')
 for x in F: print('FAIL:', x)
