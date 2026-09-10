@@ -25,7 +25,7 @@
 
 后端技术栈：Spring Boot 3.2.5（Java 17）、Spring Security（认证与授权）、MyBatis-Plus 3.5.6（ORM 框架）、MySQL 8（数据库，Docker 容器运行）、JWT / jjwt 0.12.5（令牌认证）、SpringDoc OpenAPI 2.5.0（Swagger API 文档）、EasyExcel 3.3.4（Excel 导出）、Lombok（代码简化）、Hutool 5.8.27（工具包，当前未大量使用）。
 
-回归/测试基建：Python 无依赖脚本三件套（`smoke_full.py` 全链路冒烟、`boundary_full.py` 边界与容错回归 227 断言、`smoke_member_flow.py` 成员流动专项），`gen_demo_data.py` 演示数据生成器（幂等 + 19 项自校验），全部依赖 docker 容器 `mysql-scms` 与 8080 后端。
+回归/测试基建：Python 无依赖脚本三件套（`smoke_full.py` 全链路冒烟、`boundary_full.py` 边界与容错回归 263 断言、`smoke_member_flow.py` 成员流动专项），`gen_demo_data.py` 演示数据生成器（幂等 + 19 项自校验），全部依赖 docker 容器 `mysql-scms` 与 8080 后端。
 
 基础设施：MySQL 运行在 Docker 容器 `mysql-scms` 中（端口 3306）、Maven 路径为 `C:\apache-maven\apache-maven-3.9.16\bin\mvn.cmd`（若不在 PATH 中需完整路径调用）。
 
@@ -1115,7 +1115,7 @@ Vite 开发服务器支持 HMR（热模块替换），修改 `.tsx`/`.ts`/`.css`
 
 ### 10.7 运行回归
 
-后端与 mysql-scms 运行时：`python backend/smoke_full.py`（冒烟）、`python backend/boundary_full.py`（边界容错 227 断言）、`python backend/smoke_member_flow.py`（成员流动专项）；三者均自清理临时数据、校验种子完整性，可重复执行。演示数据：`python backend/gen_demo_data.py`。前端 e2e：`cd frontend && npx playwright test`（需 3000+8080 同时在跑）。
+后端与 mysql-scms 运行时：`python backend/smoke_full.py`（冒烟）、`python backend/boundary_full.py`（边界容错 263 断言）、`python backend/smoke_member_flow.py`（成员流动专项）；三者均自清理临时数据、校验种子完整性，可重复执行。演示数据：`python backend/gen_demo_data.py`。前端 e2e：`cd frontend && npx playwright test`（需 3000+8080 同时在跑）。
 
 ---
 

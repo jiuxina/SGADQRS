@@ -13,6 +13,7 @@
 | [docs/UI设计规范.md](docs/UI设计规范.md) | 界面设计规范（Liquid Glass 风格取舍原则） |
 | [docs/课程设计报告.md](docs/课程设计报告.md) | 数据库课程设计方案报告 |
 | [docs/full-link-test-report/](docs/full-link-test-report/) | 全链路测试报告（API 断言 + UI 端到端 + 缺陷修复记录） |
+| [docs/全功能检查报告-2026-09-10.md](docs/全功能检查报告-2026-09-10.md) | 61 端点 × 26 页面全量功能完整性/操作容错检查报告 + D1–D22 缺陷修复结果 |
 | [docs/frontend-test-plan/](docs/frontend-test-plan/) | 前端验证计划与历史测试报告 |
 
 ---
@@ -178,7 +179,7 @@ npm run dev        # http://localhost:3000
 # 后端全链路冒烟（需后端 8080 + mysql-scms 运行；自动清理本次写入的数据）
 python backend/smoke_full.py
 
-# 边界与容错全量回归（需后端 8080 + mysql-scms 运行；临时数据+自清理+种子完整性校验，227 断言）
+# 边界与容错全量回归（需后端 8080 + mysql-scms 运行；临时数据+自清理+种子完整性校验，263 断言）
 python backend/boundary_full.py
 # 注：backend/boundary_test.sh 为历史遗留脚本，会污染演示数据，请勿直接运行
 
@@ -264,7 +265,7 @@ SGADQRS/
 │   ├── public/                    # 种子海报（随 /public/** 提供，启动目录敏感）
 │   ├── sql/                       # init.sql + upgrade-teamup/lean/lean2/teamup2.sql + demo-data.sql（演示数据，脚本生成）
 │   ├── smoke_full.py              # 全链路冒烟脚本（自动清理）
-│   ├── boundary_full.py           # 边界与容错回归（227 断言，临时数据+自清理+种子守卫）
+│   ├── boundary_full.py           # 边界与容错回归（263 断言，临时数据+自清理+种子守卫）
 │   ├── smoke_member_flow.py       # 成员流动/联系方式专项回归
 │   ├── gen_demo_data.py           # 演示数据生成器（生成并导入 demo-data.sql，幂等+自校验）
 │   └── target/                    # 构建产物（git 忽略，不入库）

@@ -490,6 +490,31 @@ cd frontend && npm run build
 
 ## 更新日志
 
+### 2026-09-10 全功能检查 22 项缺陷修复（检查与修复计划见 docs/全功能检查报告-2026-09-10.md）
+
+按当日全栈检查报告（61 端点 × 26 页面全覆盖）逐项修复 D1–D22，行为变更如下（全部有 boundary 9b 回归断言锁死）：
+
+- **D1 成绩越权（高）**：ResultService save/batch/update/publish 补 publisherId 归属守卫（复用 CompetitionService 模板，授权先于数据校验）；非发布教师一律拒绝。
+- **D2 名单冻结绕过（高）**：`addMemberToTeam` 与 `precheckJoinable` 增加 `team.status∈{0,3}` 闸门——提交审核(1)/已通过(2)后积压申请/邀请不能再进人。
+- **D3 导出用户断链**：`GET /export/users`（ADMIN）接线已存在但从未暴露的 `ExportService.exportUsers`；前端 toast/console「删除用户失败」错文案同步修正。
+- **D4 账号枚举**：非管理员 `/user/list` 强制 `userType=2` 且裁剪字段（教师简表，学生端组队选导师不受影响）；`/user/{id}` 改 ADMIN-only。
+- **D5 教师横向**：`/registration/teams` 的 teacherId 参数仅允许本人 id；`participants` 补 publisher 归属守卫。
+- **D6 草稿可见性统一**：竞赛列表非管理员不再出现他人草稿行（与详情口径一致，本人草稿/admin 全量保留）。
+- **D7 公告草稿泄露**：`/notice/list` 改 ADMIN-only（草稿不下发学生，announcements 侧原本就正确）。
+- **D8 状态域+容量收缩**：竞赛 status 写入限定 {0,2,3,4}；maxMembers 不得收缩到小于任一现有队伍人数。
+- **D9 注册提权**：注册通道拒绝 role=teacher（教师由管理员开通）；userType 恒 1。
+- **D10 静默失效**：公告列表新增 keyword（前端搜索框从此有效）；统计页日期范围后端无参支持 → 移除前端无效控件。
+- **D11 长度守卫**：招募标题≤100、申请留言≤500、公告标题≤100/内容≤500、成绩备注≤500、updateUser 补 realName≤50/userType 域/密码≥6——超长从 HTTP 500 全部收敛为结构化业务拒绝。
+- **D12 并发唯一键**：GlobalExceptionHandler 新增 DuplicateKeyException/DataIntegrityViolation/DateTimeParse → 400（并发双击注册/建队不再 500）。
+- **D13/D15/D16/D17**：batch-disable 补状态域；已下架帖拒绝编辑；提交审核后禁换导师（smoke 第 4/7 步随之重排）；D17 复核为防探测设计维持现状。
+- **D18 统计口径**：StatsService 已发布/进行中/分布/upcoming 双分支/dashboard availableCompetitions 全部改按时间派生谓词（与列表一致的 in(2,3)+窗口表达式）。
+- **D19 通知降级**：NotificationService.send 内部兜底（标题/内容按列宽截断 + try/catch），通知失败不再回滚业务事务。
+- **D20 导出缓冲**：ExportService 全部导出先写内存再一次性刷响应流，不再可能产生半截损坏 xlsx。
+- **D21 级联补全**：删竞赛同事务清关联 community_request/通知；删用户拒绝：当前登录账号、仍任队长、有未完成(0/1)队伍成员身份。
+- **D22 清理**：未知路径登录态回落本角色首页（ROLE_HOME 常量统一维护）；删前端 5 个无调用 api 函数、后端 Notice 实体/NoticeMapper/ExcelUtil/JwtTokenUtil 三个零调用方法（兑现 L502 遗留提示）、vite `/api/ws` 遗留代理。
+- **计划外顺手修复（本轮新增测试逼出）**：`saveBatchResults` 边插边校验 + return 式错误不触发回滚 → 失败批次首行会被部分提交；改为两遍式全量校验后统一插入，boundary 加「失败批量零残留」断言。另 member_flow 的 `/recruit DELETE` 实为软下架导致每跑净积累一组 NEWFEAT 帖/请求/通知——预清理与收尾改 SQL 硬删（幂等），清理后库内 recruit_post/community_request 恰好等于 init+demo 规范行数。
+- 回归：smoke 65/65、member_flow 31/31、boundary **263/263**（新增 36 断言，含 9b 修复回归段与第 7 节入队链迁移至 status=0 新队）、e2e 1/1、page-sweep 54 项 0 失败（导出用例 FAIL→PASS）、tsc+vite 构建通过。
+
 ### 2026-09-10 全量文档同步（本文件主体 + README + DEVELOPMENT + ER 图 + 课程设计报告 + frontend/README）
 
 - **本文件（AGENT.md）主体大修**：数据库结构一节此前仍是 TeamUp 之前描述（列有已删除的 competition_registration 表、sys_user 的 phone/email/role 字段、成员表 status 列、recruit_post 的 need_count/view_count、两步制互看流程），已按 init.sql 重写为当前 8 表并新增「组队 2.0 变更记录」；前端路由表按 App.tsx 重写（删除 /admin/registrations、/student/registration 等已不存在路由，补齐三 tab/四 tab 合并页、重定向与 TeamDetail/UserProfilePage）；服务端口修正（前端固定 3000，5174/3001 动画演示为不存在的历史遗留）；目录结构/控制器数量（13）/API 模块（10）/组件（34）/页面（26）对齐实际；CORS 修正为 `allowedOriginPatterns("*")`；「禁止修改数据库结构」例外清单更新。
